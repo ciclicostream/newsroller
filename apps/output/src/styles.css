@@ -6,7 +6,7 @@ body { font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Robo
 
 /* Lienzo fijo 1920x1080 escalado al viewport */
 .stage {
-  width: 1920px; height: 1080px; position: relative; overflow: hidden;
+  width: 1920px; height: 1080px; flex: none; position: relative; overflow: hidden;
   background: #ffffff; color: #10151f; transform-origin: center center;
 }
 
