@@ -203,9 +203,12 @@ function AddBlock({
   const layouts = LAYOUTS.filter((t) => t.appliesTo.includes(type));
   const [duration, setDuration] = useState(8);
 
-  // Ajustar selección al cambiar de tipo.
+  // Mantener una selección válida cuando cambian las opciones (incluye la carga async).
   useEffect(() => {
-    setContentId(options[0]?.id ?? "");
+    setContentId((cur) => (options.some((o) => o.id === cur) ? cur : options[0]?.id ?? ""));
+  }, [options]);
+  // Al cambiar de tipo, fijar el layout por defecto.
+  useEffect(() => {
     setTemplate(layouts[0]?.id ?? "custom");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [type]);
