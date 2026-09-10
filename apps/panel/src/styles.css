@@ -109,6 +109,10 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 6px
 .icon-btn:hover { background: var(--bg); color: var(--danger); }
 .switch { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); cursor: pointer; }
 .switch input { width: auto; }
+.toggle-pill { border: 1px solid var(--border); background: var(--surface); color: var(--muted); font-size: 12px; font-weight: 500; padding: 6px 12px; border-radius: 999px; display: inline-flex; align-items: center; gap: 6px; }
+.toggle-pill:hover { border-color: var(--accent); color: var(--accent); }
+.toggle-pill.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+.toggle-pill .live-dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
 .uploading { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 14px; margin-bottom: 14px; }
 .placa-item { display: flex; align-items: flex-start; gap: 12px; padding: 14px 16px; border-bottom: 1px solid var(--border); }
 .placa-item:last-child { border-bottom: none; }

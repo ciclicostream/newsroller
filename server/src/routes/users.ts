@@ -12,7 +12,7 @@ export function usersRouter(): Router {
   r.use(requireAuth, requireAdmin);
 
   // Listar usuarios (perfil + rol).
-  r.get("/users", async (_req, res) => {
+  r.get("/", async (_req, res) => {
     const sb = getSupabase()!;
     const { data, error } = await sb
       .from("profiles")
@@ -23,7 +23,7 @@ export function usersRouter(): Router {
   });
 
   // Crear usuario con rol.
-  r.post("/users", async (req, res) => {
+  r.post("/", async (req, res) => {
     const sb = getSupabase()!;
     const { email, password, full_name, role } = req.body ?? {};
     if (!isEmail(email)) return res.status(400).json({ error: "email inválido" });
@@ -50,7 +50,7 @@ export function usersRouter(): Router {
   });
 
   // Cambiar rol / nombre.
-  r.patch("/users/:id", async (req, res) => {
+  r.patch("/:id", async (req, res) => {
     const sb = getSupabase()!;
     const { id } = req.params;
     const { role, full_name } = req.body ?? {};
@@ -71,7 +71,7 @@ export function usersRouter(): Router {
   });
 
   // Eliminar usuario.
-  r.delete("/users/:id", async (req, res) => {
+  r.delete("/:id", async (req, res) => {
     const sb = getSupabase()!;
     const { id } = req.params;
     if (id === req.user!.id) return res.status(400).json({ error: "no podés eliminarte a vos mismo" });

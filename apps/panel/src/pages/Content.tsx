@@ -119,10 +119,10 @@ function AssetManager({ kind }: { kind: AssetKind }) {
             <div className="asset-body">
               <div className="asset-name">{a.name}</div>
               <div className="asset-actions">
-                <label className="switch">
-                  <input type="checkbox" checked={a.active} onChange={() => toggle(a)} />
-                  {a.active ? "Al aire" : "Inactivo"}
-                </label>
+                <button className={"toggle-pill" + (a.active ? " on" : "")} onClick={() => toggle(a)}>
+                  {a.active && <span className="live-dot" />}
+                  {a.active ? "Al aire" : "Poner al aire"}
+                </button>
                 <button className="icon-btn" onClick={() => remove(a)} aria-label="Eliminar">
                   <Trash2 size={16} />
                 </button>
@@ -200,10 +200,10 @@ function PlacasManager() {
               <div className="placa-title">{p.title}</div>
               {p.body && <div className="placa-body">{p.body}</div>}
             </div>
-            <label className="switch">
-              <input type="checkbox" checked={p.active} onChange={() => toggle(p)} />
-              {p.active ? "Al aire" : "Inactiva"}
-            </label>
+            <button className={"toggle-pill" + (p.active ? " on" : "")} onClick={() => toggle(p)}>
+              {p.active && <span className="live-dot" />}
+              {p.active ? "Al aire" : "Poner al aire"}
+            </button>
             <button className="icon-btn" onClick={() => remove(p)} aria-label="Eliminar">
               <Trash2 size={16} />
             </button>

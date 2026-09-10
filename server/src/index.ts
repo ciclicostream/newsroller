@@ -40,8 +40,9 @@ app.use(healthRouter(registry));
 app.use("/api", dataRouter());
 app.use("/api", sourcesRouter(registry));
 app.use("/api", meRouter());
-app.use("/api", usersRouter());
-app.use("/api", contentRouter());
+// Cada router en su sub-ruta: así el requireAdmin de usuarios NO afecta a contenido.
+app.use("/api/users", usersRouter());
+app.use("/api/content", contentRouter());
 
 // En producción, servir el build del panel (mismo origen que la API y el socket).
 const panelDist = path.resolve(fileURLToPath(import.meta.url), "../../../apps/panel/dist");

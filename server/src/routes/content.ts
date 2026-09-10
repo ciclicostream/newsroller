@@ -24,7 +24,7 @@ export function contentRouter(): Router {
     sb().storage.from(bucket).getPublicUrl(path).data.publicUrl;
 
   // 1) Pedir URL firmada para subir directo a Storage (sin pasar el archivo por el server).
-  r.post("/content/uploads/sign", async (req, res) => {
+  r.post("/uploads/sign", async (req, res) => {
     const { kind, filename } = req.body ?? {};
     if (!isKind(kind)) return res.status(400).json({ error: "kind inválido" });
     if (typeof filename !== "string" || !filename) return res.status(400).json({ error: "filename requerido" });
@@ -36,7 +36,7 @@ export function contentRouter(): Router {
   });
 
   // 2) Registrar la metadata una vez subido el binario.
-  r.post("/content/assets", async (req, res) => {
+  r.post("/assets", async (req, res) => {
     const { kind, bucket, path, name, mime, size } = req.body ?? {};
     if (!isKind(kind) || !bucket || !path) return res.status(400).json({ error: "faltan datos del asset" });
     const { data, error } = await sb()
@@ -49,7 +49,7 @@ export function contentRouter(): Router {
   });
 
   // Listar assets (opcionalmente por kind).
-  r.get("/content/assets", async (req, res) => {
+  r.get("/assets", async (req, res) => {
     const kind = req.query.kind;
     let q = sb().from("assets").select("*").order("sort").order("created_at");
     if (typeof kind === "string" && isKind(kind)) q = q.eq("kind", kind);
@@ -59,7 +59,7 @@ export function contentRouter(): Router {
   });
 
   // Editar (activar, renombrar, reordenar).
-  r.patch("/content/assets/:id", async (req, res) => {
+  r.patch("/assets/:id", async (req, res) => {
     const patch: Record<string, unknown> = {};
     for (const k of ["active", "name", "sort", "meta"]) if (k in (req.body ?? {})) patch[k] = req.body[k];
     if (Object.keys(patch).length === 0) return res.status(400).json({ error: "nada para actualizar" });
@@ -70,7 +70,7 @@ export function contentRouter(): Router {
   });
 
   // Eliminar (borra el binario en Storage y la fila).
-  r.delete("/content/assets/:id", async (req, res) => {
+  r.delete("/assets/:id", async (req, res) => {
     const { data: row } = await sb().from("assets").select("bucket, path").eq("id", req.params.id).maybeSingle();
     if (row) await sb().storage.from(row.bucket).remove([row.path]);
     const { error } = await sb().from("assets").delete().eq("id", req.params.id);
@@ -79,13 +79,13 @@ export function contentRouter(): Router {
   });
 
   // ---- Placas (texto) ----
-  r.get("/content/placas", async (_req, res) => {
+  r.get("/placas", async (_req, res) => {
     const { data, error } = await sb().from("placas").select("*").order("sort").order("created_at");
     if (error) return res.status(500).json({ error: error.message });
     res.json(data);
   });
 
-  r.post("/content/placas", async (req, res) => {
+  r.post("/placas", async (req, res) => {
     const { title, body, accent } = req.body ?? {};
     if (typeof title !== "string" || !title.trim()) return res.status(400).json({ error: "el título es obligatorio" });
     const { data, error } = await sb()
@@ -97,7 +97,7 @@ export function contentRouter(): Router {
     res.status(201).json(data);
   });
 
-  r.patch("/content/placas/:id", async (req, res) => {
+  r.patch("/placas/:id", async (req, res) => {
     const patch: Record<string, unknown> = {};
     for (const k of ["title", "body", "accent", "active", "sort"]) if (k in (req.body ?? {})) patch[k] = req.body[k];
     if (Object.keys(patch).length === 0) return res.status(400).json({ error: "nada para actualizar" });
@@ -107,7 +107,7 @@ export function contentRouter(): Router {
     res.json(data);
   });
 
-  r.delete("/content/placas/:id", async (req, res) => {
+  r.delete("/placas/:id", async (req, res) => {
     const { error } = await sb().from("placas").delete().eq("id", req.params.id);
     if (error) return res.status(500).json({ error: error.message });
     res.status(204).end();
