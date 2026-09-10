@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import {
   LayoutDashboard,
   FileStack,
+  LayoutTemplate,
   ListVideo,
   Users as UsersIcon,
   Radio,
@@ -21,6 +22,7 @@ interface NavDef {
 const NAV: NavDef[] = [
   { to: "/", label: "Panel", icon: <LayoutDashboard size={18} /> },
   { to: "/contenido", label: "Contenido", icon: <FileStack size={18} /> },
+  { to: "/plantillas", label: "Plantillas", icon: <LayoutTemplate size={18} /> },
   { to: "/programacion", label: "Programación", icon: <ListVideo size={18} /> },
   { to: "/fuentes", label: "Fuentes / APIs", icon: <Radio size={18} />, adminOnly: true },
   { to: "/usuarios", label: "Usuarios", icon: <UsersIcon size={18} />, adminOnly: true },

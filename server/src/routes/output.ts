@@ -68,7 +68,7 @@ export function outputRouter(): Router {
           case "template": {
             const t = templateById.get(it.content_id);
             if (!t) return null;
-            return { ...base, template: { id: t.id, name: t.name, background: t.background, elements: t.elements } };
+            return { ...base, tpl: { id: t.id, name: t.name, background: t.background, elements: t.elements } };
           }
           default:
             return null;

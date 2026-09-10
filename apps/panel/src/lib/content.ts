@@ -27,6 +27,15 @@ export async function uploadAsset(kind: AssetKind, file: File): Promise<Asset> {
   });
 }
 
+// Sube media para usar dentro de plantillas (a Storage) y devuelve la URL pública,
+// SIN registrar un asset (no aparece en Publicidad).
+export async function uploadMedia(file: File, kind: AssetKind = "ad"): Promise<string> {
+  const sign = await api.post<SignResponse>("/api/content/uploads/sign", { kind, filename: file.name });
+  const { error } = await supabase.storage.from(sign.bucket).uploadToSignedUrl(sign.path, sign.token, file);
+  if (error) throw new Error(`subida a Storage: ${error.message}`);
+  return supabase.storage.from(sign.bucket).getPublicUrl(sign.path).data.publicUrl;
+}
+
 export const content = {
   listAssets: (kind: AssetKind) => api.get<Asset[]>(`/api/content/assets?kind=${kind}`),
   patchAsset: (id: string, patch: Partial<Pick<Asset, "active" | "name" | "sort">>) =>

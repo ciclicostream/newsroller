@@ -136,3 +136,20 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 6px
 .pl-badge { font-size: 11px; color: var(--accent); background: var(--accent-weak); padding: 1px 8px; border-radius: 999px; align-self: flex-start; }
 .pl-label { font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .pl-dur { display: flex; align-items: center; gap: 6px; }
+
+/* Editor de plantillas */
+.tpl-layout { display: grid; grid-template-columns: 210px 1fr 300px; gap: 16px; align-items: start; }
+.tpl-list { display: flex; flex-direction: column; gap: 4px; }
+.tpl-list .tpl-item { padding: 10px 12px; border-radius: 8px; cursor: pointer; font-size: 14px; border: 1px solid transparent; display: flex; justify-content: space-between; align-items: center; }
+.tpl-list .tpl-item:hover { background: var(--bg); }
+.tpl-list .tpl-item.active { background: var(--accent-weak); color: var(--accent); border-color: var(--accent); }
+.canvas-wrap { background: #e9ecf1; border-radius: 12px; padding: 16px; overflow: auto; }
+.canvas { position: relative; box-shadow: 0 10px 40px -18px rgba(0,0,0,.4); overflow: hidden; }
+.el { position: absolute; overflow: hidden; cursor: move; display: flex; }
+.el.sel { outline: 2px solid var(--accent); outline-offset: 0; }
+.el .handle { position: absolute; width: 14px; height: 14px; background: #fff; border: 2px solid var(--accent); border-radius: 3px; right: -7px; bottom: -7px; cursor: se-resize; }
+.addbar { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+.addbar button { font-size: 12px; padding: 7px 10px; }
+.props .field { margin-bottom: 10px; }
+.props h3 { font-size: 13px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); margin: 0 0 10px; font-weight: 500; }
+.xy { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }

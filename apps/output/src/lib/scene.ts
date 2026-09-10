@@ -15,6 +15,23 @@ export interface Block {
   placa?: { title: string; body: string | null; accent: string | null };
   media?: { url: string; mime: string | null };
   data?: { source: string };
+  tpl?: {
+    id: string;
+    name: string;
+    background: { type: "image" | "gradient" | "color"; value: string };
+    elements: TemplateElement[];
+  };
+}
+
+export interface TemplateElement {
+  id: string;
+  type: "text" | "image" | "video" | "weather" | "data" | "logo" | "shape";
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  z: number;
+  props: Record<string, any>;
 }
 export interface Scene {
   background: Background | null;

@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { io } from "socket.io-client";
 import { API_BASE, fetchScene, dataView, tickerText, type Block, type Scene } from "./lib/scene";
+import { TemplateView, templateHasVideo } from "./templates/render";
 
 export function Output() {
   const [scene, setScene] = useState<Scene | null>(null);
@@ -50,67 +51,90 @@ export function Output() {
   }, []);
 
   const items = scene?.items ?? [];
+  const current = items.length ? items[index % items.length] : null;
+  // Un bloque con video se avanza cuando el video TERMINA (no por tiempo).
+  const hasVideo = !!(current?.tpl && templateHasVideo(current.tpl));
 
-  // Reproductor: avanza según la duración de cada bloque; al dar la vuelta, recarga escena.
+  const advanced = useRef(false);
+  const advance = useCallback(() => {
+    if (advanced.current) return;
+    advanced.current = true;
+    setIndex((i) => {
+      const len = items.length || 1;
+      const next = (i + 1) % len;
+      if (next === 0) void load();
+      return next;
+    });
+  }, [items.length, load]);
+
+  // Reproductor: por duración, salvo bloques con video (avanzan al terminar, con tope de seguridad).
   useEffect(() => {
+    advanced.current = false;
     if (items.length === 0) return;
-    const safeIndex = index % items.length;
-    const dur = Math.max(2, items[safeIndex]?.duration_sec ?? 8);
-    const t = setTimeout(() => {
-      setIndex((i) => {
-        const next = (i + 1) % items.length;
-        if (next === 0) void load();
-        return next;
-      });
-    }, dur * 1000);
+    const dur = Math.max(2, items[index % items.length]?.duration_sec ?? 8);
+    const ms = (hasVideo ? Math.max(dur, 1200) : dur) * 1000;
+    const t = setTimeout(advance, ms);
     return () => clearTimeout(t);
-  }, [index, items, load]);
+  }, [index, items, hasVideo, advance]);
 
   const clock = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
-  const current = items.length ? items[index % items.length] : null;
   const logo = scene?.logos?.[0];
   const bg = scene?.background;
+  const isTemplate = !!current?.tpl;
 
   return (
     <div className="viewport">
       <div className="stage" style={{ transform: `scale(${scale})` }}>
-        {/* Fondo */}
-        <div className="layer">
-          {bg?.mime?.startsWith("video/") ? (
-            <video className="bg-media" src={bg.url} autoPlay muted loop playsInline />
-          ) : bg?.url ? (
-            <img className="bg-media" src={bg.url} alt="" />
-          ) : (
-            <div className="layer bg-white" />
-          )}
-        </div>
+        {/* Fondo (para bloques que no son plantilla; la plantilla trae su propio fondo) */}
+        {!isTemplate && (
+          <div className="layer">
+            {bg?.mime?.startsWith("video/") ? (
+              <video className="bg-media" src={bg.url} autoPlay muted loop playsInline />
+            ) : bg?.url ? (
+              <img className="bg-media" src={bg.url} alt="" />
+            ) : (
+              <div className="layer bg-white" />
+            )}
+          </div>
+        )}
 
         {/* Contenido rotativo */}
-        <div className="content">
-          <AnimatePresence mode="wait">
-            {current && (
-              <motion.div
-                key={current.id + ":" + index}
-                initial={{ opacity: 0, y: 24 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -24 }}
-                transition={{ duration: 0.5, ease: [0.2, 0.8, 0.2, 1] }}
-                style={{ position: "absolute", inset: 0 }}
-              >
-                <BlockView block={current} data={scene!.data} />
-              </motion.div>
-            )}
-          </AnimatePresence>
-          {items.length === 0 && <Standby />}
-        </div>
+        <AnimatePresence mode="wait">
+          {current && isTemplate && (
+            <motion.div
+              key={current.id + ":" + index}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.4 }}
+              style={{ position: "absolute", inset: 0, zIndex: 5 }}
+            >
+              <TemplateView template={current.tpl!} data={scene!.data} logos={scene!.logos} onEnded={advance} />
+            </motion.div>
+          )}
+          {current && !isTemplate && (
+            <motion.div
+              key={current.id + ":" + index}
+              initial={{ opacity: 0, y: 24 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -24 }}
+              transition={{ duration: 0.5, ease: [0.2, 0.8, 0.2, 1] }}
+              className="content"
+              style={{ zIndex: 5 }}
+            >
+              <BlockView block={current} data={scene!.data} />
+            </motion.div>
+          )}
+        </AnimatePresence>
+        {items.length === 0 && <div className="content"><Standby /></div>}
 
-        {/* Chrome */}
-        {logo && (
+        {/* Chrome (se oculta el logo/reloj sobre plantillas, que traen su propio diseño) */}
+        {logo && !isTemplate && (
           <div className="chrome-logo">
             <img src={logo.url} alt={logo.name ?? ""} />
           </div>
         )}
-        <div className="chrome-clock">{clock}</div>
+        {!isTemplate && <div className="chrome-clock">{clock}</div>}
 
         <div className="ticker">
           <div className="ticker-tag">CÍCLICO</div>
