@@ -118,10 +118,11 @@ function YouTubePlayer({ videoId, onEnded }: { videoId: string; onEnded: () => v
         videoId,
         width: "100%",
         height: "100%",
-        playerVars: { autoplay: 1, controls: 0, rel: 0, modestbranding: 1, playsinline: 1, iv_load_policy: 3, fs: 0 },
+        // autoplay muteado = arranca SIEMPRE (política del navegador). En vMix el unMute toma sonido.
+        playerVars: { autoplay: 1, mute: 1, controls: 0, rel: 0, modestbranding: 1, playsinline: 1, iv_load_policy: 3, fs: 0, disablekb: 1 },
         events: {
           onReady: (e: any) => {
-            try { e.target.unMute(); e.target.setVolume(100); e.target.playVideo(); } catch { /* noop */ }
+            try { e.target.playVideo(); e.target.unMute(); e.target.setVolume(100); } catch { /* noop */ }
           },
           onStateChange: (e: any) => {
             if (e.data === window.YT?.PlayerState?.ENDED) endedRef.current();

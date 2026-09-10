@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { io } from "socket.io-client";
 import { API_BASE, fetchScene, dataView, tickerText, type Block, type Scene } from "./lib/scene";
-import { TemplateView, templateHasVideo } from "./templates/render";
+import { TemplateView } from "./templates/render";
 
 export function Output() {
   const [scene, setScene] = useState<Scene | null>(null);
@@ -52,8 +52,6 @@ export function Output() {
 
   const items = scene?.items ?? [];
   const current = items.length ? items[index % items.length] : null;
-  // Un bloque con video se avanza cuando el video TERMINA (no por tiempo).
-  const hasVideo = !!(current?.tpl && templateHasVideo(current.tpl));
 
   const advanced = useRef(false);
   const advance = useCallback(() => {
@@ -67,15 +65,15 @@ export function Output() {
     });
   }, [items.length, load]);
 
-  // Reproductor: por duración, salvo bloques con video (avanzan al terminar, con tope de seguridad).
+  // Reproductor: avanza por la duración del bloque; un video que TERMINA antes avanza antes.
+  // (Nunca queda congelado: la duración es el tope.)
   useEffect(() => {
     advanced.current = false;
     if (items.length === 0) return;
     const dur = Math.max(2, items[index % items.length]?.duration_sec ?? 8);
-    const ms = (hasVideo ? Math.max(dur, 1200) : dur) * 1000;
-    const t = setTimeout(advance, ms);
+    const t = setTimeout(advance, dur * 1000);
     return () => clearTimeout(t);
-  }, [index, items, hasVideo, advance]);
+  }, [index, items, advance]);
 
   const clock = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
   const logo = scene?.logos?.[0];
@@ -139,7 +137,12 @@ export function Output() {
         <div className="ticker">
           <div className="ticker-tag">CÍCLICO</div>
           <div className="ticker-track">
-            <span>{scene ? tickerText(scene.data) + "        " : "Cíclico"}</span>
+            {(() => {
+              const txt = scene ? tickerText(scene.data) : "Cíclico";
+              // Velocidad legible: ~0.45s por caracter, mínimo 60s.
+              const durS = Math.max(60, Math.round(txt.length * 0.45));
+              return <span style={{ animationDuration: `${durS}s` }}>{txt + "        "}</span>;
+            })()}
           </div>
         </div>
       </div>
