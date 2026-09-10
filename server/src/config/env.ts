@@ -15,7 +15,7 @@ export const env = {
   port: num("PORT", 4000),
   corsOrigin: str("CORS_ORIGIN", "*"),
 
-  supabaseUrl: str("SUPABASE_URL"),
+  supabaseUrl: str("SUPABASE_URL").replace(/\/+$/, ""),
   supabaseServiceKey: str("SUPABASE_SERVICE_ROLE_KEY"),
 
   pollDolarMs: num("POLL_DOLAR_MS", 60_000),
