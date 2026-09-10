@@ -78,6 +78,10 @@ export function dataView(source: string, data: Record<string, any>): DataView | 
 }
 
 export function tickerText(data: Record<string, any>): string {
+  // Prioridad: titulares de somosciclico.com.
+  const headlines: string[] = data.ticker?.headlines ?? [];
+  if (headlines.length) return headlines.join("        ·        ");
+  // Respaldo: datos en vivo.
   const parts: string[] = [];
   const casas: any[] = data.dolar?.casas ?? [];
   const blue = casas.find((c) => c.casa === "blue")?.venta;

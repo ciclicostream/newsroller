@@ -25,6 +25,10 @@ export const env = {
   cammesaRegion: str("CAMMESA_REGION", "1002"),
   datosGobSeries: str("DATOSGOB_SERIES"),
 
+  // Ticker desde el sitio de Cíclico (WordPress RSS).
+  tickerFeedUrl: str("TICKER_FEED_URL", "https://somosciclico.com/feed/"),
+  tickerFeedMs: num("TICKER_FEED_MS", 10 * 60_000),
+
   // YouTube Data API v3 (shorts del canal).
   youtubeApiKey: str("YOUTUBE_API_KEY"),
   youtubeChannelHandle: str("YOUTUBE_CHANNEL_HANDLE", "esciclico").replace(/^@/, ""),
