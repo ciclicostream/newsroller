@@ -14,6 +14,7 @@ import { meRouter } from "./routes/me.js";
 import { usersRouter } from "./routes/users.js";
 import { contentRouter } from "./routes/content.js";
 import { playlistRouter } from "./routes/playlist.js";
+import { outputRouter } from "./routes/output.js";
 import { getStore } from "./db/store.js";
 import { getSupabase } from "./db/supabase.js";
 import { ensureAdmins } from "./auth/bootstrap.js";
@@ -47,14 +48,26 @@ app.use("/api", meRouter());
 app.use("/api/users", usersRouter());
 app.use("/api/content", contentRouter());
 app.use("/api/playlist", playlistRouter());
+app.use("/api/output", outputRouter()); // público (sin auth) para vMix
 
-// En producción, servir el build del panel (mismo origen que la API y el socket).
-const panelDist = path.resolve(fileURLToPath(import.meta.url), "../../../apps/panel/dist");
+// En producción, servir los builds del front (mismo origen que la API y el socket).
+const appsDir = path.resolve(fileURLToPath(import.meta.url), "../../../apps");
+const outputDist = path.join(appsDir, "output/dist");
+const panelDist = path.join(appsDir, "panel/dist");
+
+// Output para vMix en /output (app propia, base /output/).
+if (existsSync(outputDist)) {
+  app.use("/output", express.static(outputDist));
+  app.get("/output/*", (_req, res) => res.sendFile(path.join(outputDist, "index.html")));
+  console.log(`[server] sirviendo output desde ${outputDist}`);
+}
+
+// Panel en la raíz.
 if (existsSync(panelDist)) {
   app.use(express.static(panelDist));
-  // SPA fallback: cualquier ruta que no sea API la resuelve el router del front.
+  // SPA fallback: cualquier ruta que no sea API/health/output la resuelve el panel.
   app.get("*", (req, res, next) => {
-    if (req.path.startsWith("/api") || req.path === "/health") return next();
+    if (req.path.startsWith("/api") || req.path === "/health" || req.path.startsWith("/output")) return next();
     res.sendFile(path.join(panelDist, "index.html"));
   });
   console.log(`[server] sirviendo panel desde ${panelDist}`);

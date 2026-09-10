@@ -156,3 +156,24 @@ El modelo de emisión es **playlist explícita** (el usuario elige qué y en qu�
 
 Pendiente Supabase: correr `0005` (y las previas 0003/0004 si faltan).
 Próximo: **output para vMix** que reproduce la playlist con las plantillas + data en vivo.
+
+---
+
+## Sprint 5 (adelantado) — Output para vMix ✅ código (2026-09-10)
+
+- **Endpoint público** `GET /api/output/scene` (sin auth): arma la escena = fondo activo + logos
+  activos + playlist habilitada (cada bloque resuelto a algo auto-contenido) + data cacheada.
+- **Server** sirve dos front: panel en `/`, **output en `/output`** (app propia, base `/output/`).
+  Root build script ahora compila panel + output. Railway: mismo build command sirve.
+- **App `apps/output`** (React + Vite + framer-motion + socket.io-client):
+  - Lienzo fijo 1920×1080 escalado al viewport (ideal para Web Browser Input de vMix).
+  - Fondo (video/imagen) + chrome fijo (logo, reloj, ticker con data en vivo).
+  - Reproductor en loop de la playlist; cada bloque con su plantilla animada (framer-motion),
+    dura sus segundos y avanza; al dar la vuelta recarga la escena. Data en vivo por Socket.IO.
+  - Plantillas implementadas: short-916 (iframe YouTube 9:16 + título palabra x palabra),
+    full-media, placa-full, placa-medio, data-full, data-medio, tres-cuartos. Standby si vacía.
+- Verificado local: `/output/` sirve la app, ticker con data real (dólar), reloj, standby. Falta
+  probar con playlist real en producción (requiere migración 0005 + bloques cargados).
+
+Para vMix: agregar `https://newsroll.somosciclico.com/output` como Web Browser Input 1920×1080.
+Pendiente producción: correr migraciones 0003/0004/0005 en Supabase y armar una playlist.

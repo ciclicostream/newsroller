@@ -15,7 +15,7 @@
   "scripts": {
     "dev": "npm run dev --workspace server",
     "poll": "npm run poll --workspace server",
-    "build": "npm run build --workspace @newsroller/panel",
+    "build": "npm run build --workspace @newsroller/panel && npm run build --workspace @newsroller/output",
     "start": "npm run start --workspace @newsroller/server"
   }
 }
