@@ -59,6 +59,35 @@ export interface CammesaPayload {
   temp: number | null; // °C
 }
 
+// ---- Contenido ----
+
+export type AssetKind = "background" | "logo" | "ad";
+
+export interface Asset {
+  id: string;
+  kind: AssetKind;
+  bucket: string;
+  path: string;
+  name: string | null;
+  mime: string | null;
+  size: number | null;
+  active: boolean;
+  sort: number;
+  meta: Record<string, unknown>;
+  created_at: string;
+  url: string; // URL pública calculada por el server
+}
+
+export interface Placa {
+  id: string;
+  title: string;
+  body: string | null;
+  accent: string | null;
+  active: boolean;
+  sort: number;
+  created_at: string;
+}
+
 // Eventos de Socket.IO server -> clientes.
 export interface ServerToClientEvents {
   "data:update": (data: CachedData) => void;

@@ -12,6 +12,7 @@ import { dataRouter } from "./routes/data.js";
 import { sourcesRouter } from "./routes/sources.js";
 import { meRouter } from "./routes/me.js";
 import { usersRouter } from "./routes/users.js";
+import { contentRouter } from "./routes/content.js";
 import { getStore } from "./db/store.js";
 import { ensureAdmins } from "./auth/bootstrap.js";
 
@@ -40,6 +41,7 @@ app.use("/api", dataRouter());
 app.use("/api", sourcesRouter(registry));
 app.use("/api", meRouter());
 app.use("/api", usersRouter());
+app.use("/api", contentRouter());
 
 // En producción, servir el build del panel (mismo origen que la API y el socket).
 const panelDist = path.resolve(fileURLToPath(import.meta.url), "../../../apps/panel/dist");

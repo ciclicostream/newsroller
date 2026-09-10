@@ -97,3 +97,20 @@ del usuario). Sin eso, el login queda deshabilitado (todo lo demás compila y co
 
 Próximo: Sprint de contenido (gestor: fondos/logos/placas/publicidad/shorts) + rotación autopilot,
 que alimenta el output para vMix.
+
+---
+
+## Sprint 2 (cont.) — Gestor de contenidos ✅ código (2026-09-10)
+
+- **Migración `0003_content.sql`**: tablas `assets` (background/logo/ad → Storage) y `placas` (texto).
+  RLS lectura pública (output), escritura sólo server. **Falta correrla en Supabase.**
+- **Backend `routes/content.ts`** (requireAuth, admin+editor):
+  - Subida directa a Storage con **URL firmada** (`/content/uploads/sign` → el binario NO pasa por el
+    server) + registro de metadata (`/content/assets`). CRUD de assets y de placas.
+- **Front**: `lib/content.ts` (uploadAsset con `uploadToSignedUrl`) + página **Contenido** con pestañas
+  Fondos / Logos / Publicidad / Placas (subida múltiple, activar/inactivar, eliminar; placas con
+  título/cuerpo/color de acento).
+- Verificado: `tsc` + `vite build` OK. Falta probar en vivo (requiere migración 0003 + deploy).
+
+Pendiente: correr `0003` en Supabase; luego probar subir un fondo/logo desde el panel en producción.
+Después: rotación/autopilot (consume assets+placas activos) y output para vMix.
