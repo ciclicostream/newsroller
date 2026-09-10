@@ -202,3 +202,15 @@ Nota Railway: tenía **Watch Paths** configuradas → saltaba ("Skipped") los de
 tocaban esas rutas (por ej. cambios solo en apps/panel o apps/output). Se **vaciaron** las Watch Paths
 para que cualquier push deploye. Fixes de esta tanda: 16:9 del output (`flex:none` en `.stage`) y la
 selección de plantilla en Programación (init async).
+
+### Ajustes post-prueba (2026-09-10, fin de jornada)
+- **Ticker** más lento (velocidad según largo del texto, inline animationDuration).
+- **Video no congela**: el bloque avanza por su **duración** (y antes si el video termina). Se quitó
+  el tope de 20 min que trababa todo cuando el autoplay no arrancaba.
+- **YouTube**: autoplay **muteado** (arranca siempre) + `unMute` para vMix/OBS; UI oculta al máximo.
+- **Verificado por el usuario en OBS (Mac)**: 16:9 OK, video arranca solo y **suena** (Browser Source
+  con "Control audio via OBS" + Audio Monitoring "Monitor and Output"). En vMix va igual (mismo CEF).
+
+**Próxima sesión: ESTILIZAR** todo (diseño real de Cíclico). Pendientes/ideas para el editor:
+alinear/guías, capas (traer al frente/atrás), duplicar elemento, más tipografías, y afinar el look
+de placas/plantillas. Recordar: correr migraciones 0003-0006 en Supabase si falta alguna.
