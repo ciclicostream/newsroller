@@ -2,6 +2,7 @@ import { Router } from "express";
 import type { AssetKind } from "@newsroller/shared";
 import { getSupabase } from "../db/supabase.js";
 import { requireAuth } from "../auth/middleware.js";
+import { syncShorts } from "../content/youtube.js";
 
 const BUCKETS: Record<AssetKind, string> = {
   background: "backgrounds",
@@ -109,6 +110,40 @@ export function contentRouter(): Router {
 
   r.delete("/placas/:id", async (req, res) => {
     const { error } = await sb().from("placas").delete().eq("id", req.params.id);
+    if (error) return res.status(500).json({ error: error.message });
+    res.status(204).end();
+  });
+
+  // ---- Shorts de YouTube ----
+  // Sincronizar con el canal (trae/actualiza shorts, preserva títulos editados).
+  r.post("/shorts/sync", async (_req, res) => {
+    try {
+      const count = await syncShorts(sb());
+      const { data } = await sb().from("shorts").select("*").order("published_at", { ascending: false });
+      res.json({ synced: count, shorts: data ?? [] });
+    } catch (e) {
+      res.status(502).json({ error: e instanceof Error ? e.message : "error sincronizando" });
+    }
+  });
+
+  r.get("/shorts", async (_req, res) => {
+    const { data, error } = await sb().from("shorts").select("*").order("published_at", { ascending: false });
+    if (error) return res.status(500).json({ error: error.message });
+    res.json(data);
+  });
+
+  r.patch("/shorts/:id", async (req, res) => {
+    const patch: Record<string, unknown> = {};
+    for (const k of ["custom_title", "active", "sort"]) if (k in (req.body ?? {})) patch[k] = req.body[k];
+    if (Object.keys(patch).length === 0) return res.status(400).json({ error: "nada para actualizar" });
+    const { data, error } = await sb().from("shorts").update(patch).eq("id", req.params.id).select().maybeSingle();
+    if (error) return res.status(500).json({ error: error.message });
+    if (!data) return res.status(404).json({ error: "short no encontrado" });
+    res.json(data);
+  });
+
+  r.delete("/shorts/:id", async (req, res) => {
+    const { error } = await sb().from("shorts").delete().eq("id", req.params.id);
     if (error) return res.status(500).json({ error: error.message });
     res.status(204).end();
   });

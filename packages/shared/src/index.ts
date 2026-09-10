@@ -88,6 +88,18 @@ export interface Placa {
   created_at: string;
 }
 
+export interface Short {
+  id: string; // id del video de YouTube
+  title: string;
+  custom_title: string | null;
+  thumbnail_url: string | null;
+  duration_sec: number | null;
+  published_at: string | null;
+  active: boolean;
+  sort: number;
+  synced_at: string;
+}
+
 // Eventos de Socket.IO server -> clientes.
 export interface ServerToClientEvents {
   "data:update": (data: CachedData) => void;

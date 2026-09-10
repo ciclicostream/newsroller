@@ -25,6 +25,11 @@ export const env = {
   cammesaRegion: str("CAMMESA_REGION", "1002"),
   datosGobSeries: str("DATOSGOB_SERIES"),
 
+  // YouTube Data API v3 (shorts del canal).
+  youtubeApiKey: str("YOUTUBE_API_KEY"),
+  youtubeChannelHandle: str("YOUTUBE_CHANNEL_HANDLE", "somosciclico").replace(/^@/, ""),
+  youtubeSyncMs: num("YOUTUBE_SYNC_MS", 30 * 60_000),
+
   // Emails que se promueven a rol admin automáticamente al arrancar (bootstrap).
   adminEmails: str("ADMIN_EMAILS")
     .split(",")

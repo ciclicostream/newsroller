@@ -114,3 +114,25 @@ que alimenta el output para vMix.
 
 Pendiente: correr `0003` en Supabase; luego probar subir un fondo/logo desde el panel en producción.
 Después: rotación/autopilot (consume assets+placas activos) y output para vMix.
+
+---
+
+## Sprint 2 (cont.) — Fix editor + Shorts de YouTube ✅ código (2026-09-10)
+
+Bug corregido (reportado por el usuario): el `requireAdmin` de `usersRouter` estaba montado en `/api`
+y se filtraba a `/api/content/*` (router-level `use` corre para todo lo que entra al mount). El editor
+recibía 403 "requiere rol administrador" en contenido. Fix: montar `usersRouter` en `/api/users` y
+`contentRouter` en `/api/content` (rutas internas sin el prefijo). Toggle "Al aire" pasó a botón-pill visible.
+
+Shorts de YouTube:
+- Migración `0004_shorts.sql`: tabla `shorts` (id de YouTube, title, **custom_title** editable,
+  thumbnail, duration_sec, active, sort). RLS lectura pública. **Falta correrla en Supabase.**
+- `server/src/content/youtube.ts`: resuelve canal por handle (`forHandle`), trae uploads, filtra
+  shorts (duración ≤ 180s), upsert preservando custom_title/active/sort. Env: `YOUTUBE_API_KEY`,
+  `YOUTUBE_CHANNEL_HANDLE` (default `somosciclico`), `YOUTUBE_SYNC_MS` (30 min).
+- Endpoints en content router: `POST /shorts/sync`, `GET/PATCH/DELETE /shorts`. Auto-sync al arrancar.
+- Panel: pestaña **Shorts** (sincronizar, editar título inline, activar, quitar).
+
+Pendiente en Supabase: correr `0003` y `0004`. En Railway: confirmar `YOUTUBE_API_KEY` cargada.
+Próximo: **playlist/lista de reproducción** (orden de emisión) + **plantillas de organización visual**,
+y luego el output para vMix.

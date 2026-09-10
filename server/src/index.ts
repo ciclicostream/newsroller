@@ -14,7 +14,9 @@ import { meRouter } from "./routes/me.js";
 import { usersRouter } from "./routes/users.js";
 import { contentRouter } from "./routes/content.js";
 import { getStore } from "./db/store.js";
+import { getSupabase } from "./db/supabase.js";
 import { ensureAdmins } from "./auth/bootstrap.js";
+import { syncShorts } from "./content/youtube.js";
 
 const app = express();
 app.use(cors({ origin: env.corsOrigin === "*" ? true : env.corsOrigin.split(",") }));
@@ -61,6 +63,17 @@ http.listen(env.port, () => {
   console.log(`[server] store: ${registry.storeKind()}`);
   void ensureAdmins();
   registry.start();
+
+  // Auto-sync de shorts de YouTube (si hay key + Supabase).
+  const sb = getSupabase();
+  if (sb && env.youtubeApiKey) {
+    const run = () =>
+      syncShorts(sb)
+        .then((n) => console.log(`[youtube] shorts sincronizados: ${n}`))
+        .catch((e) => console.error(`[youtube] sync ERROR: ${e.message}`));
+    void run();
+    setInterval(run, env.youtubeSyncMs);
+  }
 });
 
 const shutdown = () => {

@@ -1,4 +1,4 @@
-import type { Asset, AssetKind, Placa } from "@newsroller/shared";
+import type { Asset, AssetKind, Placa, Short } from "@newsroller/shared";
 import { api } from "./api";
 import { supabase } from "./supabase";
 
@@ -38,4 +38,10 @@ export const content = {
   patchPlaca: (id: string, patch: Partial<Pick<Placa, "title" | "body" | "accent" | "active" | "sort">>) =>
     api.patch<Placa>(`/api/content/placas/${id}`, patch),
   deletePlaca: (id: string) => api.del(`/api/content/placas/${id}`),
+
+  listShorts: () => api.get<Short[]>("/api/content/shorts"),
+  syncShorts: () => api.post<{ synced: number; shorts: Short[] }>("/api/content/shorts/sync", {}),
+  patchShort: (id: string, patch: Partial<Pick<Short, "custom_title" | "active" | "sort">>) =>
+    api.patch<Short>(`/api/content/shorts/${id}`, patch),
+  deleteShort: (id: string) => api.del(`/api/content/shorts/${id}`),
 };
