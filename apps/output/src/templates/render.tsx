@@ -162,10 +162,18 @@ function YouTubePlayer({ videoId, onEnded }: { videoId: string; onEnded: () => v
         playerVars: { autoplay: 1, mute: 1, controls: 0, rel: 0, modestbranding: 1, playsinline: 1, iv_load_policy: 3, fs: 0, disablekb: 1 },
         events: {
           onReady: (e: any) => {
-            try { e.target.playVideo(); e.target.unMute(); e.target.setVolume(100); } catch { /* noop */ }
+            try { e.target.playVideo(); } catch { /* noop */ }
+            // Intentar sonido (funciona en OBS/vMix). En navegadores estrictos esto pausa;
+            // el onStateChange de abajo lo recupera muteado para que nunca quede trabado.
+            setTimeout(() => { try { e.target.unMute(); e.target.setVolume(100); } catch { /* noop */ } }, 400);
           },
           onStateChange: (e: any) => {
-            if (e.data === window.YT?.PlayerState?.ENDED) endedRef.current();
+            const S = window.YT?.PlayerState;
+            if (e.data === S?.ENDED) { endedRef.current(); return; }
+            // Si el navegador lo pausó (por el intento de sonido sin gesto), seguí reproduciendo muteado.
+            if (e.data === S?.PAUSED) {
+              try { e.target.mute(); e.target.playVideo(); } catch { /* noop */ }
+            }
           },
         },
       });
