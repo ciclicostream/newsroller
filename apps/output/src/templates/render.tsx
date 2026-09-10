@@ -198,7 +198,13 @@ function YouTubePlayer({ videoId, onEnded, allowAudio = true }: { videoId: strin
     return () => { cancelled = true; try { player?.destroy(); } catch { /* noop */ } };
   }, [videoId]);
 
-  return <div style={{ width: "100%", height: "100%", overflow: "hidden" }}><div ref={ref} style={{ width: "100%", height: "100%" }} /></div>;
+  // La capa transparente encima intercepta el mouse → YouTube no muestra sus controles al pasar por encima.
+  return (
+    <div style={{ position: "relative", width: "100%", height: "100%", overflow: "hidden" }}>
+      <div ref={ref} style={{ width: "100%", height: "100%", pointerEvents: "none" }} />
+      <div style={{ position: "absolute", inset: 0, zIndex: 2 }} />
+    </div>
+  );
 }
 
 function WeatherEl({ lat, lon, city, data }: { lat?: number; lon?: number; city: string; data: Record<string, any> }) {
