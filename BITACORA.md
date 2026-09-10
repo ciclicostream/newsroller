@@ -197,3 +197,8 @@ Correcciones y funciones pedidas por el usuario tras ver el output:
 
 Pendiente producción: correr **0006** en Supabase; probar crear una plantilla estilo EPA! y verla en
 `/output`. Nota: el quitado de fondo descarga el modelo la primera vez (puede tardar unos segundos).
+
+Nota Railway: tenía **Watch Paths** configuradas → saltaba ("Skipped") los deploys de commits que no
+tocaban esas rutas (por ej. cambios solo en apps/panel o apps/output). Se **vaciaron** las Watch Paths
+para que cualquier push deploye. Fixes de esta tanda: 16:9 del output (`flex:none` en `.stage`) y la
+selección de plantilla en Programación (init async).
