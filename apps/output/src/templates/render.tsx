@@ -3,6 +3,10 @@ import { motion } from "framer-motion";
 import Hls from "hls.js";
 import { dataView, type Camera, type Logo, type TemplateElement } from "../lib/scene";
 
+// Sonido: por defecto MUTEADO (así el autoplay nunca se bloquea en el navegador).
+// Para OBS/vMix, abrir el output con ?audio=1 → intenta activar el audio.
+const WANT_AUDIO = typeof window !== "undefined" && new URLSearchParams(window.location.search).has("audio");
+
 interface TemplateData {
   id: string;
   name: string;
@@ -136,6 +140,7 @@ function VideoAsset({ src, fit, radius, onEnded }: { src: string; fit: string; r
     <video
       src={src}
       autoPlay
+      muted={!WANT_AUDIO}
       playsInline
       onEnded={onEnded}
       style={{ width: "100%", height: "100%", objectFit: fit as any, borderRadius: radius }}
@@ -163,9 +168,9 @@ function YouTubePlayer({ videoId, onEnded }: { videoId: string; onEnded: () => v
         events: {
           onReady: (e: any) => {
             try { e.target.playVideo(); } catch { /* noop */ }
-            // Intentar sonido (funciona en OBS/vMix). En navegadores estrictos esto pausa;
-            // el onStateChange de abajo lo recupera muteado para que nunca quede trabado.
-            setTimeout(() => { try { e.target.unMute(); e.target.setVolume(100); } catch { /* noop */ } }, 400);
+            // Solo intentar sonido si se pidió (OBS/vMix con ?audio=1). En el navegador normal
+            // NO se toca: así el autoplay muteado nunca se bloquea.
+            if (WANT_AUDIO) setTimeout(() => { try { e.target.unMute(); e.target.setVolume(100); } catch { /* noop */ } }, 500);
           },
           onStateChange: (e: any) => {
             const S = window.YT?.PlayerState;
