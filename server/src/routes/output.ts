@@ -21,16 +21,19 @@ export function outputRouter(): Router {
 
     const publicUrl = (bucket: string, path: string) => sb.storage.from(bucket).getPublicUrl(path).data.publicUrl;
 
-    const [{ data: playlist }, { data: assets }, { data: placas }, { data: shorts }] = await Promise.all([
-      sb.from("playlist_items").select("*").eq("enabled", true).order("sort"),
-      sb.from("assets").select("*"),
-      sb.from("placas").select("*"),
-      sb.from("shorts").select("*"),
-    ]);
+    const [{ data: playlist }, { data: assets }, { data: placas }, { data: shorts }, { data: templates }] =
+      await Promise.all([
+        sb.from("playlist_items").select("*").eq("enabled", true).order("sort"),
+        sb.from("assets").select("*"),
+        sb.from("placas").select("*"),
+        sb.from("shorts").select("*"),
+        sb.from("templates").select("*"),
+      ]);
 
     const assetById = new Map((assets ?? []).map((a) => [a.id, a]));
     const placaById = new Map((placas ?? []).map((p) => [p.id, p]));
     const shortById = new Map((shorts ?? []).map((s) => [s.id, s]));
+    const templateById = new Map((templates ?? []).map((t) => [t.id, t]));
 
     // Fondo y logos activos (capas globales).
     const activeBg = (assets ?? []).find((a) => a.kind === "background" && a.active);
@@ -62,6 +65,11 @@ export function outputRouter(): Router {
           }
           case "data":
             return { ...base, data: { source: it.content_id } };
+          case "template": {
+            const t = templateById.get(it.content_id);
+            if (!t) return null;
+            return { ...base, template: { id: t.id, name: t.name, background: t.background, elements: t.elements } };
+          }
           default:
             return null;
         }

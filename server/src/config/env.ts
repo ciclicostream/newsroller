@@ -29,6 +29,12 @@ export const env = {
   tickerFeedUrl: str("TICKER_FEED_URL", "https://somosciclico.com/feed/"),
   tickerFeedMs: num("TICKER_FEED_MS", 10 * 60_000),
 
+  // Clima (Open-Meteo). Default: Buenos Aires.
+  climaLat: str("CLIMA_LAT", "-34.61"),
+  climaLon: str("CLIMA_LON", "-58.38"),
+  climaCity: str("CLIMA_CITY", "Buenos Aires"),
+  climaMs: num("CLIMA_MS", 15 * 60_000),
+
   // YouTube Data API v3 (shorts del canal).
   youtubeApiKey: str("YOUTUBE_API_KEY"),
   youtubeChannelHandle: str("YOUTUBE_CHANNEL_HANDLE", "esciclico").replace(/^@/, ""),

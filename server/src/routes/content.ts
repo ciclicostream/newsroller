@@ -87,11 +87,18 @@ export function contentRouter(): Router {
   });
 
   r.post("/placas", async (req, res) => {
-    const { title, body, accent } = req.body ?? {};
+    const { title, body, accent, image_url, image_fit } = req.body ?? {};
     if (typeof title !== "string" || !title.trim()) return res.status(400).json({ error: "el título es obligatorio" });
     const { data, error } = await sb()
       .from("placas")
-      .insert({ title: title.trim(), body: body ?? null, accent: accent ?? null, created_by: req.user!.id })
+      .insert({
+        title: title.trim(),
+        body: body ?? null,
+        accent: accent ?? null,
+        image_url: image_url ?? null,
+        image_fit: image_fit ?? "contain",
+        created_by: req.user!.id,
+      })
       .select()
       .single();
     if (error) return res.status(500).json({ error: error.message });
@@ -100,7 +107,7 @@ export function contentRouter(): Router {
 
   r.patch("/placas/:id", async (req, res) => {
     const patch: Record<string, unknown> = {};
-    for (const k of ["title", "body", "accent", "active", "sort"]) if (k in (req.body ?? {})) patch[k] = req.body[k];
+    for (const k of ["title", "body", "accent", "active", "sort", "image_url", "image_fit"]) if (k in (req.body ?? {})) patch[k] = req.body[k];
     if (Object.keys(patch).length === 0) return res.status(400).json({ error: "nada para actualizar" });
     const { data, error } = await sb().from("placas").update(patch).eq("id", req.params.id).select().maybeSingle();
     if (error) return res.status(500).json({ error: error.message });

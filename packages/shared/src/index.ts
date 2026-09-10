@@ -83,6 +83,8 @@ export interface Placa {
   title: string;
   body: string | null;
   accent: string | null;
+  image_url: string | null;
+  image_fit: string | null; // 'cover' | 'contain'
   active: boolean;
   sort: number;
   created_at: string;
@@ -102,7 +104,38 @@ export interface Short {
 
 // ---- Programación (playlist) + plantillas ----
 
-export type ContentType = "short" | "placa" | "ad" | "background" | "data";
+export type ContentType = "short" | "placa" | "ad" | "background" | "data" | "template";
+
+// ---- Plantillas propias (editor visual) ----
+export type ElementType = "text" | "image" | "video" | "weather" | "data" | "logo" | "shape";
+
+export interface TemplateElement {
+  id: string;
+  type: ElementType;
+  x: number; // px sobre lienzo 1920x1080
+  y: number;
+  w: number;
+  h: number;
+  z: number;
+  props: Record<string, any>;
+}
+
+export interface TemplateBackground {
+  type: "image" | "gradient" | "color";
+  value: string; // url | css de gradiente | color hex
+}
+
+export interface Template {
+  id: string;
+  name: string;
+  background: TemplateBackground;
+  elements: TemplateElement[];
+  created_at: string;
+  updated_at: string;
+}
+
+export const CANVAS_W = 1920;
+export const CANVAS_H = 1080;
 
 // Fuentes de datos que se pueden poner como bloque de la playlist.
 export const DATA_BLOCKS: { id: string; label: string }[] = [
@@ -112,16 +145,17 @@ export const DATA_BLOCKS: { id: string; label: string }[] = [
   { id: "salarios", label: "Salarios" },
   { id: "energia", label: "Energía" },
   { id: "petroleo", label: "Petróleo" },
+  { id: "clima", label: "Clima" },
 ];
 
-// Catálogo fijo de plantillas de organización visual.
-export interface Template {
+// Catálogo fijo de layouts para bloques simples de la playlist (no las plantillas propias).
+export interface Layout {
   id: string;
   label: string;
   description: string;
   appliesTo: ContentType[];
 }
-export const TEMPLATES: Template[] = [
+export const LAYOUTS: Layout[] = [
   { id: "full-media", label: "Pantalla completa", description: "Media ocupando toda la pantalla", appliesTo: ["short", "ad", "background"] },
   { id: "short-916", label: "Short 9:16 + título", description: "Video vertical con el título animado al lado", appliesTo: ["short"] },
   { id: "placa-full", label: "Placa pantalla completa", description: "Título y cuerpo a pantalla completa", appliesTo: ["placa"] },

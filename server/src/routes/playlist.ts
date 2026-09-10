@@ -1,10 +1,10 @@
 import { Router } from "express";
-import { TEMPLATES, type ContentType } from "@newsroller/shared";
+import { LAYOUTS, type ContentType } from "@newsroller/shared";
 import { getSupabase } from "../db/supabase.js";
 import { requireAuth } from "../auth/middleware.js";
 
-const TYPES: ContentType[] = ["short", "placa", "ad", "background", "data"];
-const TEMPLATE_IDS = new Set(TEMPLATES.map((t) => t.id));
+const TYPES: ContentType[] = ["short", "placa", "ad", "background", "data", "template"];
+const TEMPLATE_IDS = new Set(LAYOUTS.map((t) => t.id));
 
 export function playlistRouter(): Router {
   const r = Router();
@@ -20,7 +20,10 @@ export function playlistRouter(): Router {
   r.post("/", async (req, res) => {
     const { content_type, content_id, template, duration_sec } = req.body ?? {};
     if (!TYPES.includes(content_type)) return res.status(400).json({ error: "content_type inválido" });
-    if (!TEMPLATE_IDS.has(template)) return res.status(400).json({ error: "plantilla inválida" });
+    // Los bloques de plantilla propia usan 'custom' (la plantilla en sí define el layout).
+    const tmpl = content_type === "template" ? "custom" : template;
+    if (content_type !== "template" && !TEMPLATE_IDS.has(template))
+      return res.status(400).json({ error: "layout inválido" });
     const dur = Number(duration_sec);
     const { data: last } = await sb().from("playlist_items").select("sort").order("sort", { ascending: false }).limit(1).maybeSingle();
     const sort = (last?.sort ?? -1) + 1;
@@ -29,7 +32,7 @@ export function playlistRouter(): Router {
       .insert({
         content_type,
         content_id: content_id ?? null,
-        template,
+        template: tmpl,
         duration_sec: Number.isFinite(dur) && dur > 0 ? Math.round(dur) : 8,
         sort,
       })
@@ -42,8 +45,8 @@ export function playlistRouter(): Router {
   r.patch("/:id", async (req, res) => {
     const patch: Record<string, unknown> = {};
     for (const k of ["template", "duration_sec", "enabled", "sort"]) if (k in (req.body ?? {})) patch[k] = req.body[k];
-    if ("template" in patch && !TEMPLATE_IDS.has(patch.template as string))
-      return res.status(400).json({ error: "plantilla inválida" });
+    if ("template" in patch && patch.template !== "custom" && !TEMPLATE_IDS.has(patch.template as string))
+      return res.status(400).json({ error: "layout inválido" });
     if (Object.keys(patch).length === 0) return res.status(400).json({ error: "nada para actualizar" });
     const { data, error } = await sb().from("playlist_items").update(patch).eq("id", req.params.id).select().maybeSingle();
     if (error) return res.status(500).json({ error: error.message });

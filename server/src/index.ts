@@ -15,6 +15,7 @@ import { usersRouter } from "./routes/users.js";
 import { contentRouter } from "./routes/content.js";
 import { playlistRouter } from "./routes/playlist.js";
 import { outputRouter } from "./routes/output.js";
+import { templatesRouter } from "./routes/templates.js";
 import { getStore } from "./db/store.js";
 import { getSupabase } from "./db/supabase.js";
 import { ensureAdmins } from "./auth/bootstrap.js";
@@ -48,6 +49,7 @@ app.use("/api", meRouter());
 app.use("/api/users", usersRouter());
 app.use("/api/content", contentRouter());
 app.use("/api/playlist", playlistRouter());
+app.use("/api/templates", templatesRouter());
 app.use("/api/output", outputRouter()); // público (sin auth) para vMix
 
 // En producción, servir los builds del front (mismo origen que la API y el socket).
