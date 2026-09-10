@@ -4,6 +4,7 @@ import { ProtectedRoute } from "./components/ProtectedRoute";
 import { Login } from "./pages/Login";
 import { Dashboard } from "./pages/Dashboard";
 import { Content } from "./pages/Content";
+import { Programacion } from "./pages/Programacion";
 import { Sources } from "./pages/Sources";
 import { Users } from "./pages/Users";
 
@@ -21,6 +22,7 @@ export function App() {
       <Route path="/login" element={<Login />} />
       <Route path="/" element={<Protected><Dashboard /></Protected>} />
       <Route path="/contenido" element={<Protected><Content /></Protected>} />
+      <Route path="/programacion" element={<Protected><Programacion /></Protected>} />
       <Route path="/fuentes" element={<Protected adminOnly><Sources /></Protected>} />
       <Route path="/usuarios" element={<Protected adminOnly><Users /></Protected>} />
     </Routes>

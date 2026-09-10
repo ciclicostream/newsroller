@@ -13,6 +13,7 @@ import { sourcesRouter } from "./routes/sources.js";
 import { meRouter } from "./routes/me.js";
 import { usersRouter } from "./routes/users.js";
 import { contentRouter } from "./routes/content.js";
+import { playlistRouter } from "./routes/playlist.js";
 import { getStore } from "./db/store.js";
 import { getSupabase } from "./db/supabase.js";
 import { ensureAdmins } from "./auth/bootstrap.js";
@@ -45,6 +46,7 @@ app.use("/api", meRouter());
 // Cada router en su sub-ruta: así el requireAdmin de usuarios NO afecta a contenido.
 app.use("/api/users", usersRouter());
 app.use("/api/content", contentRouter());
+app.use("/api/playlist", playlistRouter());
 
 // En producción, servir el build del panel (mismo origen que la API y el socket).
 const panelDist = path.resolve(fileURLToPath(import.meta.url), "../../../apps/panel/dist");

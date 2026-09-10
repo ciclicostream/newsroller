@@ -134,5 +134,25 @@ Shorts de YouTube:
 - Panel: pestaña **Shorts** (sincronizar, editar título inline, activar, quitar).
 
 Pendiente en Supabase: correr `0003` y `0004`. En Railway: confirmar `YOUTUBE_API_KEY` cargada.
-Próximo: **playlist/lista de reproducción** (orden de emisión) + **plantillas de organización visual**,
-y luego el output para vMix.
+Handle del canal corregido a `@esciclico` (default en código).
+
+---
+
+## Sprint 2 (cont.) — Programación (playlist) + plantillas ✅ código (2026-09-10)
+
+- **Plantillas**: catálogo fijo en `shared` (`TEMPLATES`): full-media, short-916, placa-full,
+  placa-medio, data-full, data-medio, tres-cuartos. Cada una con `appliesTo` (tipos de contenido).
+  `DATA_BLOCKS` define qué datos se pueden poner como bloque (dolar, cammesa, ipc, salarios, energía, petróleo).
+- **Migración `0005_playlist.sql`**: tabla `playlist_items` (content_type, content_id, template,
+  duration_sec, enabled, sort). RLS lectura pública. **Falta correrla en Supabase.**
+- **Backend** `routes/playlist.ts` (requireAuth, `/api/playlist`): GET, POST (add), PATCH, DELETE,
+  POST /reorder. Valida content_type y template contra el catálogo.
+- **Front** página **Programación**: agregar bloque (tipo → elemento → plantilla → duración),
+  lista ordenada con subir/bajar, cambio de plantilla y duración inline, activar/pausar, quitar.
+  Muestra total de segundos por vuelta. Nuevo ítem de menú (visible a admin y editor).
+
+El modelo de emisión es **playlist explícita** (el usuario elige qué y en qué orden), no auto por
+"active". Los toggles "Al aire" de Contenido quedan como marca de disponibilidad; la playlist manda.
+
+Pendiente Supabase: correr `0005` (y las previas 0003/0004 si faltan).
+Próximo: **output para vMix** que reproduce la playlist con las plantillas + data en vivo.

@@ -100,6 +100,48 @@ export interface Short {
   synced_at: string;
 }
 
+// ---- Programación (playlist) + plantillas ----
+
+export type ContentType = "short" | "placa" | "ad" | "background" | "data";
+
+// Fuentes de datos que se pueden poner como bloque de la playlist.
+export const DATA_BLOCKS: { id: string; label: string }[] = [
+  { id: "dolar", label: "Dólar" },
+  { id: "cammesa", label: "Demanda eléctrica (CAMMESA)" },
+  { id: "ipc", label: "IPC" },
+  { id: "salarios", label: "Salarios" },
+  { id: "energia", label: "Energía" },
+  { id: "petroleo", label: "Petróleo" },
+];
+
+// Catálogo fijo de plantillas de organización visual.
+export interface Template {
+  id: string;
+  label: string;
+  description: string;
+  appliesTo: ContentType[];
+}
+export const TEMPLATES: Template[] = [
+  { id: "full-media", label: "Pantalla completa", description: "Media ocupando toda la pantalla", appliesTo: ["short", "ad", "background"] },
+  { id: "short-916", label: "Short 9:16 + título", description: "Video vertical con el título animado al lado", appliesTo: ["short"] },
+  { id: "placa-full", label: "Placa pantalla completa", description: "Título y cuerpo a pantalla completa", appliesTo: ["placa"] },
+  { id: "placa-medio", label: "Placa centrada", description: "Tarjeta centrada sobre el fondo", appliesTo: ["placa"] },
+  { id: "data-full", label: "Dato pantalla completa", description: "Dato grande a pantalla completa", appliesTo: ["data"] },
+  { id: "data-medio", label: "Dato centrado", description: "Dato en tarjeta centrada", appliesTo: ["data"] },
+  { id: "tres-cuartos", label: "Tres cuartos + datos", description: "Contenido 3/4 con columna de datos", appliesTo: ["short", "ad", "data"] },
+];
+
+export interface PlaylistItem {
+  id: string;
+  content_type: ContentType;
+  content_id: string | null; // id del short/placa/asset, o clave de dato (dolar, ipc, ...)
+  template: string;
+  duration_sec: number;
+  enabled: boolean;
+  sort: number;
+  created_at: string;
+}
+
 // Eventos de Socket.IO server -> clientes.
 export interface ServerToClientEvents {
   "data:update": (data: CachedData) => void;
