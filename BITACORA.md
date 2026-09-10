@@ -78,3 +78,22 @@ Decisiones / notas:
 
 Pendiente inmediato: crear el proyecto Supabase real y hacer el primer deploy (requiere credenciales
 del usuario). Sin eso, el login queda deshabilitado (todo lo demás compila y corre).
+
+---
+
+## Deploy productivo ✅ (2026-09-10)
+
+- Repo pusheado a `git@github.com:ciclicostream/newsroller.git` (SSH ok como ciclicostream).
+- Supabase real creado; migraciones 0001+0002 corridas; primer admin vía `ADMIN_EMAILS`.
+- Server desplegado en **Railway** (build `npm install --include=dev && npm run build`, start `npm start`,
+  PORT=8080). Sirve el panel + API + Socket.IO. `store: supabase` confirmado.
+- Fix aplicado: normalizar SUPABASE_URL/VITE_SUPABASE_URL (quitar barra final). El bug real que
+  frenaba los pollers era una **URL de Supabase mal cargada** en Railway ("Invalid path" de Kong);
+  se corrigió el valor de la variable y los 3 pollers pasaron a ok.
+- Subdominio **newsroll.somosciclico.com**: CNAME + TXT (generado por Railway) en zona DNS de
+  Hostinger → Railway; SSL Let's Encrypt emitido. Login verificado desde el subdominio por el usuario.
+- Trampa resuelta en el camino: un comando quedó en "Pre-deploy Command" de Railway y colgaba el
+  deploy → debe quedar vacío.
+
+Próximo: Sprint de contenido (gestor: fondos/logos/placas/publicidad/shorts) + rotación autopilot,
+que alimenta el output para vMix.
