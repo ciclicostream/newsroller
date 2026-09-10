@@ -27,7 +27,7 @@ export const env = {
 
   // YouTube Data API v3 (shorts del canal).
   youtubeApiKey: str("YOUTUBE_API_KEY"),
-  youtubeChannelHandle: str("YOUTUBE_CHANNEL_HANDLE", "somosciclico").replace(/^@/, ""),
+  youtubeChannelHandle: str("YOUTUBE_CHANNEL_HANDLE", "esciclico").replace(/^@/, ""),
   youtubeSyncMs: num("YOUTUBE_SYNC_MS", 30 * 60_000),
 
   // Emails que se promueven a rol admin automáticamente al arrancar (bootstrap).
