@@ -12,7 +12,7 @@ export interface Block {
   duration_sec: number;
   content_type: string;
   short?: { videoId: string; title: string; thumb: string | null };
-  placa?: { title: string; body: string | null; accent: string | null };
+  placa?: { title: string; body: string | null; accent: string | null; image_url?: string | null; image_fit?: string | null };
   media?: { url: string; mime: string | null };
   data?: { source: string };
   tpl?: {

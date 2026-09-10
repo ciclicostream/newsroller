@@ -55,7 +55,7 @@ export function outputRouter(): Router {
           case "placa": {
             const p = placaById.get(it.content_id);
             if (!p) return null;
-            return { ...base, placa: { title: p.title, body: p.body, accent: p.accent } };
+            return { ...base, placa: { title: p.title, body: p.body, accent: p.accent, image_url: p.image_url, image_fit: p.image_fit } };
           }
           case "ad":
           case "background": {

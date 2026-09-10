@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
-import { Upload, Trash2, Loader2, Plus, Image as ImageIcon, RefreshCw, Youtube } from "lucide-react";
+import { Upload, Trash2, Loader2, Plus, Image as ImageIcon, RefreshCw, Youtube, Wand2 } from "lucide-react";
 import type { Asset, AssetKind, Placa, Short } from "@newsroller/shared";
-import { content, uploadAsset } from "../lib/content";
+import { content, uploadAsset, uploadMedia } from "../lib/content";
 
 type Tab = AssetKind | "placa" | "short";
 const TABS: { key: Tab; label: string }[] = [
@@ -230,19 +230,61 @@ function PlacasManager() {
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const [accent, setAccent] = useState("#e8542f");
+  const [origFile, setOrigFile] = useState<File | null>(null);
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [imageFit, setImageFit] = useState("contain");
+  const [photoBusy, setPhotoBusy] = useState<string | null>(null);
 
   const load = () => content.listPlacas().then(setItems).catch((e) => setErr(e.message));
   useEffect(() => {
     void load();
   }, []);
 
+  async function onPhoto(file: File | null) {
+    if (!file) return;
+    setOrigFile(file);
+    setPhotoBusy("Subiendo…");
+    setErr(null);
+    try {
+      setImageUrl(await uploadMedia(file, "ad"));
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "error");
+    } finally {
+      setPhotoBusy(null);
+    }
+  }
+
+  async function quitarFondo() {
+    if (!origFile) return;
+    setPhotoBusy("Quitando fondo…");
+    setErr(null);
+    try {
+      const { removeBackground } = await import("@imgly/background-removal");
+      const blob = await removeBackground(origFile);
+      const png = new File([blob], (origFile.name.replace(/\.[^.]+$/, "") || "foto") + ".png", { type: "image/png" });
+      setImageUrl(await uploadMedia(png, "ad"));
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "no se pudo quitar el fondo");
+    } finally {
+      setPhotoBusy(null);
+    }
+  }
+
   async function create(e: React.FormEvent) {
     e.preventDefault();
     if (!title.trim()) return;
     try {
-      await content.createPlaca({ title: title.trim(), body: body.trim() || undefined, accent });
+      await content.createPlaca({
+        title: title.trim(),
+        body: body.trim() || undefined,
+        accent,
+        image_url: imageUrl,
+        image_fit: imageFit,
+      });
       setTitle("");
       setBody("");
+      setImageUrl(null);
+      setOrigFile(null);
       await load();
     } catch (e) {
       setErr(e instanceof Error ? e.message : "error");
@@ -274,6 +316,27 @@ function PlacasManager() {
           <label>Color de acento</label>
           <input type="color" value={accent} onChange={(e) => setAccent(e.target.value)} style={{ height: 40, padding: 4 }} />
         </div>
+        <div className="field">
+          <label>Foto (opcional)</label>
+          <input type="file" accept="image/*" onChange={(e) => onPhoto(e.target.files?.[0] ?? null)} />
+          {imageUrl && (
+            <div style={{ marginTop: 10 }}>
+              <div style={{ height: 120, background: "#f0f2f5 repeating-conic-gradient(#e3e6ea 0% 25%, transparent 0% 50%) 0/16px 16px", borderRadius: 8, overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <img src={imageUrl} style={{ maxWidth: "100%", maxHeight: "100%", objectFit: imageFit as any }} />
+              </div>
+              <div className="row" style={{ marginTop: 8, gap: 8 }}>
+                <button type="button" className="btn" onClick={quitarFondo} disabled={!!photoBusy || !origFile}>
+                  <Wand2 size={14} /> Quitar fondo
+                </button>
+                <select value={imageFit} onChange={(e) => setImageFit(e.target.value)} style={{ width: 120 }}>
+                  <option value="contain">Contener</option>
+                  <option value="cover">Cubrir</option>
+                </select>
+              </div>
+            </div>
+          )}
+          {photoBusy && <div className="uploading" style={{ marginTop: 8 }}><Loader2 size={14} className="spin" /> {photoBusy}</div>}
+        </div>
         <button className="btn primary" type="submit" style={{ width: "100%", justifyContent: "center" }}>
           <Plus size={16} /> Crear placa
         </button>
@@ -284,6 +347,9 @@ function PlacasManager() {
         {items.map((p) => (
           <div className="placa-item" key={p.id}>
             <div className="placa-accent" style={{ background: p.accent ?? "var(--accent)" }} />
+            {p.image_url && (
+              <img src={p.image_url} style={{ width: 44, height: 44, objectFit: "contain", borderRadius: 6, flex: "none" }} />
+            )}
             <div className="placa-main">
               <div className="placa-title">{p.title}</div>
               {p.body && <div className="placa-body">{p.body}</div>}

@@ -236,18 +236,28 @@ function BlockView({ block, data }: { block: Block; data: Record<string, any> })
     if (t === "placa-medio") {
       return (
         <div className="card-center">
-          <div className="panel" style={{ borderTopColor: accent }}>
-            <AnimatedWords text={block.placa.title} size={64} />
-            {block.placa.body && <div className="placa-body">{block.placa.body}</div>}
+          <div className="panel" style={{ borderTopColor: accent, display: "flex", gap: 40, alignItems: "center" }}>
+            <div style={{ flex: 1 }}>
+              <AnimatedWords text={block.placa.title} size={64} />
+              {block.placa.body && <div className="placa-body">{block.placa.body}</div>}
+            </div>
+            {block.placa.image_url && (
+              <img src={block.placa.image_url} style={{ width: 380, height: 460, objectFit: (block.placa.image_fit as any) ?? "contain" }} />
+            )}
           </div>
         </div>
       );
     }
     return (
-      <div className="full-pad">
-        <div className="kicker" style={{ color: accent }}>Informe</div>
-        <AnimatedWords text={block.placa.title} size={76} />
-        {block.placa.body && <div className="placa-body">{block.placa.body}</div>}
+      <div className="full-pad" style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: 60 }}>
+        <div style={{ flex: 1 }}>
+          <div className="kicker" style={{ color: accent }}>Informe</div>
+          <AnimatedWords text={block.placa.title} size={76} />
+          {block.placa.body && <div className="placa-body">{block.placa.body}</div>}
+        </div>
+        {block.placa.image_url && (
+          <img src={block.placa.image_url} style={{ width: 620, height: 760, objectFit: (block.placa.image_fit as any) ?? "contain" }} />
+        )}
       </div>
     );
   }

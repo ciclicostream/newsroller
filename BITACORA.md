@@ -177,3 +177,23 @@ Próximo: **output para vMix** que reproduce la playlist con las plantillas + da
 
 Para vMix: agregar `https://newsroll.somosciclico.com/output` como Web Browser Input 1920×1080.
 Pendiente producción: correr migraciones 0003/0004/0005 en Supabase y armar una playlist.
+
+---
+
+## Sprint 6 — Editor de plantillas + video/clima/ticker/foto ✅ código (2026-09-10)
+
+Correcciones y funciones pedidas por el usuario tras ver el output:
+- **Ticker desde somosciclico.com** (RSS `/feed/`) como fuente `ticker`. ✅
+- **Clima** nueva fuente Open-Meteo (sin key); elementos de clima **por ciudad** (geocoding client-side). ✅
+- **16:9**: el output es 1920×1080; en vMix el Web Browser Input debe ser 1920×1080 (aclarado).
+- **Video**: en plantillas, elemento `video` con **YouTube IFrame API** (audio + avanza al terminar)
+  o **video subido** (audio, sin controles); **respeta aspecto** (contain/cover). Shorts NO se re-suben.
+- **Editor de plantillas** (`/plantillas`): drag & drop, fondo imagen/gradiente/color, elementos
+  texto/imagen/video/clima/dato/logo/forma, preset "última hora". Guarda en `templates`.
+- **Placas con foto + quitar fondo** (`@imgly/background-removal`, en el navegador, carga on-demand)
+  + ajuste contain/cover. El output muestra la foto en la placa.
+- Migración **0006** (templates + image_url/image_fit en placas + playlist acepta 'template').
+- La programación suma bloques tipo **plantilla**; `Template` legacy renombrado a `Layout`.
+
+Pendiente producción: correr **0006** en Supabase; probar crear una plantilla estilo EPA! y verla en
+`/output`. Nota: el quitado de fondo descarga el modelo la primera vez (puede tardar unos segundos).

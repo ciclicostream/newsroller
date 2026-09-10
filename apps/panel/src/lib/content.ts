@@ -43,7 +43,8 @@ export const content = {
   deleteAsset: (id: string) => api.del(`/api/content/assets/${id}`),
 
   listPlacas: () => api.get<Placa[]>("/api/content/placas"),
-  createPlaca: (p: { title: string; body?: string; accent?: string }) => api.post<Placa>("/api/content/placas", p),
+  createPlaca: (p: { title: string; body?: string; accent?: string; image_url?: string | null; image_fit?: string }) =>
+    api.post<Placa>("/api/content/placas", p),
   patchPlaca: (id: string, patch: Partial<Pick<Placa, "title" | "body" | "accent" | "active" | "sort">>) =>
     api.patch<Placa>(`/api/content/placas/${id}`, patch),
   deletePlaca: (id: string) => api.del(`/api/content/placas/${id}`),
