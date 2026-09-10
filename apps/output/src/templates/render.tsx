@@ -102,7 +102,8 @@ function ElementView({ el, data, logos, cameras, onEnded }: { el: TemplateElemen
 }
 
 function CameraView({ cam }: { cam: Camera }) {
-  if (cam.type === "youtube") return <YouTubePlayer videoId={cam.url} onEnded={() => {}} />;
+  // Las cámaras nunca llevan audio.
+  if (cam.type === "youtube") return <YouTubePlayer videoId={cam.url} onEnded={() => {}} allowAudio={false} />;
   if (cam.type === "hls") return <HlsVideo url={cam.url} />;
   if (cam.type === "iframe") return <iframe src={cam.url} style={{ width: "100%", height: "100%", border: 0 }} allow="autoplay; encrypted-media" title={cam.name} />;
   return <RefreshingImage url={cam.url} />;
@@ -148,8 +149,8 @@ function VideoAsset({ src, fit, radius, onEnded }: { src: string; fit: string; r
   );
 }
 
-// Reproductor de YouTube con IFrame API: audio activado + aviso al terminar.
-function YouTubePlayer({ videoId, onEnded }: { videoId: string; onEnded: () => void }) {
+// Reproductor de YouTube con IFrame API. allowAudio=false → siempre muteado (cámaras).
+function YouTubePlayer({ videoId, onEnded, allowAudio = true }: { videoId: string; onEnded: () => void; allowAudio?: boolean }) {
   const ref = useRef<HTMLDivElement>(null);
   const endedRef = useRef(onEnded);
   endedRef.current = onEnded;
@@ -170,7 +171,7 @@ function YouTubePlayer({ videoId, onEnded }: { videoId: string; onEnded: () => v
             try { e.target.playVideo(); } catch { /* noop */ }
             // Solo intentar sonido si se pidió (OBS/vMix con ?audio=1). En el navegador normal
             // NO se toca: así el autoplay muteado nunca se bloquea.
-            if (WANT_AUDIO) setTimeout(() => { try { e.target.unMute(); e.target.setVolume(100); } catch { /* noop */ } }, 500);
+            if (allowAudio && WANT_AUDIO) setTimeout(() => { try { e.target.unMute(); e.target.setVolume(100); } catch { /* noop */ } }, 500);
           },
           onStateChange: (e: any) => {
             const S = window.YT?.PlayerState;
