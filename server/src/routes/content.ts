@@ -3,6 +3,7 @@ import type { AssetKind } from "@newsroller/shared";
 import { getSupabase } from "../db/supabase.js";
 import { requireAuth } from "../auth/middleware.js";
 import { syncShorts } from "../content/youtube.js";
+import { env } from "../config/env.js";
 
 const BUCKETS: Record<AssetKind, string> = {
   background: "backgrounds",
@@ -153,6 +154,66 @@ export function contentRouter(): Router {
     const { error } = await sb().from("shorts").delete().eq("id", req.params.id);
     if (error) return res.status(500).json({ error: error.message });
     res.status(204).end();
+  });
+
+  // ---- Cámaras ----
+  r.get("/cameras", async (_req, res) => {
+    const { data, error } = await sb().from("cameras").select("*").order("sort").order("created_at");
+    if (error) return res.status(500).json({ error: error.message });
+    res.json(data);
+  });
+
+  r.post("/cameras", async (req, res) => {
+    const { name, city, type, url } = req.body ?? {};
+    if (!["youtube", "hls", "image", "iframe"].includes(type)) return res.status(400).json({ error: "type inválido" });
+    if (typeof name !== "string" || !name.trim() || typeof url !== "string" || !url.trim())
+      return res.status(400).json({ error: "faltan nombre o url" });
+    const { data, error } = await sb()
+      .from("cameras")
+      .insert({ name: name.trim(), city: city ?? null, type, url: url.trim() })
+      .select()
+      .single();
+    if (error) return res.status(400).json({ error: error.message });
+    res.status(201).json(data);
+  });
+
+  r.patch("/cameras/:id", async (req, res) => {
+    const patch: Record<string, unknown> = {};
+    for (const k of ["name", "city", "type", "url", "active", "sort"]) if (k in (req.body ?? {})) patch[k] = req.body[k];
+    if (Object.keys(patch).length === 0) return res.status(400).json({ error: "nada para actualizar" });
+    const { data, error } = await sb().from("cameras").update(patch).eq("id", req.params.id).select().maybeSingle();
+    if (error) return res.status(500).json({ error: error.message });
+    if (!data) return res.status(404).json({ error: "cámara no encontrada" });
+    res.json(data);
+  });
+
+  r.delete("/cameras/:id", async (req, res) => {
+    const { error } = await sb().from("cameras").delete().eq("id", req.params.id);
+    if (error) return res.status(500).json({ error: error.message });
+    res.status(204).end();
+  });
+
+  // Buscar cámaras en Windy por ciudad (geocoding + nearby). Devuelve imágenes que se actualizan.
+  r.get("/windy", async (req, res) => {
+    if (!env.windyApiKey) return res.status(400).json({ error: "falta WINDY_API_KEY" });
+    const city = String(req.query.city ?? "").trim();
+    if (!city) return res.status(400).json({ error: "indicá una ciudad" });
+    try {
+      const geo = (await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(city)}&count=1&language=es`).then((r) => r.json())) as any;
+      const hit = geo.results?.[0];
+      if (!hit) return res.status(404).json({ error: "ciudad no encontrada" });
+      const url = `https://api.windy.com/webcams/api/v3/webcams?nearby=${hit.latitude},${hit.longitude},50&limit=12&include=images,location`;
+      const w = (await fetch(url, { headers: { "x-windy-api-key": env.windyApiKey } }).then((r) => r.json())) as any;
+      const cams = (w.webcams ?? []).map((c: any) => ({
+        webcamId: c.webcamId,
+        title: c.title,
+        city: c.location?.city ?? city,
+        preview: c.images?.current?.preview ?? null,
+      })).filter((c: any) => c.preview);
+      res.json({ city: hit.name, cameras: cams });
+    } catch (e) {
+      res.status(502).json({ error: e instanceof Error ? e.message : "error consultando Windy" });
+    }
   });
 
   return r;

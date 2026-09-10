@@ -5,6 +5,7 @@ import { Login } from "./pages/Login";
 import { Dashboard } from "./pages/Dashboard";
 import { Content } from "./pages/Content";
 import { Plantillas } from "./pages/Plantillas";
+import { Camaras } from "./pages/Camaras";
 import { Programacion } from "./pages/Programacion";
 import { Sources } from "./pages/Sources";
 import { Users } from "./pages/Users";
@@ -24,6 +25,7 @@ export function App() {
       <Route path="/" element={<Protected><Dashboard /></Protected>} />
       <Route path="/contenido" element={<Protected><Content /></Protected>} />
       <Route path="/plantillas" element={<Protected><Plantillas /></Protected>} />
+      <Route path="/camaras" element={<Protected><Camaras /></Protected>} />
       <Route path="/programacion" element={<Protected><Programacion /></Protected>} />
       <Route path="/fuentes" element={<Protected adminOnly><Sources /></Protected>} />
       <Route path="/usuarios" element={<Protected adminOnly><Users /></Protected>} />

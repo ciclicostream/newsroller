@@ -107,7 +107,19 @@ export interface Short {
 export type ContentType = "short" | "placa" | "ad" | "background" | "data" | "template";
 
 // ---- Plantillas propias (editor visual) ----
-export type ElementType = "text" | "image" | "video" | "weather" | "data" | "logo" | "shape";
+export type ElementType = "text" | "image" | "video" | "weather" | "data" | "logo" | "shape" | "camera";
+
+export type CameraType = "youtube" | "hls" | "image" | "iframe";
+export interface Camera {
+  id: string;
+  name: string;
+  city: string | null;
+  type: CameraType;
+  url: string;
+  active: boolean;
+  sort: number;
+  created_at: string;
+}
 
 export interface TemplateElement {
   id: string;

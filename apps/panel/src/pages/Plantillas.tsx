@@ -1,14 +1,16 @@
 import { useEffect, useRef, useState } from "react";
-import { Plus, Trash2, Save, Type, Image as ImageIcon, Film, CloudSun, BarChart3, Hexagon, Zap, Search } from "lucide-react";
+import { Plus, Trash2, Save, Type, Image as ImageIcon, Film, CloudSun, BarChart3, Hexagon, Zap, Search, Video } from "lucide-react";
 import {
   CANVAS_W,
   CANVAS_H,
   DATA_BLOCKS,
+  type Camera,
   type ElementType,
   type Template,
   type TemplateElement,
 } from "@newsroller/shared";
 import { templatesApi } from "../lib/templates";
+import { camerasApi } from "../lib/cameras";
 import { uploadMedia } from "../lib/content";
 
 const DISPLAY_W = 760;
@@ -33,6 +35,8 @@ function newElement(type: ElementType, z: number): TemplateElement {
       return { ...common, w: 240, h: 90, props: {} };
     case "shape":
       return { ...common, w: 320, h: 120, props: { shape: "rect", color: "#e8542f", radius: 8 } };
+    case "camera":
+      return { ...common, w: 900, h: 506, props: { mode: "active", cameraId: null } };
   }
 }
 
@@ -42,11 +46,13 @@ export function Plantillas() {
   const [selId, setSelId] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [cameras, setCameras] = useState<Camera[]>([]);
   const drag = useRef<null | { mode: "move" | "resize"; id: string; sx: number; sy: number; ox: number; oy: number; ow: number; oh: number }>(null);
 
   const load = () => templatesApi.list().then(setList).catch((e) => setErr(e.message));
   useEffect(() => {
     void load();
+    camerasApi.list().then(setCameras).catch(() => {});
   }, []);
 
   async function openTpl(id: string) {
@@ -189,6 +195,7 @@ export function Plantillas() {
                 <button className="btn" onClick={() => addEl("data")}><BarChart3 size={14} /> Dato</button>
                 <button className="btn" onClick={() => addEl("logo")}>Logo</button>
                 <button className="btn" onClick={() => addEl("shape")}><Hexagon size={14} /> Forma</button>
+                <button className="btn" onClick={() => addEl("camera")}><Video size={14} /> Cámara</button>
               </div>
               <div
                 className="canvas"
@@ -218,6 +225,7 @@ export function Plantillas() {
           ) : sel ? (
             <ElementProps
               el={sel}
+              cameras={cameras}
               onProps={(pp) => updateProps(sel.id, pp)}
               onEl={(p) => updateEl(sel.id, p)}
               onDelete={() => delEl(sel.id)}
@@ -262,6 +270,7 @@ function ElPreview({ el }: { el: TemplateElement }) {
       </div>
     );
   }
+  if (el.type === "camera") return <Placeholder label={p.mode === "fixed" ? "Cámara (fija)" : "Cámara activa"} />;
   if (el.type === "data") return <Placeholder label={`Dato: ${DATA_BLOCKS.find((d) => d.id === p.source)?.label ?? p.source}`} />;
   if (el.type === "logo") return <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, letterSpacing: ".06em" }}>CÍCLICO</div>;
   if (el.type === "shape")
@@ -314,19 +323,21 @@ function TemplateProps({ cur, patchCur, setErr }: { cur: Template; patchCur: (p:
 
 function ElementProps({
   el,
+  cameras,
   onProps,
   onEl,
   onDelete,
   setErr,
 }: {
   el: TemplateElement;
+  cameras: Camera[];
   onProps: (pp: Record<string, any>) => void;
   onEl: (p: Partial<TemplateElement>) => void;
   onDelete: () => void;
   setErr: (s: string | null) => void;
 }) {
   const p = el.props;
-  const TYPE_LABEL: Record<ElementType, string> = { text: "Texto", image: "Imagen", video: "Video/Short", weather: "Clima", data: "Dato", logo: "Logo", shape: "Forma" };
+  const TYPE_LABEL: Record<ElementType, string> = { text: "Texto", image: "Imagen", video: "Video/Short", weather: "Clima", data: "Dato", logo: "Logo", shape: "Forma", camera: "Cámara" };
 
   async function upload(file: File) {
     try {
@@ -395,6 +406,25 @@ function ElementProps({
 
       {el.type === "data" && (
         <div className="field"><label>Dato</label><select value={p.source ?? "dolar"} onChange={(e) => onProps({ source: e.target.value })}>{DATA_BLOCKS.map((d) => <option key={d.id} value={d.id}>{d.label}</option>)}</select></div>
+      )}
+
+      {el.type === "camera" && (
+        <>
+          <div className="field"><label>Cámara</label>
+            <select value={p.mode ?? "active"} onChange={(e) => onProps({ mode: e.target.value })}>
+              <option value="active">La activa (se cambia en Cámaras)</option>
+              <option value="fixed">Una fija</option>
+            </select>
+          </div>
+          {p.mode === "fixed" && (
+            <div className="field"><label>Elegir cámara</label>
+              <select value={p.cameraId ?? ""} onChange={(e) => onProps({ cameraId: e.target.value })}>
+                <option value="">(elegí una)</option>
+                {cameras.map((c) => <option key={c.id} value={c.id}>{c.name}{c.city ? ` · ${c.city}` : ""}</option>)}
+              </select>
+            </div>
+          )}
+        </>
       )}
 
       {el.type === "shape" && (

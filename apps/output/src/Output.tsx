@@ -107,7 +107,7 @@ export function Output() {
               transition={{ duration: 0.4 }}
               style={{ position: "absolute", inset: 0, zIndex: 5 }}
             >
-              <TemplateView template={current.tpl!} data={scene!.data} logos={scene!.logos} onEnded={advance} />
+              <TemplateView template={current.tpl!} data={scene!.data} logos={scene!.logos} cameras={scene!.cameras ?? []} onEnded={advance} />
             </motion.div>
           )}
           {current && !isTemplate && (

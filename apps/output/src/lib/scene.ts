@@ -33,11 +33,22 @@ export interface TemplateElement {
   z: number;
   props: Record<string, any>;
 }
+export interface Camera {
+  id: string;
+  name: string;
+  city: string | null;
+  type: "youtube" | "hls" | "image" | "iframe";
+  url: string;
+  active: boolean;
+  sort: number;
+}
+
 export interface Scene {
   background: Background | null;
   logos: Logo[];
   items: Block[];
   data: Record<string, any>;
+  cameras: Camera[];
   updatedAt: string;
 }
 

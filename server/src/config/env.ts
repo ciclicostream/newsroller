@@ -29,6 +29,9 @@ export const env = {
   tickerFeedUrl: str("TICKER_FEED_URL", "https://somosciclico.com/feed/"),
   tickerFeedMs: num("TICKER_FEED_MS", 10 * 60_000),
 
+  // Windy Webcams (para buscar cámaras por ciudad).
+  windyApiKey: str("WINDY_API_KEY"),
+
   // Clima (Open-Meteo). Default: Buenos Aires.
   climaLat: str("CLIMA_LAT", "-34.61"),
   climaLon: str("CLIMA_LON", "-58.38"),

@@ -214,3 +214,21 @@ selección de plantilla en Programación (init async).
 **Próxima sesión: ESTILIZAR** todo (diseño real de Cíclico). Pendientes/ideas para el editor:
 alinear/guías, capas (traer al frente/atrás), duplicar elemento, más tipografías, y afinar el look
 de placas/plantillas. Recordar: correr migraciones 0003-0006 en Supabase si falta alguna.
+
+---
+
+## Sprint — Cámaras en vivo ✅ código (2026-09-11)
+
+- **Migración 0007**: tabla `cameras` (name, city, type youtube/hls/image/iframe, url, active, sort).
+  Seed con 5 cámaras del usuario (9 de Julio, CABA Varias, Cerro Castor, Puente Gral Belgrano, Las Grutas).
+- **Backend**: CRUD `/api/content/cameras` + `/api/content/windy?city=` (geocode + Windy Webcams API,
+  devuelve imágenes que se actualizan). Env `WINDY_API_KEY`. Output incluye `cameras` en la escena.
+- **Panel**: página **Cámaras** (agregar YouTube/HLS/imagen/iframe, activar una, buscar en Windy y sumar).
+  Extrae el ID de links de YouTube (live/watch/youtu.be).
+- **Editor de plantillas**: nuevo elemento **Cámara** (modo "activa" o "fija"). El output lo renderiza
+  por tipo: YouTube (player con audio), HLS (hls.js), imagen que refresca (cada 5s), iframe.
+- Para acompañar tránsito: falta la fuente **API Transporte BA** (alertas/cortes/subte) — requiere
+  client_id/secret. Queda como próximo paso para el dato al lado de la cámara.
+
+Pendiente producción: correr **0007** en Supabase; cargar **WINDY_API_KEY** en Railway (opcional, solo
+para el buscador de Windy). Las 5 cámaras YouTube ya funcionan sin nada extra.

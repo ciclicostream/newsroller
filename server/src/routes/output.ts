@@ -21,13 +21,14 @@ export function outputRouter(): Router {
 
     const publicUrl = (bucket: string, path: string) => sb.storage.from(bucket).getPublicUrl(path).data.publicUrl;
 
-    const [{ data: playlist }, { data: assets }, { data: placas }, { data: shorts }, { data: templates }] =
+    const [{ data: playlist }, { data: assets }, { data: placas }, { data: shorts }, { data: templates }, { data: cameras }] =
       await Promise.all([
         sb.from("playlist_items").select("*").eq("enabled", true).order("sort"),
         sb.from("assets").select("*"),
         sb.from("placas").select("*"),
         sb.from("shorts").select("*"),
         sb.from("templates").select("*"),
+        sb.from("cameras").select("*"),
       ]);
 
     const assetById = new Map((assets ?? []).map((a) => [a.id, a]));
@@ -76,7 +77,7 @@ export function outputRouter(): Router {
       })
       .filter(Boolean);
 
-    res.json({ background, logos, items, data, updatedAt: new Date().toISOString() });
+    res.json({ background, logos, items, data, cameras: cameras ?? [], updatedAt: new Date().toISOString() });
   });
 
   return r;

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { dataView, type Logo, type TemplateElement } from "../lib/scene";
+import Hls from "hls.js";
+import { dataView, type Camera, type Logo, type TemplateElement } from "../lib/scene";
 
 interface TemplateData {
   id: string;
@@ -19,7 +20,7 @@ export function templateHasVideo(t: TemplateData): boolean {
   return t.elements.some((e) => e.type === "video");
 }
 
-export function TemplateView({ template, data, logos, onEnded }: { template: TemplateData; data: Record<string, any>; logos: Logo[]; onEnded: () => void }) {
+export function TemplateView({ template, data, logos, cameras, onEnded }: { template: TemplateData; data: Record<string, any>; logos: Logo[]; cameras: Camera[]; onEnded: () => void }) {
   return (
     <div style={{ position: "absolute", inset: 0, background: bgCss(template.background) }}>
       {[...template.elements].sort((a, b) => a.z - b.z).map((el, i) => (
@@ -30,14 +31,14 @@ export function TemplateView({ template, data, logos, onEnded }: { template: Tem
           transition={{ delay: 0.1 + i * 0.08, duration: 0.5, ease: [0.2, 0.8, 0.2, 1] }}
           style={{ position: "absolute", left: el.x, top: el.y, width: el.w, height: el.h, zIndex: el.z }}
         >
-          <ElementView el={el} data={data} logos={logos} onEnded={onEnded} />
+          <ElementView el={el} data={data} logos={logos} cameras={cameras} onEnded={onEnded} />
         </motion.div>
       ))}
     </div>
   );
 }
 
-function ElementView({ el, data, logos, onEnded }: { el: TemplateElement; data: Record<string, any>; logos: Logo[]; onEnded: () => void }) {
+function ElementView({ el, data, logos, cameras, onEnded }: { el: TemplateElement; data: Record<string, any>; logos: Logo[]; cameras: Camera[]; onEnded: () => void }) {
   const p = el.props;
 
   if (el.type === "text") {
@@ -88,7 +89,46 @@ function ElementView({ el, data, logos, onEnded }: { el: TemplateElement; data: 
   if (el.type === "shape") {
     return <div style={{ width: "100%", height: "100%", background: p.color ?? "#e8542f", borderRadius: p.shape === "line" ? 0 : p.radius ?? 0 }} />;
   }
+  if (el.type === "camera") {
+    const cam = p.mode === "fixed" ? cameras.find((c) => c.id === p.cameraId) : cameras.find((c) => c.active);
+    if (!cam) return <div style={{ width: "100%", height: "100%", background: "#0b0e15", display: "flex", alignItems: "center", justifyContent: "center", color: "#6b7688", fontSize: 22 }}>Sin cámara</div>;
+    return <CameraView cam={cam} />;
+  }
   return null;
+}
+
+function CameraView({ cam }: { cam: Camera }) {
+  if (cam.type === "youtube") return <YouTubePlayer videoId={cam.url} onEnded={() => {}} />;
+  if (cam.type === "hls") return <HlsVideo url={cam.url} />;
+  if (cam.type === "iframe") return <iframe src={cam.url} style={{ width: "100%", height: "100%", border: 0 }} allow="autoplay; encrypted-media" title={cam.name} />;
+  return <RefreshingImage url={cam.url} />;
+}
+
+function HlsVideo({ url }: { url: string }) {
+  const ref = useRef<HTMLVideoElement>(null);
+  useEffect(() => {
+    const v = ref.current;
+    if (!v) return;
+    if (v.canPlayType("application/vnd.apple.mpegurl")) {
+      v.src = url;
+    } else if (Hls.isSupported()) {
+      const hls = new Hls();
+      hls.loadSource(url);
+      hls.attachMedia(v);
+      return () => hls.destroy();
+    }
+  }, [url]);
+  return <video ref={ref} autoPlay muted playsInline style={{ width: "100%", height: "100%", objectFit: "cover" }} />;
+}
+
+// Imagen de cámara que se actualiza sola (cámaras de tránsito / Windy).
+function RefreshingImage({ url }: { url: string }) {
+  const [src, setSrc] = useState(url);
+  useEffect(() => {
+    const iv = setInterval(() => setSrc(`${url}${url.includes("?") ? "&" : "?"}t=${Date.now()}`), 5000);
+    return () => clearInterval(iv);
+  }, [url]);
+  return <img src={src} style={{ width: "100%", height: "100%", objectFit: "cover" }} />;
 }
 
 function VideoAsset({ src, fit, radius, onEnded }: { src: string; fit: string; radius: number; onEnded: () => void }) {
