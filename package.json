@@ -1,0 +1,21 @@
+{
+  "name": "newsroller",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Motor de placas en vivo para Cíclico (backend + front parametrizable)",
+  "type": "module",
+  "workspaces": [
+    "packages/*",
+    "server",
+    "apps/*"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "npm run dev --workspace server",
+    "poll": "npm run poll --workspace server",
+    "build": "npm run build --workspace @newsroller/panel",
+    "start": "npm run start --workspace @newsroller/server"
+  }
+}
