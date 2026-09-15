@@ -125,3 +125,9 @@ y carrusel. Cada una: el usuario pasa el diseño estático + los campos; yo la r
    publicar + capa overlays + reportes) e integrar **Cifras** como primer tipo end-to-end.
 3. Seguir plantilla por plantilla en el orden de arriba: el usuario pasa el diseño, yo lo animo y lo
    sumo como tipo de contenido con su formulario.
+
+### Nota (2026-09-15): varios videos por bloque
+Un contenido de video (Publicidad/Especiales/Promo/Plantilla full) puede tener **una lista de clips**
+que se reproducen **encadenados en la misma pantalla**: al `ended` de uno arranca el siguiente (sin
+corte). El bloque avanza al terminar el último. Sirve para subidos (`<video>` cambia src) y YouTube
+(`loadVideoById`). Opciones a ofrecer: orden, loop, y transición corta (corte/fade) entre clips.
