@@ -232,3 +232,11 @@ de placas/plantillas. Recordar: correr migraciones 0003-0006 en Supabase si falt
 
 Pendiente producción: correr **0007** en Supabase; cargar **WINDY_API_KEY** en Railway (opcional, solo
 para el buscador de Windy). Las 5 cámaras YouTube ya funcionan sin nada extra.
+
+---
+
+## Handoff 2026-09-15 — Rediseño banco/parrilla + plantillas
+
+Ver `docs/PLANTILLAS-Y-ESTADO.md`: modelo banco→parrilla→aire (borrador/publicar + overlays + reportes),
+flujo de diseño de plantillas (usuario diseña, yo animo; lienzo 1920x1080; refs en `refes/`), CIFRAS
+ya diseñada+animada (Artifact v6, falta integrar + Lexia), y la lista completa de plantillas a seguir.
