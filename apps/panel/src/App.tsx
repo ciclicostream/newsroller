@@ -5,6 +5,7 @@ import { Login } from "./pages/Login";
 import { Programacion } from "./pages/Programacion";
 import { NuevoContenido } from "./pages/NuevoContenido";
 import { Plantillas } from "./pages/Plantillas";
+import { PlantillaContenidos } from "./pages/PlantillaContenidos";
 import { Camaras } from "./pages/Camaras";
 import { Sources } from "./pages/Sources";
 import { Shorts } from "./pages/Shorts";
@@ -30,6 +31,7 @@ export function App() {
       <Route path="/contenido" element={<Protected><NuevoContenido /></Protected>} />
       <Route path="/contenido/:type" element={<Protected><NuevoContenido /></Protected>} />
       <Route path="/plantillas" element={<Protected><Plantillas /></Protected>} />
+      <Route path="/plantillas/:type" element={<Protected><PlantillaContenidos /></Protected>} />
       <Route path="/camaras" element={<Protected><Camaras /></Protected>} />
       <Route path="/fuentes" element={<Protected><Sources /></Protected>} />
       <Route path="/shorts" element={<Protected><Shorts /></Protected>} />

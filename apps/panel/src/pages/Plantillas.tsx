@@ -88,7 +88,7 @@ export function Plantillas() {
         {TIPOS.map((t) => {
           const s = stats(t.type);
           return (
-            <button key={t.type} className="tipo-card" onClick={() => navigate(`/contenido/${t.type}`)} style={{ textAlign: "left", cursor: "pointer" }}>
+            <button key={t.type} className="tipo-card" onClick={() => navigate(`/plantillas/${t.type}`)} style={{ textAlign: "left", cursor: "pointer" }}>
               <span className="tipo-ic"><t.Icon size={22} /></span>
               <span className="tipo-main" style={{ flex: 1 }}>
                 <span className="tipo-name">{t.label}{!t.ready && <span className="tipo-soon">pronto</span>}</span>
