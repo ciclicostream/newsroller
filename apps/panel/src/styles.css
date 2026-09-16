@@ -4,22 +4,43 @@
   --border: #e3e6ea;
   --text: #10151f;
   --muted: #6b7688;
-  --accent: #e8542f;
-  --accent-weak: #fdeee9;
+  --accent: #2f6bff;
+  --accent-weak: #e8efff;
   --sidebar: #0f1420;
   --sidebar-muted: #8a94a6;
   --danger: #c0392b;
-  --ok: #1d9e75;
-  --radius: 10px;
+  --ok: #16a34a;
+  --radius: 12px;
+  --shadow: 0 4px 16px rgba(20,30,60,.05);
   --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
 * { box-sizing: border-box; }
-body { margin: 0; font-family: var(--font); background: var(--bg); color: var(--text); }
+body { margin: 0; font-family: var(--font); color: var(--text);
+  background: var(--bg);
+  background-image: radial-gradient(1200px 520px at 12% -12%, #dfe8ff 0%, transparent 55%), radial-gradient(1000px 520px at 100% -4%, #e7fff4 0%, transparent 50%);
+  background-attachment: fixed;
+}
 a { color: inherit; text-decoration: none; }
 button { font-family: inherit; cursor: pointer; }
 
-/* Layout */
-.app { display: grid; grid-template-columns: 240px 1fr; min-height: 100vh; }
+/* Layout — top nav (light) */
+.app { display: flex; flex-direction: column; min-height: 100vh; }
+.topbar { display: flex; align-items: center; gap: 16px; padding: 12px 22px; }
+.topbar .brand { padding: 0; gap: 10px; min-width: 190px; color: var(--text); }
+.brand-logo { height: 30px; width: auto; display: block; }
+.brand-txt { display: flex; flex-direction: column; line-height: 1.05; }
+.brand-txt b { font-size: 14px; font-weight: 800; letter-spacing: 0; }
+.brand-txt small { font-size: 10px; color: var(--muted); font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+.topnav { margin: 0 auto; display: flex; gap: 4px; background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 6px; box-shadow: var(--shadow); }
+.topnav .nav-item { flex-direction: column; align-items: center; gap: 3px; min-width: 74px; padding: 8px 14px; border-radius: 11px; color: var(--muted); font-size: 11px; font-weight: 600; }
+.topnav .nav-item:hover { background: var(--bg); color: var(--text); }
+.topnav .nav-item.active { background: var(--text); color: #fff; }
+.topbar-right { display: flex; align-items: center; gap: 10px; min-width: 190px; justify-content: flex-end; }
+.topbar-right .role-pill { margin: 0; }
+.topbar-right .role-pill.editor { background: #eef1f6; color: var(--muted); }
+.avatar { width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, #2f6bff, #7aa2ff); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 13px; }
+.topbar-right .logout { width: auto; margin: 0; border: 1px solid var(--border); background: var(--surface); color: var(--muted); padding: 8px; border-radius: 9px; }
+.topbar-right .logout:hover { background: var(--bg); color: var(--text); }
 .sidebar { background: var(--sidebar); color: #fff; padding: 20px 14px; display: flex; flex-direction: column; gap: 6px; }
 .brand { display: flex; align-items: center; gap: 10px; font-weight: 600; letter-spacing: .04em; padding: 6px 8px 18px; }
 .brand .mark { width: 26px; height: 26px; border-radius: 6px; background: var(--accent); display: flex; align-items: center; justify-content: center; }
@@ -42,7 +63,7 @@ button { font-family: inherit; cursor: pointer; }
 .page-head p { margin: 4px 0 0; color: var(--muted); font-size: 14px; }
 
 /* Cards / table */
-.card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); }
 .grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
 .stat { padding: 16px 18px; }
 .stat .label { font-size: 13px; color: var(--muted); }
@@ -59,7 +80,7 @@ tr:last-child td { border-bottom: none; }
 .btn { display: inline-flex; align-items: center; gap: 8px; padding: 9px 14px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface); font-size: 14px; }
 .btn:hover { border-color: #c7ccd3; }
 .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
-.btn.primary:hover { background: #d2491f; }
+.btn.primary:hover { background: #2559d8; }
 .btn.danger-ghost { color: var(--danger); border-color: #f0c7c2; }
 .btn.danger-ghost:hover { background: #fbeceA; }
 .btn:disabled { opacity: .55; cursor: not-allowed; }
