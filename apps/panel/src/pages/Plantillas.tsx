@@ -1,17 +1,23 @@
 import { useEffect, useRef, useState } from "react";
-import { Plus, Trash2, Save, Type, Image as ImageIcon, Film, CloudSun, BarChart3, Hexagon, Zap, Search, Video } from "lucide-react";
+import { Plus, Trash2, Save, Type, Image as ImageIcon, Film, CloudSun, BarChart3, Hexagon, Zap, Search, Video, ArrowLeft, PenTool } from "lucide-react";
 import {
   CANVAS_W,
   CANVAS_H,
   DATA_BLOCKS,
   type Camera,
+  type ContentItem,
   type ElementType,
+  type PlaylistItem,
   type Template,
   type TemplateElement,
 } from "@newsroller/shared";
 import { templatesApi } from "../lib/templates";
 import { camerasApi } from "../lib/cameras";
+import { contentItems } from "../lib/content-items";
+import { playlist } from "../lib/playlist";
 import { uploadMedia } from "../lib/content";
+import { TIPOS } from "../lib/tipos";
+import { useNavigate } from "react-router-dom";
 
 const DISPLAY_W = 760;
 const SCALE = DISPLAY_W / CANVAS_W;
@@ -41,6 +47,80 @@ function newElement(type: ElementType, z: number): TemplateElement {
 }
 
 export function Plantillas() {
+  const [editing, setEditing] = useState(false);
+  const [items, setItems] = useState<ContentItem[]>([]);
+  const [live, setLive] = useState<PlaylistItem[]>([]);
+  const [err, setErr] = useState<string | null>(null);
+  const navigate = useNavigate();
+
+  const load = () =>
+    Promise.all([contentItems.list(), playlist.list()])
+      .then(([its, pl]) => { setItems(its); setLive(pl); })
+      .catch((e) => setErr(e.message));
+  useEffect(() => { void load(); }, []);
+
+  if (editing) return <PlantillaEditor onBack={() => { setEditing(false); void load(); }} />;
+
+  // id de content_item → tipo (para contar lo que está al aire)
+  const idType = new Map(items.map((i) => [i.id, i.type]));
+  const stats = (type: string) => {
+    const total = items.filter((i) => i.type === type).length;
+    const activos = items.filter((i) => i.type === type && i.active).length;
+    const aire = live.filter((p) => p.content_type === "content_item" && p.content_id && idType.get(p.content_id) === type).length;
+    return { total, activos, aire };
+  };
+
+  return (
+    <>
+      <div className="page-head">
+        <div>
+          <h1>Plantillas</h1>
+          <p>Todas las placas del canal. Entrá a una para cargar su contenido, o creá una plantilla nueva.</p>
+        </div>
+        <button className="btn primary" onClick={() => setEditing(true)}>
+          <Plus size={16} /> Crear plantilla
+        </button>
+      </div>
+
+      {err && <div className="alert error">{err}</div>}
+
+      <div className="tipo-grid">
+        {TIPOS.map((t) => {
+          const s = stats(t.type);
+          return (
+            <button key={t.type} className="tipo-card" onClick={() => navigate(`/contenido/${t.type}`)} style={{ textAlign: "left", cursor: "pointer" }}>
+              <span className="tipo-ic"><t.Icon size={22} /></span>
+              <span className="tipo-main" style={{ flex: 1 }}>
+                <span className="tipo-name">{t.label}{!t.ready && <span className="tipo-soon">pronto</span>}</span>
+                <span className="tipo-desc">{t.desc}</span>
+                <span className="tpl-stats">
+                  <span className="tpl-stat" title="Contenidos activos">
+                    <b>{s.activos}</b> activo{s.activos === 1 ? "" : "s"}
+                  </span>
+                  <span className={"tpl-stat" + (s.aire > 0 ? " on" : "")} title="Al aire ahora">
+                    {s.aire > 0 && <span className="live-dot" />}<b>{s.aire}</b> al aire
+                  </span>
+                </span>
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="page-head" style={{ marginTop: 28 }}>
+        <div>
+          <h2 style={{ margin: 0, fontSize: 17 }}>Plantillas personalizadas</h2>
+          <p style={{ margin: "2px 0 0" }}>Diseñadas a mano en el editor.</p>
+        </div>
+        <button className="btn" onClick={() => setEditing(true)}>
+          <PenTool size={15} /> Abrir editor
+        </button>
+      </div>
+    </>
+  );
+}
+
+function PlantillaEditor({ onBack }: { onBack: () => void }) {
   const [list, setList] = useState<Template[]>([]);
   const [cur, setCur] = useState<Template | null>(null);
   const [selId, setSelId] = useState<string | null>(null);
@@ -151,14 +231,17 @@ export function Plantillas() {
     <>
       <div className="page-head">
         <div>
-          <h1>Plantillas</h1>
+          <h1>Editor de plantillas</h1>
           <p>Diseñá tus placas: fondo + elementos que acomodás a mano. Después las agregás a la Programación.</p>
         </div>
-        {cur && (
-          <button className="btn primary" onClick={save} disabled={saving}>
-            <Save size={16} /> {saving ? "Guardando…" : "Guardar"}
-          </button>
-        )}
+        <div className="row" style={{ gap: 8 }}>
+          <button className="btn" onClick={onBack}><ArrowLeft size={16} /> Volver</button>
+          {cur && (
+            <button className="btn primary" onClick={save} disabled={saving}>
+              <Save size={16} /> {saving ? "Guardando…" : "Guardar"}
+            </button>
+          )}
+        </div>
       </div>
 
       {err && <div className="alert error">{err}</div>}

@@ -55,6 +55,13 @@ button { font-family: inherit; cursor: pointer; }
 .tipo-main { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
 .tipo-name { font-weight: 600; display: flex; align-items: center; }
 .tipo-desc { font-size: 12.5px; color: var(--muted); line-height: 1.35; }
+button.tipo-card { font: inherit; color: inherit; width: 100%; }
+.tpl-stats { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+.tpl-stat { display: inline-flex; align-items: center; gap: 5px; font-size: 11.5px; color: var(--muted); background: var(--bg); border: 1px solid var(--border); border-radius: 999px; padding: 2px 9px; }
+.tpl-stat b { color: var(--text); font-weight: 700; }
+.tpl-stat.on { background: #fdecec; border-color: #f6c9c9; color: #c0392b; }
+.tpl-stat.on b { color: #c0392b; }
+.tpl-stat .live-dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
 .pill { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; color: var(--text); background: var(--accent-weak); border: 1px solid var(--border); border-radius: 999px; padding: 4px 10px; }
 .topbar-right { display: flex; align-items: center; gap: 10px; min-width: 190px; justify-content: flex-end; }
 .topbar-right .role-pill { margin: 0; }
