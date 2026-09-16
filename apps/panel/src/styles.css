@@ -35,6 +35,27 @@ button { font-family: inherit; cursor: pointer; }
 .topnav .nav-item { flex-direction: column; align-items: center; gap: 3px; min-width: 74px; padding: 8px 14px; border-radius: 11px; color: var(--muted); font-size: 11px; font-weight: 600; }
 .topnav .nav-item:hover { background: var(--bg); color: var(--text); }
 .topnav .nav-item.active { background: var(--text); color: #fff; }
+/* submenú Nuevo Contenido */
+.topnav .nav-dd { position: relative; }
+.topnav .nav-dd > .nav-item { background: none; border: 0; cursor: pointer; font-family: inherit; }
+.nav-lbl { display: inline-flex; align-items: center; gap: 2px; }
+.dd-caret { opacity: .55; }
+.nav-dd.open > .nav-item { background: var(--text); color: #fff; }
+.nav-menu { position: absolute; top: calc(100% + 10px); left: 50%; transform: translateX(-50%); background: var(--surface); border: 1px solid var(--border); border-radius: 14px; box-shadow: var(--shadow); padding: 6px; min-width: 250px; display: flex; flex-direction: column; gap: 2px; z-index: 50; }
+.nav-menu-item { display: flex; align-items: center; gap: 10px; padding: 9px 11px; border-radius: 9px; color: var(--text); font-size: 13px; font-weight: 500; }
+.nav-menu-item:hover { background: var(--bg); }
+.nav-menu-item.active { background: var(--accent-weak); color: var(--accent); }
+.nav-menu-item > span:first-of-type { flex: 1; }
+.tipo-soon { font-size: 9px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); background: var(--bg); border: 1px solid var(--border); border-radius: 999px; padding: 1px 6px; margin-left: 8px; }
+/* hub de tipos */
+.tipo-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 14px; }
+.tipo-card { display: flex; gap: 12px; align-items: flex-start; padding: 16px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); transition: transform .08s ease, border-color .12s ease; }
+.tipo-card:hover { border-color: var(--accent); transform: translateY(-1px); }
+.tipo-ic { width: 40px; height: 40px; flex: none; border-radius: 10px; background: var(--accent-weak); color: var(--accent); display: flex; align-items: center; justify-content: center; }
+.tipo-main { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.tipo-name { font-weight: 600; display: flex; align-items: center; }
+.tipo-desc { font-size: 12.5px; color: var(--muted); line-height: 1.35; }
+.pill { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; color: var(--text); background: var(--accent-weak); border: 1px solid var(--border); border-radius: 999px; padding: 4px 10px; }
 .topbar-right { display: flex; align-items: center; gap: 10px; min-width: 190px; justify-content: flex-end; }
 .topbar-right .role-pill { margin: 0; }
 .topbar-right .role-pill.editor { background: #eef1f6; color: var(--muted); }
