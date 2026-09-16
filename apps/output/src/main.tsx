@@ -23,6 +23,27 @@ const DEMOS: Record<string, { type: string; data: Record<string, any> }> = {
       media_kind: "image",
     },
   },
+  placas: {
+    type: "placas",
+    data: {
+      kicker: "NOTICIAS",
+      title: "El Gobierno anunció un **nuevo esquema** cambiario para las próximas semanas",
+      body: "La medida busca contener la brecha y llega tras una semana de fuerte demanda de divisas en el mercado.",
+      media_url: null,
+      source: "somosciclico.com",
+    },
+  },
+  placas_media: {
+    type: "placas",
+    data: {
+      kicker: "CULTURA",
+      title: "EPA! con Pichu Straneo y los creadores del álbum de figuritas de Madres y Abuelas",
+      body: "Marcela Feudale y Alén Lodeiro tuvieron un lunes con mucho color, emoción y cultura.",
+      media_url: "https://picsum.photos/seed/plc/900/600",
+      media_kind: "image",
+      source: "somosciclico.com",
+    },
+  },
 };
 
 function DemoStage({ id }: { id: string }) {

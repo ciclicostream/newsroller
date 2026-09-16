@@ -29,6 +29,10 @@ export const env = {
   tickerFeedUrl: str("TICKER_FEED_URL", "https://somosciclico.com/feed/"),
   tickerFeedMs: num("TICKER_FEED_MS", 10 * 60_000),
 
+  // Notas del sitio de Cíclico (WordPress REST API).
+  ciclicoWebUrl: str("CICLICO_WEB_URL", "https://somosciclico.com/wp-json/wp/v2/posts"),
+  ciclicoWebMs: num("CICLICO_WEB_MS", 10 * 60_000),
+
   // Windy Webcams (para buscar cámaras por ciudad).
   windyApiKey: str("WINDY_API_KEY"),
 

@@ -11,6 +11,7 @@ import {
   MonitorPlay,
   Sparkles,
   CloudSun,
+  Newspaper,
   type LucideIcon,
 } from "lucide-react";
 
@@ -26,6 +27,7 @@ export interface TipoDef {
 // Shorts, Cámaras y Programas tienen su propia sección (se alimentan de APIs).
 export const TIPOS: TipoDef[] = [
   { type: "ultima_hora", label: "Última Hora", desc: "Placa roja de alerta con foto o video opcional", Icon: Siren, ready: true },
+  { type: "placas", label: "Placas", desc: "Noticia: escrita a mano o traída de Cíclico", Icon: Newspaper, ready: true },
   { type: "dolar", label: "Dólar", desc: "Cotizaciones (API o manual)", Icon: DollarSign },
   { type: "cifras", label: "Cifras", desc: "Dato destacado con fuente", Icon: BarChart3 },
   { type: "efemerides", label: "Efemérides", desc: "Fecha + cuerpo + imagen", Icon: CalendarDays },

@@ -5,6 +5,7 @@ import type { ContentItem } from "@newsroller/shared";
 import { TIPOS, TIPO_BY_KEY } from "../lib/tipos";
 import { contentItems } from "../lib/content-items";
 import { UltimaHora } from "./UltimaHora";
+import { Placas } from "./Placas";
 
 export function NuevoContenido() {
   const { type } = useParams();
@@ -34,8 +35,9 @@ export function NuevoContenido() {
     );
   }
 
-  // Última Hora: formulario real
+  // Formularios reales
   if (type === "ultima_hora") return <UltimaHora />;
+  if (type === "placas") return <Placas />;
 
   // Resto: placeholder + listado de lo ya cargado
   const def = TIPO_BY_KEY[type];

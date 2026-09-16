@@ -121,6 +121,7 @@ export type ContentItemType =
   | "promos"
   | "camaras"
   | "clima"
+  | "placas"
   | (string & {});
 
 export interface ContentItem {
@@ -139,6 +140,16 @@ export interface UltimaHoraData {
   text: string;                       // bajada (soporta **markdown** para negrita)
   media_url?: string | null;          // foto o video opcional
   media_kind?: "image" | "video" | null;
+}
+
+// Datos del tipo "placas" (noticia genérica: escrita a mano o traída de Cíclico).
+export interface PlacasData {
+  title: string;                      // titular (admite **negrita**)
+  body?: string;                      // bajada / cuerpo
+  kicker?: string;                    // volanta / categoría (ej. NOTICIAS)
+  media_url?: string | null;          // foto opcional
+  media_kind?: "image" | "video" | null;
+  source?: string;                    // fuente (ej. somosciclico.com)
 }
 
 // ---- Plantillas propias (editor visual) ----

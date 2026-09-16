@@ -17,6 +17,7 @@ const TYPES = new Set([
   "promos",
   "camaras",
   "clima",
+  "placas",
 ]);
 
 // Banco de contenidos tipados (ultima_hora, etc.). Cualquiera autenticado.
