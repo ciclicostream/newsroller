@@ -5,7 +5,7 @@ import { ItemView } from "./templates/items";
 // Preview de un contenido tipado (MONITOR del panel). Renderiza una placa, con su animación,
 // y la reproduce en loop para que el operador la vea antes de mandarla al aire.
 export function Preview({ id }: { id: string }) {
-  const [item, setItem] = useState<{ type: string; data: Record<string, any> } | null>(null);
+  const [item, setItem] = useState<{ type: string; data: Record<string, any>; duration_sec?: number } | null>(null);
   const [scale, setScale] = useState(1);
   const [loop, setLoop] = useState(0);
 
@@ -18,6 +18,8 @@ export function Preview({ id }: { id: string }) {
     return () => { on = false; };
   }, [id]);
 
+  const dur = Math.max(4, item?.duration_sec ?? 8);
+
   useEffect(() => {
     const fit = () => setScale(Math.min(window.innerWidth / 1920, window.innerHeight / 1080));
     fit();
@@ -25,16 +27,16 @@ export function Preview({ id }: { id: string }) {
     return () => window.removeEventListener("resize", fit);
   }, []);
 
-  // Replay de la animación cada ~9s.
+  // Replay de la animación cada ciclo (duración + margen para ver entrada y salida).
   useEffect(() => {
-    const t = setInterval(() => setLoop((n) => n + 1), 9000);
+    const t = setInterval(() => setLoop((n) => n + 1), (dur + 1) * 1000);
     return () => clearInterval(t);
-  }, []);
+  }, [dur]);
 
   return (
     <div className="viewport">
       <div className="stage" style={{ transform: `scale(${scale})` }}>
-        {item ? <ItemView key={loop} type={item.type} data={item.data} /> : null}
+        {item ? <ItemView key={loop} type={item.type} data={item.data} durationSec={dur} /> : null}
       </div>
     </div>
   );

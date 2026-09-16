@@ -91,9 +91,9 @@ export function outputRouter(): Router {
   r.get("/item/:id", async (req, res) => {
     const sb = getSupabase();
     if (!sb) return res.status(404).json({ error: "sin base" });
-    const { data } = await sb.from("content_items").select("type, data").eq("id", req.params.id).maybeSingle();
+    const { data } = await sb.from("content_items").select("type, data, duration_sec").eq("id", req.params.id).maybeSingle();
     if (!data) return res.status(404).json({ error: "no encontrado" });
-    res.json({ type: data.type, data: data.data });
+    res.json({ type: data.type, data: data.data, duration_sec: data.duration_sec });
   });
 
   return r;

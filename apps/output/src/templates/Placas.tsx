@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { PlacasData } from "@newsroller/shared";
-import ciclicoWhite from "../assets/ciclico-white.png";
+import fondo from "../assets/fondo-placas.jpg";
+import qrCiclico from "../assets/qr-ciclico.png";
 
 const WANT_AUDIO = typeof window !== "undefined" && new URLSearchParams(window.location.search).has("audio");
 const MESES = ["ENE", "FEB", "MAR", "ABR", "MAY", "JUN", "JUL", "AGO", "SEP", "OCT", "NOV", "DIC"];
@@ -10,11 +11,30 @@ function renderText(t: string): string {
   return esc.replace(/\*\*(.+?)\*\*/g, "<b>$1</b>");
 }
 
-// Placa de noticia genérica: se escribe a mano o se trae del sitio de Cíclico.
-export function Placas({ data }: { data: PlacasData }) {
+// Achica la fuente de un elemento hasta que entre en su alto disponible.
+function useAutoFit(ref: React.RefObject<HTMLElement>, base: number, min: number, deps: unknown[]) {
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    let px = base;
+    el.style.fontSize = px + "px";
+    let guard = 0;
+    while (el.scrollHeight > el.clientHeight && px > min && guard++ < 50) {
+      px -= 2;
+      el.style.fontSize = px + "px";
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, deps);
+}
+
+// Placa de noticia (marco estándar): volanta + título + foto a la izquierda, cuerpo a la derecha.
+export function Placas({ data, durationSec }: { data: PlacasData; durationSec?: number }) {
   const hasMedia = !!data.media_url;
   const [now, setNow] = useState(() => new Date());
   const [play, setPlay] = useState(false);
+  const [exiting, setExiting] = useState(false);
+  const titleRef = useRef<HTMLDivElement>(null);
+  const bodyRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const t = setInterval(() => setNow(new Date()), 30_000);
@@ -24,43 +44,54 @@ export function Placas({ data }: { data: PlacasData }) {
     const id = requestAnimationFrame(() => setPlay(true));
     return () => cancelAnimationFrame(id);
   }, []);
+  // Salida por fade (card por card) poco antes de que termine la duración.
+  useEffect(() => {
+    if (!durationSec) return;
+    const start = Math.max(1000, durationSec * 1000 - 1100);
+    const t = setTimeout(() => setExiting(true), start);
+    return () => clearTimeout(t);
+  }, [durationSec]);
+
+  useAutoFit(titleRef, 56, 32, [data.title]);
+  useAutoFit(bodyRef, 42, 24, [data.body]);
 
   const clock = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
   const fecha = `${now.getDate()} ${MESES[now.getMonth()]}`;
-  const kicker = (data.kicker || "NOTICIAS").toUpperCase();
+  const city = data.city || "CABA";
 
   return (
-    <div className={"pl" + (play ? " play" : "") + (hasMedia ? " has-media" : "")} style={{ position: "absolute", inset: 0 }}>
+    <div className={"pl" + (play ? " play" : "") + (exiting ? " exit" : "") + (hasMedia ? " has-media" : "")} style={{ position: "absolute", inset: 0 }}>
       <style>{CSS}</style>
-      <div className="pl-bg" />
 
+      {/* Marco persistente (no anima) */}
+      <img className="pl-bg" src={fondo} alt="" />
+      <div className="pl-clockpill">{clock} | {fecha}</div>
+      {data.temp && <div className="pl-temppill">{data.temp}<span>{city}</span></div>}
+      <div className="pl-ticker">
+        <div className="pl-track">
+          {Array.from({ length: 12 }).map((_, i) => (
+            <span key={i}>{data.title.replace(/\*\*/g, "")}</span>
+          ))}
+        </div>
+      </div>
+      <img className="pl-qr" src={qrCiclico} alt="Somos Cíclico" />
+
+      {/* Contenido (anima in/out) */}
+      {data.label && <div className="pl-date pl-card">{data.label.toUpperCase()}</div>}
+      <div className="pl-titlecard pl-card">
+        <div className="pl-title" ref={titleRef} dangerouslySetInnerHTML={{ __html: renderText(data.title) }} />
+      </div>
       {hasMedia && (
-        <div className="pl-media">
+        <div className="pl-photo pl-card">
           {data.media_kind === "video" ? (
             <video src={data.media_url!} autoPlay muted={!WANT_AUDIO} loop playsInline />
           ) : (
             <img src={data.media_url!} alt="" />
           )}
-          <div className="pl-media-grad" />
         </div>
       )}
-
-      <div className="pl-clock">{clock} | {fecha}</div>
-      <div className="pl-logo"><img src={ciclicoWhite} alt="Cíclico" /></div>
-
-      <div className="pl-content">
-        <div className="pl-kicker">{kicker}</div>
-        <div className="pl-title" dangerouslySetInnerHTML={{ __html: renderText(data.title) }} />
-        {data.body && <div className="pl-body">{data.body}</div>}
-        {data.source && <div className="pl-source">{data.source}</div>}
-      </div>
-
-      <div className="pl-ticker">
-        <div className="pl-track">
-          {Array.from({ length: 16 }).map((_, i) => (
-            <span key={i}>{kicker}</span>
-          ))}
-        </div>
+      <div className={"pl-bodycard pl-card" + (hasMedia ? "" : " tall")}>
+        <div className="pl-body" ref={bodyRef} dangerouslySetInnerHTML={{ __html: renderText(data.body ?? "") }} />
       </div>
     </div>
   );
@@ -68,39 +99,46 @@ export function Placas({ data }: { data: PlacasData }) {
 
 const CSS = `
 .pl{font-family:Inter,system-ui,sans-serif}
-.pl-bg{position:absolute;inset:0;background:radial-gradient(120% 90% at 30% 20%,#16308f 0%,#0d2168 32%,#050d33 78%,#03081f 100%)}
-.pl-clock{position:absolute;top:44px;right:52px;z-index:20;background:#fff;color:#12203a;border-radius:16px;padding:16px 26px;font-weight:800;font-size:40px;letter-spacing:.02em;box-shadow:0 6px 18px rgba(0,0,0,.18);opacity:0}
-.pl-logo{position:absolute;top:56px;left:96px;z-index:20;width:150px;opacity:0}
-.pl-logo img{display:block;width:100%;height:auto;filter:brightness(0) invert(1)}
+.pl-bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 
-.pl-media{position:absolute;right:60px;top:150px;width:860px;height:600px;border-radius:28px;overflow:hidden;background:#c9ccd2;opacity:0;transform:translateX(40px);clip-path:inset(0 0 0 100%)}
-.pl-media img,.pl-media video{width:100%;height:100%;object-fit:cover;display:block}
-.pl-media-grad{position:absolute;inset:0;background:linear-gradient(180deg,transparent 60%,rgba(3,8,31,.35) 100%)}
-
-.pl-content{position:absolute;left:96px;right:120px;bottom:184px;z-index:15;display:flex;flex-direction:column;align-items:flex-start;gap:20px;opacity:0;transform:translateY(28px)}
-.pl.has-media .pl-content{right:960px;bottom:210px}
-.pl-kicker{background:#EE220C;color:#fff;font-weight:800;font-size:32px;letter-spacing:.06em;padding:8px 22px;border-radius:10px}
-.pl-title{font-family:"Zilla Slab",Georgia,serif;font-weight:700;color:#fff;line-height:.98;font-size:118px}
-.pl.has-media .pl-title{font-size:74px}
-.pl-title b{font-weight:900}
-.pl-body{color:#dfe6ff;font-weight:500;line-height:1.14;font-size:50px;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
-.pl.has-media .pl-body{font-size:38px;-webkit-line-clamp:3}
-.pl-source{color:#8ea3e6;font-weight:700;font-size:28px;letter-spacing:.04em;text-transform:uppercase}
-
-.pl-ticker{position:absolute;left:30px;right:30px;bottom:56px;height:56px;z-index:30;background:#fff;overflow:hidden;display:flex;align-items:center;box-shadow:inset 0 0 24px rgba(0,0,0,.28), inset 0 2px 6px rgba(0,0,0,.20);opacity:0}
-.pl-ticker::before,.pl-ticker::after{content:"";position:absolute;top:0;bottom:0;width:140px;z-index:2;pointer-events:none}
-.pl-ticker::before{left:0;background:linear-gradient(90deg,rgba(0,0,0,.50) 0%,rgba(0,0,0,.18) 45%,rgba(0,0,0,0) 100%)}
-.pl-ticker::after{right:0;background:linear-gradient(270deg,rgba(0,0,0,.50) 0%,rgba(0,0,0,.18) 45%,rgba(0,0,0,0) 100%)}
-.pl-track{display:flex;white-space:nowrap;will-change:transform;animation:pl-scroll 30s linear infinite}
-.pl-track span{font-family:"Zilla Slab",Georgia,serif;font-weight:700;color:#0E0E0E;font-size:32px;letter-spacing:.02em;padding:0 26px}
+/* --- Marco (pills, ticker, QR): persistente --- */
+.pl-clockpill{position:absolute;top:78px;right:100px;z-index:20;background:linear-gradient(180deg,#3b82f6,#2f6bff);color:#fff;font-weight:800;font-size:30px;letter-spacing:.01em;padding:10px 20px;border-radius:12px;box-shadow:0 6px 16px rgba(0,0,0,.25)}
+.pl-temppill{position:absolute;top:150px;right:100px;z-index:20;background:linear-gradient(180deg,#3b82f6,#2f6bff);color:#fff;font-weight:800;font-size:34px;line-height:1;padding:12px 22px;border-radius:12px;box-shadow:0 6px 16px rgba(0,0,0,.25);text-align:center;display:flex;flex-direction:column;gap:3px}
+.pl-temppill span{font-size:22px;font-weight:700;opacity:.95}
+.pl-ticker{position:absolute;left:24px;right:24px;bottom:34px;height:60px;z-index:25;background:linear-gradient(180deg,#2456e0,#16308f);border-radius:14px;overflow:hidden;display:flex;align-items:center;box-shadow:0 8px 20px rgba(0,0,0,.28)}
+.pl-track{display:flex;white-space:nowrap;will-change:transform;animation:pl-scroll 32s linear infinite}
+.pl-track span{color:#fff;font-weight:800;font-size:30px;letter-spacing:.01em;padding:0 34px}
 @keyframes pl-scroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+.pl-qr{position:absolute;left:40px;bottom:18px;width:270px;height:auto;z-index:26;filter:drop-shadow(0 8px 18px rgba(0,0,0,.35))}
 
-.pl.play .pl-clock{animation:pl-fadeIn .5s ease .5s forwards}
-.pl.play .pl-logo{animation:pl-fadeIn .5s ease .5s forwards}
-.pl.play .pl-content{animation:pl-rise .6s cubic-bezier(.2,.8,.2,1) .35s forwards}
-.pl.play .pl-media{animation:pl-mediaIn .7s cubic-bezier(.2,.8,.2,1) .3s forwards}
-.pl.play .pl-ticker{animation:pl-fadeIn .5s ease .7s forwards}
-@keyframes pl-fadeIn{to{opacity:1}}
-@keyframes pl-rise{to{opacity:1;transform:translateY(0)}}
-@keyframes pl-mediaIn{to{opacity:1;transform:translateX(0);clip-path:inset(0 0 0 0)}}
+/* --- Cards de contenido --- */
+.pl-date{position:absolute;top:150px;right:1068px;z-index:15;background:#0b1f52;color:#fff;font-weight:800;font-size:34px;letter-spacing:.02em;padding:12px 26px;border-radius:14px;box-shadow:0 8px 20px rgba(0,0,0,.28)}
+.pl-titlecard{position:absolute;left:248px;top:232px;width:604px;height:250px;z-index:14;background:#fff;border-radius:22px;box-shadow:0 12px 30px rgba(0,0,0,.28);display:flex;align-items:center;justify-content:center;padding:26px 34px}
+.pl-title{font-weight:800;color:#1a3aa8;line-height:1.02;text-align:center;width:100%;height:100%;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.pl-title b{font-weight:900}
+.pl-photo{position:absolute;left:248px;top:505px;width:604px;height:397px;z-index:14;background:#c9ccd2;border-radius:22px;overflow:hidden;box-shadow:0 12px 30px rgba(0,0,0,.28)}
+.pl-photo img,.pl-photo video{width:100%;height:100%;object-fit:cover;display:block}
+.pl-bodycard{position:absolute;left:884px;top:175px;width:736px;height:727px;z-index:14;background:#fff;border-radius:22px;box-shadow:0 12px 30px rgba(0,0,0,.28);padding:44px 48px}
+.pl-body{color:#101317;font-weight:500;line-height:1.24;white-space:pre-wrap;width:100%;height:100%;overflow:hidden}
+.pl-body b{font-weight:800}
+
+/* Sin foto: el título ocupa toda la columna izquierda y el cuerpo también baja */
+.pl.has-media .pl-titlecard{}
+.pl:not(.has-media) .pl-titlecard{height:300px}
+
+/* --- Entrada: card por card, de afuera hacia adentro --- */
+.pl-card{opacity:0}
+.pl.play .pl-date{animation:pl-inLeft .6s cubic-bezier(.2,.8,.2,1) .15s forwards}
+.pl.play .pl-titlecard{animation:pl-inLeft .6s cubic-bezier(.2,.8,.2,1) .30s forwards}
+.pl.play .pl-photo{animation:pl-inLeft .6s cubic-bezier(.2,.8,.2,1) .45s forwards}
+.pl.play .pl-bodycard{animation:pl-inRight .6s cubic-bezier(.2,.8,.2,1) .60s forwards}
+@keyframes pl-inLeft{from{opacity:0;transform:translateX(-140px)}to{opacity:1;transform:translateX(0)}}
+@keyframes pl-inRight{from{opacity:0;transform:translateX(160px)}to{opacity:1;transform:translateX(0)}}
+
+/* --- Salida: fade una a una --- */
+.pl.exit .pl-date{animation:pl-out .5s ease 0s forwards}
+.pl.exit .pl-titlecard{animation:pl-out .5s ease .12s forwards}
+.pl.exit .pl-photo{animation:pl-out .5s ease .24s forwards}
+.pl.exit .pl-bodycard{animation:pl-out .5s ease .36s forwards}
+@keyframes pl-out{from{opacity:1}to{opacity:0}}
 `;

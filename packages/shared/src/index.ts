@@ -144,12 +144,14 @@ export interface UltimaHoraData {
 
 // Datos del tipo "placas" (noticia genérica: escrita a mano o traída de Cíclico).
 export interface PlacasData {
-  title: string;                      // titular (admite **negrita**)
-  body?: string;                      // bajada / cuerpo
-  kicker?: string;                    // volanta / categoría (ej. NOTICIAS)
-  media_url?: string | null;          // foto opcional
+  title: string;                      // titular (card izquierda, admite **negrita**)
+  body?: string;                      // cuerpo largo (card derecha)
+  label?: string;                     // volanta / fecha (pill sobre la card de título)
+  media_url?: string | null;          // foto opcional (card izquierda, debajo del título)
   media_kind?: "image" | "video" | null;
-  source?: string;                    // fuente (ej. somosciclico.com)
+  temp?: string;                      // temperatura pill (ej. "13C")
+  city?: string;                      // ciudad de la temperatura (ej. "CABA")
+  source?: string;                    // fuente (opcional, no se muestra)
 }
 
 // ---- Plantillas propias (editor visual) ----
