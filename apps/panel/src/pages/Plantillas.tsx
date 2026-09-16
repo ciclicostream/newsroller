@@ -87,15 +87,22 @@ export function Plantillas() {
       <div className="tipo-grid">
         {TIPOS.map((t) => {
           const s = stats(t.type);
+          const usable = s.total > 0;
           return (
-            <button key={t.type} className="tipo-card" onClick={() => navigate(`/plantillas/${t.type}`)} style={{ textAlign: "left", cursor: "pointer" }}>
+            <button
+              key={t.type}
+              className={"tipo-card" + (usable ? "" : " empty")}
+              onClick={usable ? () => navigate(`/plantillas/${t.type}`) : undefined}
+              disabled={!usable}
+              title={usable ? "" : "Todavía no hay contenidos con esta plantilla"}
+            >
               <span className="tipo-ic"><t.Icon size={22} /></span>
               <span className="tipo-main" style={{ flex: 1 }}>
                 <span className="tipo-name">{t.label}{!t.ready && <span className="tipo-soon">pronto</span>}</span>
                 <span className="tipo-desc">{t.desc}</span>
                 <span className="tpl-stats">
-                  <span className="tpl-stat" title="Contenidos activos">
-                    <b>{s.activos}</b> activo{s.activos === 1 ? "" : "s"}
+                  <span className="tpl-stat" title="Contenidos generados con esta plantilla">
+                    <b>{s.total}</b> contenido{s.total === 1 ? "" : "s"}
                   </span>
                   <span className={"tpl-stat" + (s.aire > 0 ? " on" : "")} title="Al aire ahora">
                     {s.aire > 0 && <span className="live-dot" />}<b>{s.aire}</b> al aire

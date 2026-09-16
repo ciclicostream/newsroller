@@ -4,6 +4,7 @@ import { ArrowLeft, Plus, Trash2 } from "lucide-react";
 import type { ContentItem, PlaylistItem } from "@newsroller/shared";
 import { contentItems } from "../lib/content-items";
 import { playlist } from "../lib/playlist";
+import { OUTPUT_BASE } from "../lib/parrilla";
 import { TIPO_BY_KEY } from "../lib/tipos";
 
 function titleOf(it: ContentItem): string {
@@ -41,7 +42,7 @@ export function PlantillaContenidos() {
       <div className="page-head">
         <div>
           <h1>{def?.label ?? type}</h1>
-          <p>Contenidos generados con esta plantilla. Para crear uno nuevo andá a Nuevo Contenido.</p>
+          <p>Contenidos que usaron esta plantilla. Para crear uno nuevo andá a Nuevo Contenido.</p>
         </div>
         <div className="row" style={{ gap: 8 }}>
           <Link to="/plantillas" className="btn"><ArrowLeft size={16} /> Plantillas</Link>
@@ -53,43 +54,49 @@ export function PlantillaContenidos() {
 
       {items.length === 0 ? (
         <div className="card" style={{ padding: 22, textAlign: "center" }}>
-          <div className="muted-note" style={{ marginBottom: 12 }}>Todavía no hay contenidos con esta plantilla.</div>
-          <Link to={`/contenido/${type}`} className="btn primary" style={{ display: "inline-flex" }}>
-            <Plus size={16} /> Crear el primero
-          </Link>
+          <div className="muted-note">Todavía no hay contenidos generados con esta plantilla.</div>
         </div>
       ) : (
-        <div className="card">
+        <div className="prev-grid">
           {items.map((it) => {
             const onAir = aireIds.has(it.id);
             return (
-              <div className="placa-item" key={it.id}>
-                <div className="placa-main">
-                  <div className="placa-title">{titleOf(it)}</div>
-                  <div className="placa-body">
+              <div className={"prev-card" + (onAir ? " on-air" : "")} key={it.id}>
+                <div className="prev-frame">
+                  <iframe
+                    src={`${OUTPUT_BASE}/output?preview=${it.id}`}
+                    title={titleOf(it)}
+                    scrolling="no"
+                    tabIndex={-1}
+                  />
+                  <div className="prev-mask" />
+                  {onAir && <span className="prev-air"><span className="live-dot" /> AL AIRE</span>}
+                </div>
+                <div className="prev-body">
+                  <div className="prev-title" title={titleOf(it)}>{titleOf(it)}</div>
+                  <div className="muted-note" style={{ fontSize: 11 }}>
                     {it.duration_sec}s · {new Date(it.created_at).toLocaleDateString("es-AR")}
                   </div>
-                </div>
-                <div className="row" style={{ gap: 8 }}>
-                  {onAir && <span className="tpl-stat on"><span className="live-dot" /> al aire</span>}
-                  <button
-                    className={"toggle-pill" + (it.in_parrilla ? " on" : "")}
-                    onClick={() => toggle(it, "in_parrilla")}
-                    title="Disponible en la parrilla"
-                  >
-                    {it.in_parrilla ? "En parrilla" : "Fuera de parrilla"}
-                  </button>
-                  <button
-                    className={"toggle-pill" + (it.active ? " on" : "")}
-                    onClick={() => toggle(it, "active")}
-                    title="Activo"
-                  >
-                    {it.active && <span className="live-dot" />}
-                    {it.active ? "Activo" : "Inactivo"}
-                  </button>
-                  <button className="icon-btn" onClick={() => remove(it)} aria-label="Eliminar">
-                    <Trash2 size={16} />
-                  </button>
+                  <div className="prev-actions">
+                    <button
+                      className={"toggle-pill" + (it.in_parrilla ? " on" : "")}
+                      onClick={() => toggle(it, "in_parrilla")}
+                      title="Disponible en la parrilla"
+                    >
+                      {it.in_parrilla ? "En parrilla" : "Fuera"}
+                    </button>
+                    <button
+                      className={"toggle-pill" + (it.active ? " on" : "")}
+                      onClick={() => toggle(it, "active")}
+                      title="Activo"
+                    >
+                      {it.active && <span className="live-dot" />}
+                      {it.active ? "Activo" : "Inactivo"}
+                    </button>
+                    <button className="icon-btn" onClick={() => remove(it)} aria-label="Eliminar" style={{ marginLeft: "auto" }}>
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
                 </div>
               </div>
             );
