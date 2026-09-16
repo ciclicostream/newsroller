@@ -11,6 +11,7 @@ import { Shorts } from "./pages/Shorts";
 import { Programas } from "./pages/Programas";
 import { Banco } from "./pages/Banco";
 import { Reportes } from "./pages/Reportes";
+import { Ajustes } from "./pages/Ajustes";
 import { Users } from "./pages/Users";
 
 function Protected({ children, adminOnly }: { children: React.ReactNode; adminOnly?: boolean }) {
@@ -35,6 +36,7 @@ export function App() {
       <Route path="/programas" element={<Protected><Programas /></Protected>} />
       <Route path="/banco" element={<Protected><Banco /></Protected>} />
       <Route path="/reportes" element={<Protected><Reportes /></Protected>} />
+      <Route path="/ajustes" element={<Protected><Ajustes /></Protected>} />
       <Route path="/usuarios" element={<Protected adminOnly><Users /></Protected>} />
     </Routes>
   );

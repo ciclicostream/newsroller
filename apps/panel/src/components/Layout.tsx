@@ -6,11 +6,8 @@ import {
   LayoutTemplate,
   Video,
   Radio,
-  Youtube,
-  Tv,
-  Images,
   BarChart3,
-  Users as UsersIcon,
+  Settings,
   LogOut,
   ChevronDown,
 } from "lucide-react";
@@ -30,11 +27,8 @@ const NAV: NavDef[] = [
   { to: "/plantillas", label: "Plantillas", icon: <LayoutTemplate size={18} /> },
   { to: "/camaras", label: "Cámaras", icon: <Video size={18} /> },
   { to: "/fuentes", label: "Fuentes", icon: <Radio size={18} /> },
-  { to: "/shorts", label: "Shorts", icon: <Youtube size={18} /> },
-  { to: "/programas", label: "Programas", icon: <Tv size={18} /> },
-  { to: "/banco", label: "Banco", icon: <Images size={18} /> },
   { to: "/reportes", label: "Reportes", icon: <BarChart3 size={18} /> },
-  { to: "/usuarios", label: "Usuarios", icon: <UsersIcon size={18} />, adminOnly: true },
+  { to: "/ajustes", label: "Ajustes", icon: <Settings size={18} /> },
 ];
 
 export function Layout({ children }: { children: ReactNode }) {
