@@ -170,6 +170,24 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 6px
 .cam-play { position: absolute; right: 8px; bottom: 8px; width: 30px; height: 30px; border-radius: 50%; border: 0; background: rgba(15,20,32,.72); color: #fff; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 2; }
 .cam-play:hover { background: rgba(15,20,32,.92); }
 .cam-type { font-size: 9px; font-weight: 800; letter-spacing: .05em; color: var(--muted); background: var(--bg); border: 1px solid var(--border); border-radius: 999px; padding: 1px 6px; margin-left: 8px; }
+/* Fuentes / APIs */
+.src-row { border-bottom: 1px solid var(--border); }
+.src-row:last-child { border-bottom: 0; }
+.src-head { display: flex; align-items: center; gap: 10px; width: 100%; background: none; border: 0; padding: 12px 10px; cursor: pointer; font: inherit; color: var(--text); text-align: left; }
+.src-head:hover { background: var(--bg); border-radius: 8px; }
+.src-caret { color: var(--muted); transition: transform .15s ease; flex: none; }
+.src-caret.open { transform: rotate(90deg); }
+.src-label { font-weight: 600; }
+.src-meta { font-size: 12px; color: var(--muted); }
+.src-meta.err { color: #c0392b; margin-left: auto; }
+.src-detail { padding: 6px 12px 16px 36px; }
+.pl-array { display: flex; flex-direction: column; gap: 6px; }
+.pl-item { background: var(--bg); border: 1px solid var(--border); border-radius: 9px; padding: 8px 10px; }
+.pl-obj { display: flex; flex-wrap: wrap; gap: 6px 18px; }
+.pl-field { display: flex; flex-direction: column; gap: 1px; min-width: 90px; }
+.pl-key { font-size: 10px; font-weight: 700; letter-spacing: .03em; text-transform: uppercase; color: var(--muted); }
+.pl-val { font-size: 13px; color: var(--text); font-variant-numeric: tabular-nums; word-break: break-word; }
+.pl-null { color: var(--muted); }
 .short-thumb { position: relative; height: 200px; background: #0f1420 center/cover no-repeat; display: flex; align-items: center; justify-content: center; color: #6b7688; }
 .short-thumb img { width: 100%; height: 100%; object-fit: cover; }
 .short-dur { position: absolute; bottom: 8px; right: 8px; background: rgba(0,0,0,.7); color: #fff; font-size: 11px; padding: 2px 7px; border-radius: 6px; }

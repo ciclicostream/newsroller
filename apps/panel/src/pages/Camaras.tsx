@@ -37,12 +37,6 @@ export function Camaras() {
       setErr(e instanceof Error ? e.message : "error");
     }
   }
-  // Marcar una cámara como activa (y desactivar las demás).
-  async function setActive(cam: Camera) {
-    await Promise.all(items.filter((c) => c.active && c.id !== cam.id).map((c) => camerasApi.patch(c.id, { active: false })));
-    await camerasApi.patch(cam.id, { active: !cam.active });
-    await load();
-  }
   async function remove(cam: Camera) {
     if (!confirm(`¿Eliminar la cámara "${cam.name}"?`)) return;
     await camerasApi.remove(cam.id);
@@ -103,10 +97,6 @@ export function Camaras() {
                     <span className="cam-type">{c.type.toUpperCase()}</span>
                   </div>
                   <div className="asset-actions">
-                    <button className={"toggle-pill" + (c.active ? " on" : "")} onClick={() => setActive(c)}>
-                      {c.active && <span className="live-dot" />}
-                      {c.active ? "Al aire" : "Poner al aire"}
-                    </button>
                     <button className="icon-btn" onClick={() => remove(c)} aria-label="Eliminar"><Trash2 size={16} /></button>
                   </div>
                 </div>
