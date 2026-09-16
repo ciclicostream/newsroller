@@ -104,7 +104,42 @@ export interface Short {
 
 // ---- Programación (playlist) + plantillas ----
 
-export type ContentType = "short" | "placa" | "ad" | "background" | "data" | "template";
+export type ContentType = "short" | "placa" | "ad" | "background" | "data" | "template" | "content_item";
+
+// ---- Banco de contenidos tipados 2026 ----
+export type ContentItemType =
+  | "ultima_hora"
+  | "dolar"
+  | "cifras"
+  | "efemerides"
+  | "cartelera"
+  | "declaraciones"
+  | "shorts"
+  | "informe"
+  | "publicidad"
+  | "video_full"
+  | "promos"
+  | "camaras"
+  | "clima"
+  | (string & {});
+
+export interface ContentItem {
+  id: string;
+  type: ContentItemType;
+  data: Record<string, any>; // campos propios del tipo
+  duration_sec: number;
+  active: boolean;
+  in_parrilla: boolean; // disponible en la lista de la parrilla
+  sort: number;
+  created_at: string;
+}
+
+// Datos del tipo "ultima_hora".
+export interface UltimaHoraData {
+  text: string;                       // bajada (soporta **markdown** para negrita)
+  media_url?: string | null;          // foto o video opcional
+  media_kind?: "image" | "video" | null;
+}
 
 // ---- Plantillas propias (editor visual) ----
 export type ElementType = "text" | "image" | "video" | "weather" | "data" | "logo" | "shape" | "camera";

@@ -4,6 +4,7 @@ import { ProtectedRoute } from "./components/ProtectedRoute";
 import { Login } from "./pages/Login";
 import { Dashboard } from "./pages/Dashboard";
 import { Content } from "./pages/Content";
+import { UltimaHora } from "./pages/UltimaHora";
 import { Plantillas } from "./pages/Plantillas";
 import { Camaras } from "./pages/Camaras";
 import { Programacion } from "./pages/Programacion";
@@ -24,6 +25,7 @@ export function App() {
       <Route path="/login" element={<Login />} />
       <Route path="/" element={<Protected><Dashboard /></Protected>} />
       <Route path="/contenido" element={<Protected><Content /></Protected>} />
+      <Route path="/ultima-hora" element={<Protected><UltimaHora /></Protected>} />
       <Route path="/plantillas" element={<Protected><Plantillas /></Protected>} />
       <Route path="/camaras" element={<Protected><Camaras /></Protected>} />
       <Route path="/programacion" element={<Protected><Programacion /></Protected>} />

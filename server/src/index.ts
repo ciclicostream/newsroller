@@ -13,7 +13,9 @@ import { sourcesRouter } from "./routes/sources.js";
 import { meRouter } from "./routes/me.js";
 import { usersRouter } from "./routes/users.js";
 import { contentRouter } from "./routes/content.js";
+import { contentItemsRouter } from "./routes/content-items.js";
 import { playlistRouter } from "./routes/playlist.js";
+import { parrillaRouter } from "./routes/parrilla.js";
 import { outputRouter } from "./routes/output.js";
 import { templatesRouter } from "./routes/templates.js";
 import { getStore } from "./db/store.js";
@@ -48,7 +50,9 @@ app.use("/api", meRouter());
 // Cada router en su sub-ruta: así el requireAdmin de usuarios NO afecta a contenido.
 app.use("/api/users", usersRouter());
 app.use("/api/content", contentRouter());
+app.use("/api/content-items", contentItemsRouter());
 app.use("/api/playlist", playlistRouter());
+app.use("/api/parrilla", parrillaRouter());
 app.use("/api/templates", templatesRouter());
 app.use("/api/output", outputRouter()); // público (sin auth) para vMix
 

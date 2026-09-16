@@ -1,0 +1,168 @@
+import { useEffect, useRef, useState } from "react";
+import { Plus, Trash2, Check, Loader2, Image as ImageIcon, Video, X } from "lucide-react";
+import type { ContentItem, UltimaHoraData } from "@newsroller/shared";
+import { contentItems } from "../lib/content-items";
+import { uploadMedia } from "../lib/content";
+
+const MAX = 200;
+
+export function UltimaHora() {
+  const [items, setItems] = useState<ContentItem[]>([]);
+  const [err, setErr] = useState<string | null>(null);
+  const [msg, setMsg] = useState<string | null>(null);
+  const [text, setText] = useState("");
+  const [dur, setDur] = useState(8);
+  const [mediaUrl, setMediaUrl] = useState<string | null>(null);
+  const [mediaKind, setMediaKind] = useState<"image" | "video" | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  const load = () => contentItems.list("ultima_hora").then(setItems).catch((e) => setErr(e.message));
+  useEffect(() => {
+    void load();
+  }, []);
+
+  async function onFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setErr(null);
+    setUploading(true);
+    try {
+      const url = await uploadMedia(file, "ad");
+      setMediaUrl(url);
+      setMediaKind(file.type.startsWith("video/") ? "video" : "image");
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "error subiendo");
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  function clearMedia() {
+    setMediaUrl(null);
+    setMediaKind(null);
+    if (fileRef.current) fileRef.current.value = "";
+  }
+
+  async function save(e: React.FormEvent) {
+    e.preventDefault();
+    setErr(null);
+    setMsg(null);
+    if (!text.trim()) return setErr("El texto es obligatorio.");
+    setSaving(true);
+    try {
+      const data: UltimaHoraData = { text: text.trim().slice(0, MAX), media_url: mediaUrl, media_kind: mediaKind };
+      await contentItems.create({ type: "ultima_hora", data, duration_sec: dur });
+      setText("");
+      setDur(8);
+      clearMedia();
+      setMsg("Guardado en el banco.");
+      await load();
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "error");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function remove(it: ContentItem) {
+    if (!confirm("¿Eliminar esta placa de Última Hora?")) return;
+    await contentItems.remove(it.id);
+    await load();
+  }
+
+  async function toggleDisponible(it: ContentItem) {
+    setErr(null);
+    try {
+      await contentItems.patch(it.id, { in_parrilla: !(it.in_parrilla !== false) });
+      await load();
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "error");
+    }
+  }
+
+  return (
+    <>
+      <div className="page-head">
+        <div>
+          <h1>Última Hora</h1>
+          <p>Placa de alerta (roja). Texto obligatorio (máx. {MAX}, admite **negrita** con asteriscos). Foto o video opcional: sin recurso sale a pantalla completa; con recurso, a un lado.</p>
+        </div>
+      </div>
+
+      {err && <div className="alert error">{err}</div>}
+      {msg && <div className="alert">{msg}</div>}
+
+      <div style={{ display: "grid", gridTemplateColumns: "360px 1fr", gap: 20, alignItems: "start" }}>
+        <form className="card" style={{ padding: 18 }} onSubmit={save}>
+          <div style={{ fontWeight: 500, marginBottom: 14 }}>Nueva placa</div>
+
+          <div className="field">
+            <label>Texto de la noticia</label>
+            <textarea
+              value={text}
+              onChange={(e) => setText(e.target.value.slice(0, MAX))}
+              rows={4}
+              maxLength={MAX}
+              placeholder={'Abogados de Cristina presentaron una **"prueba trascendente"**…'}
+              required
+            />
+            <div style={{ fontSize: 12, color: "#6b7688", textAlign: "right", marginTop: 4 }}>{text.length}/{MAX}</div>
+          </div>
+
+          <div className="field">
+            <label>Foto o video (opcional)</label>
+            {mediaUrl ? (
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 13 }}>
+                  {mediaKind === "video" ? <Video size={16} /> : <ImageIcon size={16} />} recurso cargado
+                </span>
+                <button type="button" className="btn" onClick={clearMedia}><X size={14} /> quitar</button>
+              </div>
+            ) : (
+              <input ref={fileRef} type="file" accept="image/*,video/*" onChange={onFile} disabled={uploading} />
+            )}
+            {uploading && <div style={{ fontSize: 12, color: "#6b7688", marginTop: 4 }}><Loader2 size={13} className="spin" /> subiendo…</div>}
+          </div>
+
+          <div className="field">
+            <label>Duración (segundos)</label>
+            <input type="number" min={2} value={dur} onChange={(e) => setDur(Math.max(2, Number(e.target.value) || 8))} />
+          </div>
+
+          <button className="btn primary" type="submit" disabled={saving || uploading} style={{ width: "100%", justifyContent: "center" }}>
+            <Plus size={16} /> {saving ? "Guardando…" : "Guardar en el banco"}
+          </button>
+        </form>
+
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          {items.length === 0 && <div className="card" style={{ padding: 18, color: "#6b7688" }}>Todavía no hay placas de Última Hora.</div>}
+          {items.map((it) => {
+            const d = it.data as UltimaHoraData;
+            return (
+              <div key={it.id} className="card" style={{ padding: 16, display: "flex", gap: 16, alignItems: "center" }}>
+                <div style={{ width: 90, height: 64, borderRadius: 8, background: "#EE220C", flex: "0 0 auto", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontWeight: 800, fontSize: 12, fontFamily: "Zilla Slab, serif" }}>
+                  ÚLTIMA
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                    {(d.text ?? "").replace(/\*\*/g, "")}
+                  </div>
+                  <div style={{ fontSize: 12, color: "#6b7688", marginTop: 4, display: "flex", gap: 12 }}>
+                    <span>{d.media_url ? (d.media_kind === "video" ? "con video" : "con foto") : "solo texto (full)"}</span>
+                    <span>{it.duration_sec}s</span>
+                  </div>
+                </div>
+                <button className={"toggle-pill" + (it.in_parrilla !== false ? " on" : "")} onClick={() => toggleDisponible(it)}>
+                  {it.in_parrilla !== false && <Check size={14} />} {it.in_parrilla !== false ? "En parrilla" : "Disponible: no"}
+                </button>
+                <button className="btn" onClick={() => remove(it)}><Trash2 size={15} /></button>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </>
+  );
+}

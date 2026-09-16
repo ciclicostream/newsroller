@@ -3,8 +3,10 @@ import { LAYOUTS, type ContentType } from "@newsroller/shared";
 import { getSupabase } from "../db/supabase.js";
 import { requireAuth } from "../auth/middleware.js";
 
-const TYPES: ContentType[] = ["short", "placa", "ad", "background", "data", "template"];
+const TYPES: ContentType[] = ["short", "placa", "ad", "background", "data", "template", "content_item"];
 const TEMPLATE_IDS = new Set(LAYOUTS.map((t) => t.id));
+// Tipos cuyo layout lo define el propio contenido (no un layout del catálogo).
+const SELF_LAYOUT = new Set<ContentType>(["template", "content_item"]);
 
 export function playlistRouter(): Router {
   const r = Router();
@@ -20,9 +22,9 @@ export function playlistRouter(): Router {
   r.post("/", async (req, res) => {
     const { content_type, content_id, template, duration_sec } = req.body ?? {};
     if (!TYPES.includes(content_type)) return res.status(400).json({ error: "content_type inválido" });
-    // Los bloques de plantilla propia usan 'custom' (la plantilla en sí define el layout).
-    const tmpl = content_type === "template" ? "custom" : template;
-    if (content_type !== "template" && !TEMPLATE_IDS.has(template))
+    // Los bloques con layout propio (plantilla / contenido tipado) usan 'custom'.
+    const tmpl = SELF_LAYOUT.has(content_type) ? "custom" : template;
+    if (!SELF_LAYOUT.has(content_type) && !TEMPLATE_IDS.has(template))
       return res.status(400).json({ error: "layout inválido" });
     const dur = Number(duration_sec);
     const { data: last } = await sb().from("playlist_items").select("sort").order("sort", { ascending: false }).limit(1).maybeSingle();

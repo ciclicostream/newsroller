@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { io } from "socket.io-client";
 import { API_BASE, fetchScene, dataView, tickerText, type Block, type Scene } from "./lib/scene";
 import { TemplateView } from "./templates/render";
+import { ItemView } from "./templates/items";
 
 export function Output() {
   const [scene, setScene] = useState<Scene | null>(null);
@@ -79,12 +80,15 @@ export function Output() {
   const logo = scene?.logos?.[0];
   const bg = scene?.background;
   const isTemplate = !!current?.tpl;
+  const isItem = !!current?.item;
+  // Bloques con diseño propio (plantilla o contenido tipado 2026): traen su propio fondo/chrome.
+  const isCustom = isTemplate || isItem;
 
   return (
     <div className="viewport">
       <div className="stage" style={{ transform: `scale(${scale})` }}>
-        {/* Fondo (para bloques que no son plantilla; la plantilla trae su propio fondo) */}
-        {!isTemplate && (
+        {/* Fondo (para bloques con chrome estándar; plantillas y contenidos tipados traen su propio fondo) */}
+        {!isCustom && (
           <div className="layer">
             {bg?.mime?.startsWith("video/") ? (
               <video className="bg-media" src={bg.url} autoPlay muted loop playsInline />
@@ -110,7 +114,19 @@ export function Output() {
               <TemplateView template={current.tpl!} data={scene!.data} logos={scene!.logos} cameras={scene!.cameras ?? []} onEnded={advance} />
             </motion.div>
           )}
-          {current && !isTemplate && (
+          {current && isItem && (
+            <motion.div
+              key={current.id + ":" + index}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.4 }}
+              style={{ position: "absolute", inset: 0, zIndex: 5 }}
+            >
+              <ItemView type={current.item!.type} data={current.item!.data} />
+            </motion.div>
+          )}
+          {current && !isCustom && (
             <motion.div
               key={current.id + ":" + index}
               initial={{ opacity: 0, y: 24 }}
@@ -127,14 +143,14 @@ export function Output() {
         {items.length === 0 && <div className="content"><Standby /></div>}
 
         {/* Chrome (se oculta el logo/reloj sobre plantillas, que traen su propio diseño) */}
-        {logo && !isTemplate && (
+        {logo && !isCustom && (
           <div className="chrome-logo">
             <img src={logo.url} alt={logo.name ?? ""} />
           </div>
         )}
-        {!isTemplate && <div className="chrome-clock">{clock}</div>}
+        {!isCustom && <div className="chrome-clock">{clock}</div>}
 
-        <div className="ticker">
+        {!isItem && <div className="ticker">
           <div className="ticker-tag">CÍCLICO</div>
           <div className="ticker-track">
             {(() => {
@@ -144,7 +160,7 @@ export function Output() {
               return <span style={{ animationDuration: `${durS}s` }}>{txt + "        "}</span>;
             })()}
           </div>
-        </div>
+        </div>}
       </div>
     </div>
   );

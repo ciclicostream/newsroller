@@ -21,7 +21,7 @@ export function outputRouter(): Router {
 
     const publicUrl = (bucket: string, path: string) => sb.storage.from(bucket).getPublicUrl(path).data.publicUrl;
 
-    const [{ data: playlist }, { data: assets }, { data: placas }, { data: shorts }, { data: templates }, { data: cameras }] =
+    const [{ data: playlist }, { data: assets }, { data: placas }, { data: shorts }, { data: templates }, { data: cameras }, { data: contentItems }] =
       await Promise.all([
         sb.from("playlist_items").select("*").eq("enabled", true).order("sort"),
         sb.from("assets").select("*"),
@@ -29,12 +29,14 @@ export function outputRouter(): Router {
         sb.from("shorts").select("*"),
         sb.from("templates").select("*"),
         sb.from("cameras").select("*"),
+        sb.from("content_items").select("*"),
       ]);
 
     const assetById = new Map((assets ?? []).map((a) => [a.id, a]));
     const placaById = new Map((placas ?? []).map((p) => [p.id, p]));
     const shortById = new Map((shorts ?? []).map((s) => [s.id, s]));
     const templateById = new Map((templates ?? []).map((t) => [t.id, t]));
+    const itemById = new Map((contentItems ?? []).map((c) => [c.id, c]));
 
     // Fondo y logos activos (capas globales).
     const activeBg = (assets ?? []).find((a) => a.kind === "background" && a.active);
@@ -71,6 +73,11 @@ export function outputRouter(): Router {
             if (!t) return null;
             return { ...base, tpl: { id: t.id, name: t.name, background: t.background, elements: t.elements } };
           }
+          case "content_item": {
+            const ci = itemById.get(it.content_id);
+            if (!ci) return null;
+            return { ...base, item: { type: ci.type, data: ci.data } };
+          }
           default:
             return null;
         }
@@ -78,6 +85,15 @@ export function outputRouter(): Router {
       .filter(Boolean);
 
     res.json({ background, logos, items, data, cameras: cameras ?? [], updatedAt: new Date().toISOString() });
+  });
+
+  // Preview público de un contenido tipado del banco (para el MONITOR del panel).
+  r.get("/item/:id", async (req, res) => {
+    const sb = getSupabase();
+    if (!sb) return res.status(404).json({ error: "sin base" });
+    const { data } = await sb.from("content_items").select("type, data").eq("id", req.params.id).maybeSingle();
+    if (!data) return res.status(404).json({ error: "no encontrado" });
+    res.json({ type: data.type, data: data.data });
   });
 
   return r;

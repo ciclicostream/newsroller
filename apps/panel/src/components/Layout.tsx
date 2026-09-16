@@ -5,6 +5,7 @@ import {
   FileStack,
   LayoutTemplate,
   ListVideo,
+  Siren,
   Video,
   Users as UsersIcon,
   Radio,
@@ -23,6 +24,7 @@ interface NavDef {
 const NAV: NavDef[] = [
   { to: "/", label: "Panel", icon: <LayoutDashboard size={18} /> },
   { to: "/contenido", label: "Contenido", icon: <FileStack size={18} /> },
+  { to: "/ultima-hora", label: "Última Hora", icon: <Siren size={18} /> },
   { to: "/plantillas", label: "Plantillas", icon: <LayoutTemplate size={18} /> },
   { to: "/camaras", label: "Cámaras", icon: <Video size={18} /> },
   { to: "/programacion", label: "Programación", icon: <ListVideo size={18} /> },
