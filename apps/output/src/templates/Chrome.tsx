@@ -10,7 +10,9 @@ interface ClimaCity { city: string; tempC: number | null }
 // Marco estándar PERSISTENTE compartido por todas las placas:
 // pills reloj + temperatura (rota capitales cada 30s, desde la API de clima),
 // y newsticker con titulares en vivo de somosciclico.com. No entra/sale con el contenido.
-export function Chrome() {
+// tickerSpeed = segundos que tarda una vuelta completa del texto (menor = más rápido).
+// Se ajustará desde la sección AJUSTES; por ahora usa el default.
+export function Chrome({ tickerSpeed = 60 }: { tickerSpeed?: number } = {}) {
   const [now, setNow] = useState(() => new Date());
   const [ticker, setTicker] = useState<TickerItem[]>([]);
   const [cities, setCities] = useState<ClimaCity[]>([]);
@@ -59,11 +61,14 @@ export function Chrome() {
 
       <div className="ck-clock">{clock} | {fecha}</div>
       {cur && cur.tempC != null && (
-        <div className="ck-temp">{cur.tempC}°<span>{cur.city.toUpperCase()}</span></div>
+        <div className="ck-temp">
+          <span className="ck-temp-val">{cur.tempC}°C</span>
+          <span className="ck-temp-city">{cur.city.toUpperCase()}</span>
+        </div>
       )}
 
       <div className="ck-ticker">
-        <div className="ck-track">
+        <div className="ck-track" style={{ animationDuration: `${tickerSpeed}s` }}>
           {[0, 1].map((dup) => (
             <div className="ck-seq" key={dup} aria-hidden={dup === 1}>
               {ticker.map((it, i) => (
@@ -83,10 +88,12 @@ export function Chrome() {
 
 const CSS = `
 .ck-clock{position:absolute;top:78px;right:100px;z-index:30;background:linear-gradient(180deg,#3b82f6,#2f6bff);color:#fff;font-weight:800;font-size:30px;letter-spacing:.01em;padding:10px 20px;border-radius:12px;box-shadow:0 6px 16px rgba(0,0,0,.25)}
-.ck-temp{position:absolute;top:150px;right:100px;z-index:30;min-width:120px;background:linear-gradient(180deg,#3b82f6,#2f6bff);color:#fff;font-weight:800;font-size:36px;line-height:1;padding:12px 22px;border-radius:12px;box-shadow:0 6px 16px rgba(0,0,0,.25);text-align:center;display:flex;flex-direction:column;gap:4px}
-.ck-temp span{font-size:20px;font-weight:700;opacity:.95;max-width:260px}
+.ck-temp{position:absolute;top:150px;right:100px;z-index:30;min-width:120px;background:linear-gradient(180deg,#3b82f6,#2f6bff);color:#fff;line-height:1;padding:12px 22px;border-radius:12px;box-shadow:0 6px 16px rgba(0,0,0,.25);display:flex;flex-direction:column;align-items:flex-end;text-align:right;gap:6px}
+.ck-temp-val{font-size:36px;font-weight:800}
+.ck-temp-city{font-size:20px;font-weight:700;opacity:.95}
 
-.ck-ticker{position:absolute;left:0;right:0;bottom:0;height:74px;z-index:28;background:#fff;overflow:hidden;display:flex;align-items:center;box-shadow:0 -6px 18px rgba(0,0,0,.18)}
+/* Barra del ticker: alineada (misma base) con la pastilla del QR — NO pegada al borde inferior. */
+.ck-ticker{position:absolute;left:0;right:0;bottom:12px;height:74px;z-index:28;background:#fff;overflow:hidden;display:flex;align-items:center;box-shadow:0 6px 18px rgba(0,0,0,.18)}
 .ck-track{display:flex;white-space:nowrap;will-change:transform;animation:ck-scroll 60s linear infinite}
 .ck-seq{display:flex}
 .ck-item{color:#1a3aa8;font-weight:700;font-size:30px;letter-spacing:.01em;padding:0 40px}
