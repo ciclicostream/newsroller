@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   AlertTriangle, TrendingUp, Newspaper, Megaphone, Video, GripVertical, X,
-  MonitorPlay, Zap, ArrowRight, Plus, PauseCircle, Radio,
+  MonitorPlay, Zap, ArrowRight, Plus, PauseCircle,
 } from "lucide-react";
 import type { ContentItem, PlaylistItem } from "@newsroller/shared";
 import { contentHasAudio } from "@newsroller/shared";
@@ -265,10 +265,9 @@ export function Programacion() {
             </div>
             <div className="pv-mon-row">
               <div className="pv-mon">
+                {/* AIRE muestra el output real tal cual: si está cortado, la propia
+                    placa off_air.jpg ya lo dice — no le agregamos texto encima. */}
                 {monUrl ? <iframe key={monUrl} src={monUrl} title="monitor" /> : <div className="pv-ph">Elegí un contenido para previsualizarlo.</div>}
-                {mode === "aire" && liveStatus && !liveStatus.onAir && (
-                  <div className="pv-standby"><Radio size={40} opacity={.5} /><div>FUERA DEL AIRE</div></div>
-                )}
               </div>
               {monHasAudio && <Vu audio />}
             </div>

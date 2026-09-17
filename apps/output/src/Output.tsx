@@ -42,12 +42,19 @@ export function Output() {
     };
   }, []);
 
-  // Estado inicial de onAir (por si el socket tarda en conectar).
+  // Poll de respaldo (además del socket): en OBS el websocket no siempre se
+  // sostiene de forma confiable (mismo motivo por el que el timer de avance
+  // tuvo que blindarse antes), así que el corte de emisión no puede depender
+  // SÓLO del socket — si se pierde el mensaje, esto lo aplica igual en pocos segundos.
   useEffect(() => {
-    fetch(`${API_BASE}/api/settings`)
-      .then((r) => r.json())
-      .then((s) => setOnAir(s?.onAir !== false))
-      .catch(() => {});
+    const check = () =>
+      fetch(`${API_BASE}/api/settings`)
+        .then((r) => r.json())
+        .then((s) => setOnAir(s?.onAir !== false))
+        .catch(() => {});
+    void check();
+    const t = setInterval(check, 5_000);
+    return () => clearInterval(t);
   }, []);
 
   // Escalar el lienzo 1920x1080 al viewport.
