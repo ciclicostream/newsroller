@@ -101,7 +101,7 @@ function ElementView({ el, data, logos, cameras, onEnded }: { el: TemplateElemen
   return null;
 }
 
-function CameraView({ cam }: { cam: Camera }) {
+export function CameraView({ cam }: { cam: Camera }) {
   // Las cámaras nunca llevan audio.
   if (cam.type === "youtube") return <YouTubePlayer videoId={cam.url} onEnded={() => {}} allowAudio={false} />;
   if (cam.type === "hls") return <HlsVideo url={cam.url} />;
@@ -150,7 +150,7 @@ function VideoAsset({ src, fit, radius, onEnded }: { src: string; fit: string; r
 }
 
 // Reproductor de YouTube con IFrame API. allowAudio=false → siempre muteado (cámaras).
-function YouTubePlayer({ videoId, onEnded, allowAudio = true }: { videoId: string; onEnded: () => void; allowAudio?: boolean }) {
+export function YouTubePlayer({ videoId, onEnded, allowAudio = true }: { videoId: string; onEnded: () => void; allowAudio?: boolean }) {
   const ref = useRef<HTMLDivElement>(null);
   const endedRef = useRef(onEnded);
   endedRef.current = onEnded;

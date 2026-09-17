@@ -12,6 +12,8 @@ import {
   Sparkles,
   CloudSun,
   Newspaper,
+  Youtube,
+  Video,
   type LucideIcon,
 } from "lucide-react";
 
@@ -24,7 +26,7 @@ export interface TipoDef {
 }
 
 // Placas que el editor carga a mano (banco → parrilla → aire).
-// Shorts, Cámaras y Programas tienen su propia sección (se alimentan de APIs).
+// Programas tiene su propia sección (se alimenta de la API de YouTube por hashtag).
 export const TIPOS: TipoDef[] = [
   { type: "ultima_hora", label: "Última Hora", desc: "Placa roja de alerta con foto o video opcional", Icon: Siren, ready: true },
   { type: "placas", label: "Placas", desc: "Noticia: escrita a mano o traída de Cíclico", Icon: Newspaper, ready: true },
@@ -33,10 +35,12 @@ export const TIPOS: TipoDef[] = [
   { type: "efemerides", label: "Efemérides", desc: "Fecha + cuerpo + imagen", Icon: CalendarDays, ready: true },
   { type: "cartelera", label: "Cartelera", desc: "Estreno / obra con ficha", Icon: Clapperboard, ready: true },
   { type: "declaraciones", label: "Declaraciones", desc: "Cita textual + foto", Icon: Quote, ready: true },
+  { type: "shorts", label: "Shorts", desc: "1 o 2 shorts verticales del canal", Icon: Youtube, ready: true },
   { type: "informe", label: "Informe Cíclico", desc: "Hasta 10 tarjetas en secuencia", Icon: ListOrdered },
   { type: "publicidad", label: "Publicidad", desc: "Full o vertical (genera reporte)", Icon: Megaphone },
-  { type: "video_full", label: "Video Full", desc: "Video a pantalla completa", Icon: MonitorPlay },
+  { type: "video_full", label: "Video Full", desc: "Video a pantalla completa", Icon: MonitorPlay, ready: true },
   { type: "promos", label: "Promos / Avances", desc: "Pill + card + video 9:16 o 4:3", Icon: Sparkles },
+  { type: "camaras", label: "Cámaras", desc: "Cámara en vivo + avisos rotativos", Icon: Video, ready: true },
   { type: "clima", label: "Clima", desc: "Pronóstico con íconos y BIG", Icon: CloudSun, ready: true },
 ];
 

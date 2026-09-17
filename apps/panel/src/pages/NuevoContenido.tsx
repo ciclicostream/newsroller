@@ -13,6 +13,9 @@ import { Efemerides } from "./Efemerides";
 import { Cartelera } from "./Cartelera";
 import { Declaraciones } from "./Declaraciones";
 import { Clima } from "./Clima";
+import { ShortsPlaca } from "./ShortsPlaca";
+import { CamarasPlaca } from "./CamarasPlaca";
+import { VideoFullPlaca } from "./VideoFullPlaca";
 
 // Plantilla mostrada por defecto al entrar a Contenido.
 const DEFAULT_TYPE = "placas";
@@ -77,6 +80,9 @@ function TemplateForm({ type }: { type: string }) {
   if (type === "cartelera") return <Cartelera />;
   if (type === "declaraciones") return <Declaraciones />;
   if (type === "clima") return <Clima />;
+  if (type === "shorts") return <ShortsPlaca />;
+  if (type === "camaras") return <CamarasPlaca />;
+  if (type === "video_full") return <VideoFullPlaca />;
   const def = TIPO_BY_KEY[type];
   return <TipoEnConstruccion type={type} label={def?.label ?? type} />;
 }

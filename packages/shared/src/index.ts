@@ -312,6 +312,31 @@ export interface DeclaracionesData {
   interview_program?: string; // "Entrevista completa en …" (opcional)
 }
 
+// Datos del tipo "shorts": 1 o 2 shorts verticales del canal (YouTube). El
+// título viene de la API y es editable; con 2 shorts es un título único
+// compartido (no por video).
+export interface ShortsData {
+  count: 1 | 2;
+  video1: string; // id de video de YouTube
+  video2?: string; // sólo si count=2
+  title: string; // editable
+}
+
+// Datos del tipo "camaras": una cámara en vivo (de la base ya construida) +
+// ubicación editable + uno o más avisos (imágenes) que rotan en fade.
+export interface CamarasData {
+  camera_id: string; // FK a cameras.id
+  location: string; // "Buenos Aires · Obelisco"
+  ads: string[]; // URLs de imagen (1 o más); si hay 1 sola no rota
+}
+
+// Datos del tipo "video_full": video o imagen a pantalla completa, sin
+// overlay. A diferencia de Publicidad, NO genera reporte.
+export interface VideoFullData {
+  media_url: string;
+  media_kind: "image" | "video";
+}
+
 // ---- Plantillas propias (editor visual) ----
 export type ElementType = "text" | "image" | "video" | "weather" | "data" | "logo" | "shape" | "camera";
 

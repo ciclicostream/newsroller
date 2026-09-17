@@ -123,7 +123,7 @@ export function Output() {
               transition={{ duration: 0.4 }}
               style={{ position: "absolute", inset: 0, zIndex: 5 }}
             >
-              <ItemView type={current.item!.type} data={current.item!.data} durationSec={current.duration_sec} liveData={scene?.data} />
+              <ItemView type={current.item!.type} data={current.item!.data} durationSec={current.duration_sec} liveData={scene?.data} cameras={scene?.cameras ?? []} />
             </motion.div>
           )}
           {current && !isCustom && (
