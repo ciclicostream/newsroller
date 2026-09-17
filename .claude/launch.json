@@ -20,6 +20,17 @@
         "@newsroller/output"
       ],
       "port": 5174
+    },
+    {
+      "name": "panel",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "dev",
+        "--workspace",
+        "@newsroller/panel"
+      ],
+      "port": 5173
     }
   ]
 }

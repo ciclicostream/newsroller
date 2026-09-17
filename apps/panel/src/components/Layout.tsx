@@ -1,5 +1,5 @@
-import { NavLink, useNavigate, useLocation } from "react-router-dom";
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { NavLink, useNavigate } from "react-router-dom";
+import { type ReactNode } from "react";
 import {
   ListVideo,
   FilePlus2,
@@ -9,10 +9,8 @@ import {
   BarChart3,
   Settings,
   LogOut,
-  ChevronDown,
 } from "lucide-react";
 import { useAuth } from "../auth/AuthProvider";
-import { TIPOS } from "../lib/tipos";
 import ciclicoBlack from "../assets/ciclico-black.png";
 
 interface NavDef {
@@ -34,20 +32,7 @@ const NAV: NavDef[] = [
 export function Layout({ children }: { children: ReactNode }) {
   const { me, signOut } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
   const isAdmin = me?.role === "admin";
-  const [open, setOpen] = useState(false);
-  const ddRef = useRef<HTMLDivElement>(null);
-
-  // Cerrar el submenú al navegar o al hacer click afuera.
-  useEffect(() => setOpen(false), [location.pathname]);
-  useEffect(() => {
-    function onDoc(e: MouseEvent) {
-      if (ddRef.current && !ddRef.current.contains(e.target as Node)) setOpen(false);
-    }
-    document.addEventListener("mousedown", onDoc);
-    return () => document.removeEventListener("mousedown", onDoc);
-  }, []);
 
   async function handleLogout() {
     await signOut();
@@ -55,7 +40,6 @@ export function Layout({ children }: { children: ReactNode }) {
   }
 
   const initial = (me?.email ?? "?").charAt(0).toUpperCase();
-  const contenidoActive = location.pathname.startsWith("/contenido");
 
   return (
     <div className="app">
@@ -71,29 +55,10 @@ export function Layout({ children }: { children: ReactNode }) {
             <ListVideo size={18} /> Programación
           </NavLink>
 
-          {/* Nuevo Contenido (submenú) */}
-          <div className={"nav-dd" + (open ? " open" : "")} ref={ddRef}>
-            <button
-              type="button"
-              className={"nav-item" + (contenidoActive ? " active" : "")}
-              onClick={() => setOpen((v) => !v)}
-              aria-haspopup="menu"
-              aria-expanded={open}
-            >
-              <FilePlus2 size={18} /><span className="nav-lbl">Contenido <ChevronDown size={12} className="dd-caret" /></span>
-            </button>
-            {open && (
-              <div className="nav-menu" role="menu">
-                {TIPOS.map((t) => (
-                  <NavLink key={t.type} to={`/contenido/${t.type}`} className="nav-menu-item" role="menuitem">
-                    <t.Icon size={17} />
-                    <span>{t.label}</span>
-                    {!t.ready && <span className="tipo-soon">pronto</span>}
-                  </NavLink>
-                ))}
-              </div>
-            )}
-          </div>
+          {/* Contenido: link directo (el submenú de plantillas vive en la página). */}
+          <NavLink to="/contenido" className={({ isActive }) => "nav-item" + (isActive ? " active" : "")}>
+            <FilePlus2 size={18} /> Contenido
+          </NavLink>
 
           {/* Resto */}
           {NAV.slice(1).filter((n) => !n.adminOnly || isAdmin).map((n) => (
