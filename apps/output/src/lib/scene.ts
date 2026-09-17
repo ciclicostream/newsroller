@@ -15,7 +15,7 @@ export interface Block {
   placa?: { title: string; body: string | null; accent: string | null; image_url?: string | null; image_fit?: string | null };
   media?: { url: string; mime: string | null };
   data?: { source: string };
-  item?: { type: string; data: Record<string, any> };
+  item?: { id: string; type: string; data: Record<string, any> };
   tpl?: {
     id: string;
     name: string;

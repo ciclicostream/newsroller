@@ -84,3 +84,36 @@ export async function syncShorts(sb: SupabaseClient): Promise<number> {
   if (error) throw new Error(`supabase upsert shorts: ${error.message}`);
   return rows.length;
 }
+
+// Busca en los últimos uploads del canal los que contienen el hashtag/texto dado
+// en el título (case-insensitive). Usado por Promos para autoseleccionar por
+// hashtag (ej. #avance) sin depender de search.list (evita gasto de cuota).
+export async function searchUploads(q: string): Promise<{ id: string; title: string; thumbnail_url: string | null; duration_sec: number }[]> {
+  if (!env.youtubeApiKey) throw new Error("falta YOUTUBE_API_KEY");
+  const ch = await yt<ChannelsResp>(
+    `channels?part=contentDetails&forHandle=${encodeURIComponent(env.youtubeChannelHandle)}`,
+  );
+  const uploads = ch.items?.[0]?.contentDetails.relatedPlaylists.uploads;
+  if (!uploads) throw new Error(`no se encontró el canal @${env.youtubeChannelHandle}`);
+
+  const list = await yt<PlaylistResp>(
+    `playlistItems?part=snippet&maxResults=50&playlistId=${uploads}`,
+  );
+  const items = list.items ?? [];
+  const needle = q.trim().toLowerCase();
+  const matches = needle
+    ? items.filter((i) => i.snippet.title.toLowerCase().includes(needle))
+    : items;
+  if (matches.length === 0) return [];
+
+  const ids = matches.map((i) => i.snippet.resourceId.videoId);
+  const vids = await yt<VideosResp>(`videos?part=contentDetails&id=${ids.join(",")}`);
+  const durById = new Map(vids.items?.map((v) => [v.id, isoToSec(v.contentDetails.duration)]));
+
+  return matches.map((i) => {
+    const id = i.snippet.resourceId.videoId;
+    const th = i.snippet.thumbnails ?? {};
+    const thumb = (th.medium ?? th.high ?? th.default)?.url ?? null;
+    return { id, title: i.snippet.title, thumbnail_url: thumb, duration_sec: durById.get(id) ?? 0 };
+  });
+}

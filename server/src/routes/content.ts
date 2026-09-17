@@ -2,7 +2,7 @@ import { Router } from "express";
 import type { AssetKind } from "@newsroller/shared";
 import { getSupabase } from "../db/supabase.js";
 import { requireAuth } from "../auth/middleware.js";
-import { syncShorts } from "../content/youtube.js";
+import { syncShorts, searchUploads } from "../content/youtube.js";
 import { env } from "../config/env.js";
 
 const BUCKETS: Record<AssetKind, string> = {
@@ -161,6 +161,32 @@ export function contentRouter(): Router {
     const { error } = await sb().from("shorts").delete().eq("id", req.params.id);
     if (error) return res.status(500).json({ error: error.message });
     res.status(204).end();
+  });
+
+  // ---- Búsqueda en uploads del canal (Promos: autoseleccionar por hashtag) ----
+  r.get("/youtube-search", async (req, res) => {
+    const q = typeof req.query.q === "string" ? req.query.q : "";
+    try {
+      const results = await searchUploads(q);
+      res.json(results);
+    } catch (e) {
+      res.status(502).json({ error: e instanceof Error ? e.message : "error buscando" });
+    }
+  });
+
+  // ---- Reporte de Publicidad: cuántas veces salió cada aviso al aire en un período ----
+  r.get("/report/publicidad", async (req, res) => {
+    const from = typeof req.query.from === "string" ? req.query.from : new Date(Date.now() - 30 * 86400_000).toISOString();
+    const to = typeof req.query.to === "string" ? req.query.to : new Date().toISOString();
+    const { data, error } = await sb()
+      .from("airings")
+      .select("content_item_id")
+      .gte("played_at", from)
+      .lte("played_at", to);
+    if (error) return res.status(500).json({ error: error.message });
+    const counts = new Map<string, number>();
+    for (const row of data ?? []) counts.set(row.content_item_id, (counts.get(row.content_item_id) ?? 0) + 1);
+    res.json({ from, to, counts: Object.fromEntries(counts) });
   });
 
   // ---- Cámaras ----

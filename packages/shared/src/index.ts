@@ -337,6 +337,33 @@ export interface VideoFullData {
   media_kind: "image" | "video" | "youtube";
 }
 
+// Datos del tipo "informe": carrusel de hasta 10 slides (imágenes 4:5) con un
+// título fijo a la izquierda mientras rotan. Sin overlay de reporte.
+export interface InformeData {
+  title: string; // fijo, se muestra en la card azul mientras rotan las slides
+  slides: string[]; // hasta 10 URLs de imagen 4:5 (1080x1350)
+  sec_per_slide?: number; // default 5
+}
+
+// Datos del tipo "publicidad": Full (16:9 sin overlay) o Vertical (9:16 +
+// marco estándar + logo/QR de marca opcionales). Única familia que genera reporte.
+export interface PublicidadData {
+  format: "full" | "vertical";
+  media_url: string;
+  media_kind: "image" | "video";
+  logo_url?: string; // sólo vertical, opcional
+  brand_qr_url?: string; // sólo vertical, opcional (≠ QR de Cíclico del zócalo)
+}
+
+// Datos del tipo "promos": pill+card de texto libre + video 9:16 o 4:3 del
+// canal de YouTube (elegido a mano o autoseleccionado por hashtag). No genera reporte.
+export interface PromosData {
+  title: string; // pill, máx ~24
+  body: string; // card, máx ~160, auto-fit
+  format: "916" | "43";
+  video_id: string; // id de YouTube
+}
+
 // ---- Plantillas propias (editor visual) ----
 export type ElementType = "text" | "image" | "video" | "weather" | "data" | "logo" | "shape" | "camera";
 

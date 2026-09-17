@@ -36,10 +36,10 @@ export const TIPOS: TipoDef[] = [
   { type: "cartelera", label: "Cartelera", desc: "Estreno / obra con ficha", Icon: Clapperboard, ready: true },
   { type: "declaraciones", label: "Declaraciones", desc: "Cita textual + foto", Icon: Quote, ready: true },
   { type: "shorts", label: "Shorts", desc: "1 o 2 shorts verticales del canal", Icon: Youtube, ready: true },
-  { type: "informe", label: "Informe Cíclico", desc: "Hasta 10 tarjetas en secuencia", Icon: ListOrdered },
-  { type: "publicidad", label: "Publicidad", desc: "Full o vertical (genera reporte)", Icon: Megaphone },
+  { type: "informe", label: "Informe Cíclico", desc: "Hasta 10 tarjetas en secuencia", Icon: ListOrdered, ready: true },
+  { type: "publicidad", label: "Publicidad", desc: "Full o vertical (genera reporte)", Icon: Megaphone, ready: true },
   { type: "video_full", label: "Video Full", desc: "Video a pantalla completa", Icon: MonitorPlay, ready: true },
-  { type: "promos", label: "Promos / Avances", desc: "Pill + card + video 9:16 o 4:3", Icon: Sparkles },
+  { type: "promos", label: "Promos / Avances", desc: "Pill + card + video 9:16 o 4:3", Icon: Sparkles, ready: true },
   { type: "camaras", label: "Cámaras", desc: "Cámara en vivo + avisos rotativos", Icon: Video, ready: true },
   { type: "clima", label: "Clima", desc: "Pronóstico con íconos y BIG", Icon: CloudSun, ready: true },
 ];

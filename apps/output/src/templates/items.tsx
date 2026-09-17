@@ -1,4 +1,4 @@
-import type { UltimaHoraData, PlacasData, DolarData, DolarPayload, CifrasData, EfemeridesData, CarteleraData, DeclaracionesData, ClimaData, ClimaPayload, ShortsData, CamarasData, VideoFullData } from "@newsroller/shared";
+import type { UltimaHoraData, PlacasData, DolarData, DolarPayload, CifrasData, EfemeridesData, CarteleraData, DeclaracionesData, ClimaData, ClimaPayload, ShortsData, CamarasData, VideoFullData, InformeData, PublicidadData, PromosData } from "@newsroller/shared";
 import type { Camera } from "../lib/scene";
 import { UltimaHora } from "./UltimaHora";
 import { Placas } from "./Placas";
@@ -11,6 +11,9 @@ import { Clima } from "./Clima";
 import { Shorts } from "./Shorts";
 import { Camaras } from "./Camaras";
 import { VideoFull } from "./VideoFull";
+import { Informe } from "./Informe";
+import { Publicidad } from "./Publicidad";
+import { Promos } from "./Promos";
 
 // Despacha un contenido tipado del banco 2026 a su componente de output.
 // `liveData` = scene.data (payloads en vivo por fuente, ej. liveData.dolar) para
@@ -18,12 +21,14 @@ import { VideoFull } from "./VideoFull";
 // `cameras` = scene.cameras, para el tipo "camaras".
 // A medida que se portan más tipos, se agregan acá.
 export function ItemView({
+  id,
   type,
   data,
   durationSec,
   liveData,
   cameras,
 }: {
+  id?: string;
   type: string;
   data: Record<string, any>;
   durationSec?: number;
@@ -53,6 +58,12 @@ export function ItemView({
       return <Camaras data={data as CamarasData} durationSec={durationSec} cameras={cameras ?? []} />;
     case "video_full":
       return <VideoFull data={data as VideoFullData} />;
+    case "informe":
+      return <Informe data={data as InformeData} />;
+    case "publicidad":
+      return <Publicidad id={id} data={data as PublicidadData} />;
+    case "promos":
+      return <Promos data={data as PromosData} />;
     default:
       return null;
   }

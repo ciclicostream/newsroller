@@ -76,7 +76,7 @@ export function outputRouter(): Router {
           case "content_item": {
             const ci = itemById.get(it.content_id);
             if (!ci) return null;
-            return { ...base, item: { type: ci.type, data: ci.data } };
+            return { ...base, item: { id: ci.id, type: ci.type, data: ci.data } };
           }
           default:
             return null;
@@ -94,6 +94,18 @@ export function outputRouter(): Router {
     const { data } = await sb.from("content_items").select("type, data, duration_sec").eq("id", req.params.id).maybeSingle();
     if (!data) return res.status(404).json({ error: "no encontrado" });
     res.json({ type: data.type, data: data.data, duration_sec: data.duration_sec });
+  });
+
+  // Registra una salida al aire de un aviso de Publicidad (para el reporte).
+  // Llamado por el output cuando un bloque "publicidad" empieza a reproducirse.
+  r.post("/airing", async (req, res) => {
+    const sb = getSupabase();
+    if (!sb) return res.status(204).end();
+    const contentItemId = req.body?.content_item_id;
+    if (typeof contentItemId !== "string" || !contentItemId) return res.status(400).json({ error: "content_item_id requerido" });
+    const { error } = await sb.from("airings").insert({ content_item_id: contentItemId });
+    if (error) return res.status(500).json({ error: error.message });
+    res.status(204).end();
   });
 
   return r;
