@@ -172,6 +172,42 @@ export interface DolarData {
   overrides?: Partial<Record<string, number>>; // casa -> valor manual (pisa el venta de la API)
 }
 
+// Íconos elegibles para la placa Cifras (nombre de componente lucide-react).
+// "Sin ícono" = valor null (la explicación ocupa todo el ancho de la tarjeta azul).
+export const CIFRAS_ICONS = [
+  "TrendingUp", "TrendingDown", "Minus", "TriangleAlert", "Banknote",
+  "Clock", "Trophy", "Users", "Thermometer", "Flame", "Zap", "Percent",
+] as const;
+export type CifrasIcon = (typeof CIFRAS_ICONS)[number];
+
+// Métricas con dato de API disponible (cifra + fuente se autoescriben al elegirla).
+// key = id estable guardado en CifrasData.metric.
+export const CIFRAS_METRICS: Record<string, { label: string }> = {
+  ipc: { label: "IPC nacional (INDEC)" },
+  salarios: { label: "Índice de salarios (INDEC)" },
+  energia: { label: "Ventas de energía eléctrica" },
+  petroleo: { label: "Producción de petróleo (YPF)" },
+  demanda_electrica: { label: "Demanda eléctrica (CAMMESA)" },
+  dolar_oficial: { label: "Dólar oficial (venta)" },
+  dolar_blue: { label: "Dólar blue (venta)" },
+};
+
+// Datos del tipo "cifras". El dato (valueNum/value/source) se resuelve y CONGELA
+// al guardar (igual que Placas al importar de Cíclico): el output sólo renderiza
+// lo guardado, no vuelve a pedir la API.
+export interface CifrasData {
+  mode: "api" | "manual";
+  metric?: string;          // key de CIFRAS_METRICS si mode="api"
+  value: string;             // cifra formateada para mostrar (ej. "5,2%", "1.245 GWh")
+  valueNum: number;          // valor numérico puro, para el conteo 0→valor
+  suffix?: string;           // sufijo pegado al número animado (ej. "%")
+  subtitle: string;          // qué representa (obligatorio)
+  source: string;            // fuente técnica (obligatorio; auto si mode="api")
+  sourceAuto?: boolean;      // true = se autoescribió de una API (pill "AUTO")
+  explanation: string;       // texto de la tarjeta azul (obligatorio)
+  icon: CifrasIcon | null;   // null = "Sin ícono"
+}
+
 // ---- Plantillas propias (editor visual) ----
 export type ElementType = "text" | "image" | "video" | "weather" | "data" | "logo" | "shape" | "camera";
 

@@ -1,7 +1,8 @@
-import type { UltimaHoraData, PlacasData, DolarData, DolarPayload } from "@newsroller/shared";
+import type { UltimaHoraData, PlacasData, DolarData, DolarPayload, CifrasData } from "@newsroller/shared";
 import { UltimaHora } from "./UltimaHora";
 import { Placas } from "./Placas";
 import { Dolar } from "./Dolar";
+import { Cifras } from "./Cifras";
 
 // Despacha un contenido tipado del banco 2026 a su componente de output.
 // `liveData` = scene.data (payloads en vivo por fuente, ej. liveData.dolar) para
@@ -25,6 +26,8 @@ export function ItemView({
       return <Placas data={data as PlacasData} durationSec={durationSec} />;
     case "dolar":
       return <Dolar data={data as DolarData} live={liveData?.dolar as DolarPayload | undefined} durationSec={durationSec} />;
+    case "cifras":
+      return <Cifras data={data as CifrasData} durationSec={durationSec} />;
     default:
       return null;
   }
