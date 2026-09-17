@@ -37,7 +37,7 @@ export const TIPOS: TipoDef[] = [
   { type: "publicidad", label: "Publicidad", desc: "Full o vertical (genera reporte)", Icon: Megaphone },
   { type: "video_full", label: "Video Full", desc: "Video a pantalla completa", Icon: MonitorPlay },
   { type: "promos", label: "Promos / Avances", desc: "Pill + card + video 9:16 o 4:3", Icon: Sparkles },
-  { type: "clima", label: "Clima", desc: "Pronóstico con íconos y BIG", Icon: CloudSun },
+  { type: "clima", label: "Clima", desc: "Pronóstico con íconos y BIG", Icon: CloudSun, ready: true },
 ];
 
 export const TIPO_BY_KEY: Record<string, TipoDef> = Object.fromEntries(

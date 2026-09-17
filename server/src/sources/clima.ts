@@ -1,38 +1,15 @@
+import type { ClimaDia as DiaPronostico, ClimaCiudad, ClimaPayload } from "@newsroller/shared";
 import { env } from "../config/env.js";
 import { fetchJson, type DataSource } from "./types.js";
 
-interface DiaPronostico {
-  date: string;      // YYYY-MM-DD
-  code: number | null;
-  max: number | null;
-  min: number | null;
-  desc: string;
-}
-
-interface ClimaCiudad {
-  city: string;
-  province: string;
-  lat: number;
-  lon: number;
-  tempC: number | null;
-  code: number | null;
-  desc: string;
-  days: DiaPronostico[];   // hoy + próximos 2 días
-}
-
-interface ClimaPayload {
-  // Compat con el elemento "weather" legacy (primera ciudad = CABA).
-  city: string;
-  tempC: number | null;
-  code: number | null;
-  desc: string;
-  // Nuevo: todas las capitales + pronóstico.
-  cities: ClimaCiudad[];
-  updatedAt: string;
-}
-
 interface OpenMeteoResp {
-  current?: { temperature_2m?: number; weather_code?: number };
+  current?: {
+    temperature_2m?: number;
+    weather_code?: number;
+    apparent_temperature?: number;
+    relative_humidity_2m?: number;
+    wind_speed_10m?: number;
+  };
   daily?: {
     time?: string[];
     weather_code?: number[];
@@ -94,7 +71,7 @@ export const climaSource: DataSource<ClimaPayload> = {
     const lons = CAPITALES.map((c) => c.lon).join(",");
     const url =
       `https://api.open-meteo.com/v1/forecast?latitude=${lats}&longitude=${lons}` +
-      `&current=temperature_2m,weather_code` +
+      `&current=temperature_2m,weather_code,apparent_temperature,relative_humidity_2m,wind_speed_10m` +
       `&daily=weather_code,temperature_2m_max,temperature_2m_min` +
       `&forecast_days=3&timezone=America/Argentina/Buenos_Aires`;
 
@@ -117,6 +94,9 @@ export const climaSource: DataSource<ClimaPayload> = {
         tempC: r(resp.current?.temperature_2m),
         code,
         desc: wmoDesc(code),
+        feelsLike: r(resp.current?.apparent_temperature),
+        humidity: r(resp.current?.relative_humidity_2m),
+        windKmh: r(resp.current?.wind_speed_10m),
         days,
       };
     });

@@ -60,6 +60,55 @@ export interface DatosGobPayload {
   series: SerieValor[];
 }
 
+export interface ClimaDia {
+  date: string; // YYYY-MM-DD
+  code: number | null;
+  max: number | null;
+  min: number | null;
+  desc: string;
+}
+export interface ClimaCiudad {
+  city: string;
+  province: string;
+  lat: number;
+  lon: number;
+  tempC: number | null;
+  code: number | null;
+  desc: string;
+  feelsLike: number | null;
+  humidity: number | null; // %
+  windKmh: number | null;
+  days: ClimaDia[]; // hoy + próximos 2 días
+}
+export interface ClimaPayload {
+  city: string;
+  tempC: number | null;
+  code: number | null;
+  desc: string;
+  cities: ClimaCiudad[];
+  updatedAt: string;
+}
+
+// Íconos disponibles (BIG y de card) por condición. weatherIconKey mapea el
+// weather_code de Open-Meteo (WMO) a una de estas claves.
+export type ClimaIconKey = "soleado" | "nublado" | "llovizna" | "lluvia" | "nieve" | "tormenta";
+export function weatherIconKey(code: number | null): ClimaIconKey {
+  if (code == null) return "nublado";
+  if (code <= 1) return "soleado";
+  if (code === 2 || code === 3 || code === 45 || code === 48) return "nublado";
+  if ([51, 53, 55, 56, 57].includes(code)) return "llovizna";
+  if ([61, 63, 65, 66, 67, 80, 81, 82].includes(code)) return "lluvia";
+  if ([71, 73, 75, 77, 85, 86].includes(code)) return "nieve";
+  if ([95, 96, 99].includes(code)) return "tormenta";
+  return "nublado";
+}
+
+// Datos del tipo "clima": qué ciudad (de las capitales de la fuente `clima`)
+// muestra la placa. El resto (temperatura, pronóstico) sale en vivo de la API.
+export interface ClimaData {
+  city: string;
+}
+
 export interface CammesaPayload {
   region: string;
   fecha: string; // ISO del último sample con dato
