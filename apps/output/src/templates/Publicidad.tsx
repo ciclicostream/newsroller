@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import type { PublicidadData } from "@newsroller/shared";
+import fondo from "../assets/fondo2.jpg";
 import { Chrome } from "./Chrome";
 import { API_BASE } from "../lib/scene";
 
@@ -36,6 +37,7 @@ export function Publicidad({ id, data }: { id?: string; data: PublicidadData }) 
   return (
     <div style={{ position: "absolute", inset: 0 }}>
       <style>{CSS}</style>
+      <img className="pb-bg" src={fondo} alt="" />
       <Chrome hideTemp />
       <div className="pb-vad">
         <div className="pb-m">{media}</div>
@@ -55,6 +57,7 @@ export function Publicidad({ id, data }: { id?: string; data: PublicidadData }) 
 }
 
 const CSS = `
+.pb-bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 .pb-vad{position:absolute;left:300px;top:150px;width:405px;height:720px;background:#fff;border-radius:24px;padding:12px;box-sizing:border-box;box-shadow:0 16px 40px rgba(0,0,0,.4)}
 .pb-m{width:100%;height:100%;border-radius:14px;overflow:hidden;background:#0b1330}
 .pb-brand{position:absolute;bottom:210px;width:300px;height:300px;background:#fff;border-radius:24px;display:flex;align-items:center;justify-content:center;box-sizing:border-box;padding:28px;box-shadow:0 10px 26px rgba(0,0,0,.28)}

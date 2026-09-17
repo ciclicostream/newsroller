@@ -59,11 +59,11 @@ export function ItemView({
     case "video_full":
       return <VideoFull data={data as VideoFullData} />;
     case "informe":
-      return <Informe data={data as InformeData} />;
+      return <Informe data={data as InformeData} durationSec={durationSec} />;
     case "publicidad":
       return <Publicidad id={id} data={data as PublicidadData} />;
     case "promos":
-      return <Promos data={data as PromosData} />;
+      return <Promos data={data as PromosData} durationSec={durationSec} />;
     default:
       return null;
   }

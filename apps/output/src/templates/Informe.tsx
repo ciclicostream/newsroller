@@ -1,14 +1,28 @@
 import { useEffect, useState } from "react";
 import type { InformeData } from "@newsroller/shared";
+import fondo from "../assets/fondo2.jpg";
 import { Chrome } from "./Chrome";
 
 // Placa Informe Cíclico: carrusel de hasta 10 slides (imágenes 4:5) con
 // título fijo (pill + card azul) a la izquierda mientras rotan solas.
 // Transición: deslizamiento horizontal. Indicador: barra de progreso segmentada.
-export function Informe({ data }: { data: InformeData }) {
+// Salida estándar: el bloque baja y desaparece detrás del ticker.
+export function Informe({ data, durationSec }: { data: InformeData; durationSec?: number }) {
   const [idx, setIdx] = useState(0);
+  const [play, setPlay] = useState(false);
+  const [exiting, setExiting] = useState(false);
   const secPerSlide = data.sec_per_slide ?? 5;
   const n = data.slides.length;
+
+  useEffect(() => {
+    const id = requestAnimationFrame(() => setPlay(true));
+    return () => cancelAnimationFrame(id);
+  }, []);
+  useEffect(() => {
+    if (!durationSec) return;
+    const t = setTimeout(() => setExiting(true), Math.max(1000, durationSec * 1000 - 900));
+    return () => clearTimeout(t);
+  }, [durationSec]);
 
   useEffect(() => {
     if (n <= 1) return;
@@ -17,14 +31,15 @@ export function Informe({ data }: { data: InformeData }) {
   }, [n, secPerSlide]);
 
   return (
-    <div style={{ position: "absolute", inset: 0 }}>
+    <div className={"in" + (play ? " play" : "") + (exiting ? " exit" : "")} style={{ position: "absolute", inset: 0 }}>
       <style>{CSS}</style>
+      <img className="in-bg" src={fondo} alt="" />
       <Chrome />
 
-      <div className="in-pill">INFORME CÍCLICO</div>
-      <div className="in-titlecard">{data.title}</div>
+      <div className="in-pill in-el">INFORME CÍCLICO</div>
+      <div className="in-titlecard in-el">{data.title}</div>
 
-      <div className="in-carousel">
+      <div className="in-carousel in-el">
         <div className="in-viewport">
           <div className="in-track" style={{ transform: `translateX(-${idx * 620}px)` }}>
             {data.slides.map((s, i) => (
@@ -50,11 +65,16 @@ export function Informe({ data }: { data: InformeData }) {
 }
 
 const CSS = `
+.in{font-family:Inter,system-ui,sans-serif}
+.in-bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.in-el{opacity:0;transition:opacity .6s ease, transform .6s cubic-bezier(.2,.8,.2,1)}
+.in.play .in-el{opacity:1;transform:none}
+
 .in-pill{position:absolute;left:300px;top:576px;background:#fff;color:#0b2b6b;font-weight:800;font-size:38px;
-  letter-spacing:.02em;padding:14px 34px;border-radius:14px;box-shadow:0 8px 20px rgba(0,0,0,.18)}
+  letter-spacing:.02em;padding:14px 34px;border-radius:14px;box-shadow:0 8px 20px rgba(0,0,0,.18);transform:translateY(20px)}
 .in-titlecard{position:absolute;left:300px;top:648px;width:560px;min-height:270px;background:#1e56b3;border-radius:24px;
-  box-sizing:border-box;padding:40px 44px;display:flex;align-items:flex-start;color:#fff;font-weight:800;font-size:56px;line-height:1.1}
-.in-carousel{position:absolute;left:940px;top:110px;width:620px;height:775px}
+  box-sizing:border-box;padding:40px 44px;display:flex;align-items:flex-start;color:#fff;font-weight:800;font-size:56px;line-height:1.1;transform:translateY(20px)}
+.in-carousel{position:absolute;left:940px;top:110px;width:620px;height:775px;transform:translateX(60px)}
 .in-viewport{position:absolute;inset:0;border-radius:20px;overflow:hidden;box-shadow:0 16px 40px rgba(0,0,0,.45)}
 .in-track{display:flex;height:100%;will-change:transform;transition:transform .6s cubic-bezier(.4,0,.2,1)}
 .in-slide{flex:0 0 620px;height:775px;background:#fff}
@@ -62,4 +82,6 @@ const CSS = `
 .in-progress{position:absolute;left:0;right:0;bottom:-30px;display:flex;gap:8px}
 .in-seg{flex:1;height:8px;background:rgba(255,255,255,.28);border-radius:4px;overflow:hidden}
 .in-fill{height:100%;width:0;background:#fff;border-radius:4px}
+
+.in.exit .in-el{transition:transform .8s cubic-bezier(.4,0,.8,.2), opacity .8s ease;transform:translateY(260px)!important;opacity:0}
 `;
