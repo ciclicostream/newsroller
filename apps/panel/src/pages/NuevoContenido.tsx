@@ -49,10 +49,8 @@ export function NuevoContenido() {
               className={"tpl-chip" + (t.type === type ? " active" : "") + (air ? " on-air" : "")}
               title={t.desc}
             >
-              <span className="tpl-chip-ic"><t.Icon size={20} /></span>
+              <span className="tpl-chip-ic"><t.Icon size={16} /></span>
               <span className="tpl-chip-lbl">{t.label}</span>
-              {!t.ready && <span className="tipo-soon">pronto</span>}
-              {air && <span className="tpl-chip-air">Al aire</span>}
             </Link>
           );
         })}
