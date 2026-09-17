@@ -59,6 +59,8 @@ export function Placas({ data, durationSec }: { data: PlacasData; durationSec?: 
       <div className="pl-bodycard pl-card">
         <div className="pl-body" ref={bodyRef} dangerouslySetInnerHTML={{ __html: renderText(data.body ?? "") }} />
       </div>
+
+      {data.audio_url && <audio src={data.audio_url} autoPlay muted={!WANT_AUDIO} />}
     </div>
   );
 }

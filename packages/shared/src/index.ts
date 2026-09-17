@@ -201,6 +201,7 @@ export interface UltimaHoraData {
   text: string;                       // bajada (soporta **markdown** para negrita)
   media_url?: string | null;          // foto o video opcional
   media_kind?: "image" | "video" | null;
+  audio_url?: string | null;          // audio opcional (se reproduce mientras está al aire)
 }
 
 // Datos del tipo "placas" (noticia genérica: escrita a mano o traída de Cíclico).
@@ -211,6 +212,7 @@ export interface PlacasData {
   media_url?: string | null;          // foto opcional (card izquierda, debajo del título)
   media_kind?: "image" | "video" | null;
   source?: string;                    // fuente (opcional, no se muestra)
+  audio_url?: string | null;          // audio opcional (se reproduce mientras está al aire)
 }
 
 // Datos del tipo "dolar": 3 cotizaciones elegidas, la del medio (índice 1) es la ancla.
@@ -310,6 +312,7 @@ export interface DeclaracionesData {
   quote: string;  // cita, máx 450
   headline?: string;          // titular de la nota (opcional)
   interview_program?: string; // "Entrevista completa en …" (opcional)
+  audio_url?: string | null;  // audio opcional (se reproduce mientras está al aire)
 }
 
 // Datos del tipo "shorts": 1 o 2 shorts verticales del canal (YouTube). El

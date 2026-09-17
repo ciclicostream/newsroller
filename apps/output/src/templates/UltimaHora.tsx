@@ -79,6 +79,8 @@ export function UltimaHora({ data }: { data: UltimaHoraData }) {
           ))}
         </div>
       </div>
+
+      {data.audio_url && <audio src={data.audio_url} autoPlay muted={!WANT_AUDIO} />}
     </div>
   );
 }

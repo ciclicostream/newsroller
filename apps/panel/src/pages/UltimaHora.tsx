@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Plus, Trash2, Check, Loader2, Image as ImageIcon, Video, X } from "lucide-react";
+import { Plus, Trash2, Check, Loader2, Image as ImageIcon, Video, Music, X } from "lucide-react";
 import type { ContentItem, UltimaHoraData } from "@newsroller/shared";
 import { contentItems } from "../lib/content-items";
 import { uploadMedia } from "../lib/content";
@@ -14,9 +14,12 @@ export function UltimaHora() {
   const [dur, setDur] = useState(8);
   const [mediaUrl, setMediaUrl] = useState<string | null>(null);
   const [mediaKind, setMediaKind] = useState<"image" | "video" | null>(null);
+  const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [uploadingAudio, setUploadingAudio] = useState(false);
   const [saving, setSaving] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  const audioRef = useRef<HTMLInputElement>(null);
 
   const load = () => contentItems.list("ultima_hora").then(setItems).catch((e) => setErr(e.message));
   useEffect(() => {
@@ -45,6 +48,20 @@ export function UltimaHora() {
     if (fileRef.current) fileRef.current.value = "";
   }
 
+  async function onAudioFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setErr(null);
+    setUploadingAudio(true);
+    try { setAudioUrl(await uploadMedia(file, "media")); }
+    catch (e) { setErr(e instanceof Error ? e.message : "error subiendo"); }
+    finally { setUploadingAudio(false); }
+  }
+  function clearAudio() {
+    setAudioUrl(null);
+    if (audioRef.current) audioRef.current.value = "";
+  }
+
   async function save(e: React.FormEvent) {
     e.preventDefault();
     setErr(null);
@@ -52,11 +69,12 @@ export function UltimaHora() {
     if (!text.trim()) return setErr("El texto es obligatorio.");
     setSaving(true);
     try {
-      const data: UltimaHoraData = { text: text.trim().slice(0, MAX), media_url: mediaUrl, media_kind: mediaKind };
+      const data: UltimaHoraData = { text: text.trim().slice(0, MAX), media_url: mediaUrl, media_kind: mediaKind, audio_url: audioUrl };
       await contentItems.create({ type: "ultima_hora", data, duration_sec: dur });
       setText("");
       setDur(8);
       clearMedia();
+      clearAudio();
       setMsg("Guardado en el banco.");
       await load();
     } catch (e) {
@@ -127,11 +145,26 @@ export function UltimaHora() {
           </div>
 
           <div className="field">
+            <label>Audio (opcional)</label>
+            {audioUrl ? (
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 13 }}>
+                  <Music size={16} /> audio cargado
+                </span>
+                <button type="button" className="btn" onClick={clearAudio}><X size={14} /> quitar</button>
+              </div>
+            ) : (
+              <input ref={audioRef} type="file" accept="audio/*" onChange={onAudioFile} disabled={uploadingAudio} />
+            )}
+            {uploadingAudio && <div style={{ fontSize: 12, color: "#6b7688", marginTop: 4 }}><Loader2 size={13} className="spin" /> subiendo…</div>}
+          </div>
+
+          <div className="field">
             <label>Duración (segundos)</label>
             <input type="number" min={2} value={dur} onChange={(e) => setDur(Math.max(2, Number(e.target.value) || 8))} />
           </div>
 
-          <button className="btn primary" type="submit" disabled={saving || uploading} style={{ width: "100%", justifyContent: "center" }}>
+          <button className="btn primary" type="submit" disabled={saving || uploading || uploadingAudio} style={{ width: "100%", justifyContent: "center" }}>
             <Plus size={16} /> {saving ? "Guardando…" : "Guardar en el banco"}
           </button>
         </form>

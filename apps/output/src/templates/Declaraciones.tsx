@@ -4,6 +4,8 @@ import fondo from "../assets/fondo2.jpg";
 import { Chrome } from "./Chrome";
 import { useAutoFit } from "../lib/autofit";
 
+const WANT_AUDIO = typeof window !== "undefined" && new URLSearchParams(window.location.search).has("audio");
+
 // Placa Declaraciones: foto cuadrada + placas nombre/cargo/lugar a la izquierda;
 // cita en tarjeta azul (con comillas en placa navy separada, efecto máquina de
 // escribir) a la derecha; barra de titular + tarjeta "Entrevista en…" abajo
@@ -62,6 +64,8 @@ export function Declaraciones({ data, durationSec }: { data: DeclaracionesData; 
       {data.interview_program && (
         <div className="dc-epa dc-el">Entrevista completa en <b>{data.interview_program}</b></div>
       )}
+
+      {data.audio_url && <audio src={data.audio_url} autoPlay muted={!WANT_AUDIO} />}
     </div>
   );
 }
