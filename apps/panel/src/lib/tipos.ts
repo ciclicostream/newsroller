@@ -31,7 +31,7 @@ export const TIPOS: TipoDef[] = [
   { type: "dolar", label: "Dólar", desc: "Cotizaciones (API o manual)", Icon: DollarSign, ready: true },
   { type: "cifras", label: "Cifras", desc: "Dato destacado con fuente", Icon: BarChart3, ready: true },
   { type: "efemerides", label: "Efemérides", desc: "Fecha + cuerpo + imagen", Icon: CalendarDays, ready: true },
-  { type: "cartelera", label: "Cartelera", desc: "Estreno / obra con ficha", Icon: Clapperboard },
+  { type: "cartelera", label: "Cartelera", desc: "Estreno / obra con ficha", Icon: Clapperboard, ready: true },
   { type: "declaraciones", label: "Declaraciones", desc: "Cita textual + foto", Icon: Quote },
   { type: "informe", label: "Informe Cíclico", desc: "Hasta 10 tarjetas en secuencia", Icon: ListOrdered },
   { type: "publicidad", label: "Publicidad", desc: "Full o vertical (genera reporte)", Icon: Megaphone },

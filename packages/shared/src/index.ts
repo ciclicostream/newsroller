@@ -234,6 +234,20 @@ export function formatEfemeridesDate(d: Pick<EfemeridesData, "dateKind" | "day" 
   return `${d.day ?? 1} DE ${mes.toUpperCase()} DE ${d.year}`;
 }
 
+// Datos del tipo "cartelera" ("En cartelera"). Todo obligatorio salvo el video.
+export interface CarteleraData {
+  photo_url: string;   // foto horizontal, obligatoria
+  title: string;        // título de la obra, máx 90
+  author: string;       // "De …"
+  cast: string;          // "Con: …"
+  venue: string;         // lugar
+  address: string;       // dirección
+  city: string;           // ciudad/barrio
+  days: string;           // día(s)
+  time: string;           // horario
+  video_url?: string | null; // opcional, 9:16
+}
+
 // ---- Plantillas propias (editor visual) ----
 export type ElementType = "text" | "image" | "video" | "weather" | "data" | "logo" | "shape" | "camera";
 
