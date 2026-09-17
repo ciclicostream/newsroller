@@ -149,8 +149,6 @@ export interface PlacasData {
   label?: string;                     // volanta / fecha (pill sobre la card de título)
   media_url?: string | null;          // foto opcional (card izquierda, debajo del título)
   media_kind?: "image" | "video" | null;
-  temp?: string;                      // temperatura pill (ej. "13C")
-  city?: string;                      // ciudad de la temperatura (ej. "CABA")
   source?: string;                    // fuente (opcional, no se muestra)
 }
 

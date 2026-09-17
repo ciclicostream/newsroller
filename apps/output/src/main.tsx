@@ -28,8 +28,6 @@ const DEMOS: Record<string, { type: string; data: Record<string, any> }> = {
     data: {
       label: "17 de septiembre",
       title: "A 50 años de la Noche de los Lápices, estudiantes marchan en todo el país para no olvidar",
-      temp: "13C",
-      city: "CABA",
       body:
         "Este miércoles 16 de septiembre se cumplen exactamente 50 años de la Noche de los Lápices, el operativo represivo que en 1976 ordenó el general Ramón Camps y que derivó en el secuestro de once estudiantes secundarios de La Plata de entre 16 y 18 años, de los cuales seis permanecen desaparecidos:\n\nFrancisco López Muntaner, María Claudia Falcone, Claudio de Acha, Horacio Ángel Ungaro, Daniel Alberto Racero y María Clara Ciocchini.\n\nSu crimen fue reclamar por el boleto estudiantil secundario.",
       media_url: "https://picsum.photos/seed/plc/900/600",
@@ -41,8 +39,6 @@ const DEMOS: Record<string, { type: string; data: Record<string, any> }> = {
     data: {
       label: "Economía",
       title: "El Gobierno anunció un **nuevo esquema** cambiario para las próximas semanas",
-      temp: "21C",
-      city: "CABA",
       body:
         "La medida busca contener la brecha y llega tras una semana de fuerte demanda de divisas.\n\nEl anuncio se oficializará mañana por la mañana con la publicación en el Boletín Oficial.",
       media_url: null,

@@ -27,8 +27,6 @@ export function Placas() {
   const [label, setLabel] = useState("");
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
-  const [temp, setTemp] = useState("");
-  const [city, setCity] = useState("CABA");
   const [dur, setDur] = useState(10);
   const [mediaUrl, setMediaUrl] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -93,13 +91,11 @@ export function Placas() {
         title: title.trim().slice(0, T_MAX),
         body: body.trim().slice(0, B_MAX) || undefined,
         label: label.trim() || undefined,
-        temp: temp.trim() || undefined,
-        city: city.trim() || undefined,
         media_url: mediaUrl,
         media_kind: mediaUrl ? "image" : null,
       };
       await contentItems.create({ type: "placas", data, duration_sec: dur });
-      setLabel(""); setTitle(""); setBody(""); setTemp(""); setCity("CABA"); setDur(10);
+      setLabel(""); setTitle(""); setBody(""); setDur(10);
       clearMedia();
       setMsg("Guardado en el banco.");
       await load();
@@ -165,17 +161,6 @@ export function Placas() {
               <input ref={fileRef} type="file" accept="image/*" onChange={onFile} disabled={uploading} />
             )}
             {uploading && <div style={{ fontSize: 12, color: "#6b7688", marginTop: 4 }}><Loader2 size={13} className="spin" /> subiendo…</div>}
-          </div>
-
-          <div className="row" style={{ gap: 10 }}>
-            <div className="field" style={{ flex: 1 }}>
-              <label>Temp. (opcional)</label>
-              <input value={temp} onChange={(e) => setTemp(e.target.value.slice(0, 6))} placeholder="13C" />
-            </div>
-            <div className="field" style={{ flex: 1 }}>
-              <label>Ciudad</label>
-              <input value={city} onChange={(e) => setCity(e.target.value.slice(0, 12))} placeholder="CABA" />
-            </div>
           </div>
 
           <div className="field">
