@@ -54,27 +54,39 @@ export function Output() {
   const items = scene?.items ?? [];
   const current = items.length ? items[index % items.length] : null;
 
+  // Ref (no state/dep) para que `advance` tenga una identidad ESTABLE entre
+  // refrescos de escena — así no reinicia el timer de reproducción (ver abajo).
+  const itemsLenRef = useRef(items.length);
+  itemsLenRef.current = items.length;
+
   const advanced = useRef(false);
   const advance = useCallback(() => {
     if (advanced.current) return;
     advanced.current = true;
     setIndex((i) => {
-      const len = items.length || 1;
+      const len = itemsLenRef.current || 1;
       const next = (i + 1) % len;
       if (next === 0) void load();
       return next;
     });
-  }, [items.length, load]);
+  }, [load]);
 
   // Reproductor: avanza por la duración del bloque; un video que TERMINA antes avanza antes.
   // (Nunca queda congelado: la duración es el tope.)
+  // OJO: las dependencias son primitivas (id/duración del bloque actual), NO el array
+  // `items` completo — ese array llega con una referencia NUEVA en cada refresco de
+  // escena (poll cada 60s, o el load() al completar una vuelta), aunque el contenido
+  // sea idéntico. Depender de `items` reiniciaba este timer desde cero cada vez que
+  // eso pasaba, duplicando (o más) la duración real en pantalla, y si la escena
+  // llegaba momentáneamente vacía, cortaba el timer sin reprogramar el próximo avance.
   useEffect(() => {
     advanced.current = false;
-    if (items.length === 0) return;
-    const dur = Math.max(2, items[index % items.length]?.duration_sec ?? 8);
+    if (!current) return;
+    const dur = Math.max(2, current.duration_sec ?? 8);
     const t = setTimeout(advance, dur * 1000);
     return () => clearTimeout(t);
-  }, [index, items, advance]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [current?.id, current?.duration_sec, advance]);
 
   const clock = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
   const logo = scene?.logos?.[0];
