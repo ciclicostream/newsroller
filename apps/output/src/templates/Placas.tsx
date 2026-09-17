@@ -1,29 +1,14 @@
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { PlacasData } from "@newsroller/shared";
 import fondo from "../assets/fondo-placas.jpg";
 import { Chrome } from "./Chrome";
+import { useAutoFit } from "../lib/autofit";
 
 const WANT_AUDIO = typeof window !== "undefined" && new URLSearchParams(window.location.search).has("audio");
 
 function renderText(t: string): string {
   const esc = (t ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
   return esc.replace(/\*\*(.+?)\*\*/g, "<b>$1</b>");
-}
-
-// Achica la fuente de un elemento hasta que entre en su alto disponible.
-function useAutoFit(ref: React.RefObject<HTMLElement>, base: number, min: number, deps: unknown[]) {
-  useLayoutEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    let px = base;
-    el.style.fontSize = px + "px";
-    let guard = 0;
-    while (el.scrollHeight > el.clientHeight && px > min && guard++ < 50) {
-      px -= 2;
-      el.style.fontSize = px + "px";
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, deps);
 }
 
 // Placa de noticia (marco estándar Chrome): volanta + título + foto a la izquierda, cuerpo a la derecha.

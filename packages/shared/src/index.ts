@@ -208,6 +208,32 @@ export interface CifrasData {
   icon: CifrasIcon | null;   // null = "Sin ícono"
 }
 
+const MESES_LARGO = [
+  "enero", "febrero", "marzo", "abril", "mayo", "junio",
+  "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre",
+];
+
+// Datos del tipo "efemerides". Precisión de fecha variable: día exacto, sólo
+// mes o sólo año (hay efemérides sin fecha exacta conocida).
+export interface EfemeridesData {
+  dateKind: "full" | "month" | "year";
+  day?: number;    // 1-31, sólo si dateKind="full"
+  month?: number;  // 0-11, si dateKind="full" o "month"
+  year: number;
+  title: string;   // máx 60
+  body: string;    // máx 400
+  media_url: string;              // obligatoria
+  media_kind: "image" | "video";
+}
+
+// "11 DE SEPTIEMBRE DE 2001" / "SEPTIEMBRE DE 2025" / "2025".
+export function formatEfemeridesDate(d: Pick<EfemeridesData, "dateKind" | "day" | "month" | "year">): string {
+  if (d.dateKind === "year") return String(d.year);
+  const mes = MESES_LARGO[d.month ?? 0] ?? "";
+  if (d.dateKind === "month") return `${mes.toUpperCase()} DE ${d.year}`;
+  return `${d.day ?? 1} DE ${mes.toUpperCase()} DE ${d.year}`;
+}
+
 // ---- Plantillas propias (editor visual) ----
 export type ElementType = "text" | "image" | "video" | "weather" | "data" | "logo" | "shape" | "camera";
 

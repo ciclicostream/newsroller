@@ -30,7 +30,7 @@ export const TIPOS: TipoDef[] = [
   { type: "placas", label: "Placas", desc: "Noticia: escrita a mano o traída de Cíclico", Icon: Newspaper, ready: true },
   { type: "dolar", label: "Dólar", desc: "Cotizaciones (API o manual)", Icon: DollarSign, ready: true },
   { type: "cifras", label: "Cifras", desc: "Dato destacado con fuente", Icon: BarChart3, ready: true },
-  { type: "efemerides", label: "Efemérides", desc: "Fecha + cuerpo + imagen", Icon: CalendarDays },
+  { type: "efemerides", label: "Efemérides", desc: "Fecha + cuerpo + imagen", Icon: CalendarDays, ready: true },
   { type: "cartelera", label: "Cartelera", desc: "Estreno / obra con ficha", Icon: Clapperboard },
   { type: "declaraciones", label: "Declaraciones", desc: "Cita textual + foto", Icon: Quote },
   { type: "informe", label: "Informe Cíclico", desc: "Hasta 10 tarjetas en secuencia", Icon: ListOrdered },
