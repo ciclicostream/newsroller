@@ -3,6 +3,7 @@ import { Plus, Trash2, Check, Search, Sparkles } from "lucide-react";
 import type { ContentItem, PromosData } from "@newsroller/shared";
 import { contentItems } from "../lib/content-items";
 import { api } from "../lib/api";
+import { youtubeId } from "../lib/cameras";
 
 interface VideoResult { id: string; title: string; thumbnail_url: string | null; duration_sec: number }
 
@@ -11,10 +12,12 @@ export function PromosPlaca() {
   const [err, setErr] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
 
+  const [source, setSource] = useState<"search" | "manual">("search");
   const [query, setQuery] = useState("#avance");
   const [results, setResults] = useState<VideoResult[]>([]);
   const [searching, setSearching] = useState(false);
   const [videoId, setVideoId] = useState("");
+  const [manualInput, setManualInput] = useState("");
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const [format, setFormat] = useState<"916" | "43">("916");
@@ -42,14 +45,15 @@ export function PromosPlaca() {
   async function save(e: React.FormEvent) {
     e.preventDefault();
     setErr(null); setMsg(null);
-    if (!videoId.trim()) return setErr("Elegí un video.");
+    const id = source === "manual" ? youtubeId(manualInput) : videoId.trim();
+    if (!id) return setErr(source === "manual" ? "Pegá el link o ID del video de YouTube." : "Elegí un video.");
     if (!title.trim()) return setErr("El título es obligatorio.");
     if (!body.trim()) return setErr("El texto es obligatorio.");
     setSaving(true);
     try {
-      const data: PromosData = { title: title.trim().slice(0, 24), body: body.trim().slice(0, 160), format, video_id: videoId.trim() };
+      const data: PromosData = { title: title.trim().slice(0, 24), body: body.trim().slice(0, 160), format, video_id: id };
       await contentItems.create({ type: "promos", data, duration_sec: dur });
-      setTitle(""); setBody("");
+      setTitle(""); setBody(""); setManualInput("");
       setMsg("Guardado en el banco.");
       await load();
     } catch (e) {
@@ -74,7 +78,7 @@ export function PromosPlaca() {
       <div className="page-head">
         <div>
           <h1>Promos / Avances</h1>
-          <p>Pill + card de texto + video 9:16 o 4:3, elegido del canal de YouTube (autoseleccionable por hashtag).</p>
+          <p>Pill + card de texto + video 9:16 o 4:3, elegido del canal de YouTube (por hashtag o pegando el link/ID, para no listados).</p>
         </div>
       </div>
 
@@ -86,22 +90,41 @@ export function PromosPlaca() {
           <div style={{ fontWeight: 500, marginBottom: 14 }}>Nueva promo</div>
 
           <div className="field">
-            <label>Buscar en el canal (por hashtag o texto)</label>
-            <div style={{ display: "flex", gap: 8 }}>
-              <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="#avance" />
-              <button type="button" className="btn" onClick={() => void search()} disabled={searching}>
-                <Search size={14} /> {searching ? "…" : "Buscar"}
-              </button>
+            <label>Video</label>
+            <div className="tabs" style={{ marginBottom: 0 }}>
+              <button type="button" className={"tab" + (source === "search" ? " active" : "")} onClick={() => setSource("search")}>Buscar en el canal</button>
+              <button type="button" className={"tab" + (source === "manual" ? " active" : "")} onClick={() => setSource("manual")}>Pegar link/ID</button>
             </div>
           </div>
 
-          <div className="field">
-            <label>Video</label>
-            <select value={videoId} onChange={(e) => setVideoId(e.target.value)}>
-              {results.length === 0 && <option value="">— sin resultados —</option>}
-              {results.map((v) => <option key={v.id} value={v.id}>{v.title}</option>)}
-            </select>
-          </div>
+          {source === "search" ? (
+            <>
+              <div className="field">
+                <label>Buscar en el canal (por hashtag o texto)</label>
+                <div style={{ display: "flex", gap: 8 }}>
+                  <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="#avance" />
+                  <button type="button" className="btn" onClick={() => void search()} disabled={searching}>
+                    <Search size={14} /> {searching ? "…" : "Buscar"}
+                  </button>
+                </div>
+                <div style={{ fontSize: 12, color: "#6b7688", marginTop: 4 }}>Sólo encuentra videos públicos del canal.</div>
+              </div>
+
+              <div className="field">
+                <label>Resultado</label>
+                <select value={videoId} onChange={(e) => setVideoId(e.target.value)}>
+                  {results.length === 0 && <option value="">— sin resultados —</option>}
+                  {results.map((v) => <option key={v.id} value={v.id}>{v.title}</option>)}
+                </select>
+              </div>
+            </>
+          ) : (
+            <div className="field">
+              <label>Link o ID del video de YouTube</label>
+              <input value={manualInput} onChange={(e) => setManualInput(e.target.value)} placeholder="https://youtube.com/watch?v=…" />
+              <div style={{ fontSize: 12, color: "#6b7688", marginTop: 4 }}>Usalo para videos no listados (unlisted), que la búsqueda no encuentra.</div>
+            </div>
+          )}
 
           <div className="field">
             <label>Formato del video</label>
