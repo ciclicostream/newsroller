@@ -73,13 +73,15 @@ export function Programacion() {
   const [mode, setMode] = useState<"preview" | "aire" | "clip">("preview");
   const [clipId, setClipId] = useState<string | null>(null);
   const [onAir, setOnAirState] = useState(true);
+  const [airSince, setAirSince] = useState<string | null>(null);
   const [liveStatus, setLiveStatus] = useState<LiveStatus | null>(null);
-  const [secs, setSecs] = useState(0);
+  const [tick, setTick] = useState(0); // fuerza un re-render por segundo para el reloj
   const [publishing, setPublishing] = useState(false);
 
-  // Estado real del corte de emisión (persistido en /api/settings, no local).
+  // Estado real del corte de emisión y del reloj "al aire" (persistidos en
+  // /api/settings, no locales) — sobreviven a un refresco del navegador.
   useEffect(() => {
-    settingsApi.get().then((s) => setOnAirState(s.onAir !== false)).catch(() => {});
+    settingsApi.get().then((s) => { setOnAirState(s.onAir !== false); setAirSince(s.airSince || null); }).catch(() => {});
   }, []);
   async function toggleOnAir() {
     const next = !onAir;
@@ -109,7 +111,7 @@ export function Programacion() {
     } catch (e) { setErr(e instanceof Error ? e.message : "error"); }
   }
   useEffect(() => { void load(); }, []);
-  useEffect(() => { const t = setInterval(() => setSecs((s) => s + 1), 1000); return () => clearInterval(t); }, []);
+  useEffect(() => { const t = setInterval(() => setTick((s) => s + 1), 1000); return () => clearInterval(t); }, []);
 
   const disponibles = items.filter((c) => c.in_parrilla !== false && (filter === "all" || catOf(c.type) === filter));
   const countIn = (id: string) => draft.filter((r) => r.content_id === id).length;
@@ -130,7 +132,7 @@ export function Programacion() {
 
   async function publish() {
     setPublishing(true); setErr(null);
-    try { const r = await parrilla.publish(); setMsg(`Al aire: ${r.count} bloque(s)`); setSecs(0); setTimeout(() => setMsg(null), 2500); }
+    try { const r = await parrilla.publish(); setMsg(`Al aire: ${r.count} bloque(s)`); setAirSince(new Date().toISOString()); setTimeout(() => setMsg(null), 2500); }
     catch (e) { setErr(e instanceof Error ? e.message : "error"); }
     finally { setPublishing(false); }
   }
@@ -175,6 +177,10 @@ export function Programacion() {
   const cicloSec = draft.filter((r) => r.enabled).reduce((a, r) => a + r.duration_sec, 0);
 
   const fmt = (s: number) => [Math.floor(s / 3600), Math.floor((s % 3600) / 60), s % 60].map((n) => String(n).padStart(2, "0")).join(":");
+  // Tiempo real al aire desde la última publicación (persiste entre refrescos:
+  // se calcula contra airSince, no contra un contador local que arranca de 0).
+  void tick; // sólo dispara el re-render de 1x/seg; el valor en sí no se usa
+  const airSec = airSince ? Math.max(0, Math.floor((Date.now() - new Date(airSince).getTime()) / 1000)) : 0;
 
   return (
     <div className="pv">
@@ -230,7 +236,7 @@ export function Programacion() {
             onDragOver={(e) => { if (dragRef.current) e.preventDefault(); }}
             onDrop={(e) => { e.preventDefault(); onDropAt(null, false); }}>
             {draft.length === 0 && <div className="pv-empty">Arrastrá acá los contenidos disponibles.</div>}
-            {draft.map((r, i) => {
+            {draft.map((r) => {
               const ci = r.content_id ? itemById.get(r.content_id) : null;
               const cat = ci ? catOf(ci.type) : "media"; const cc = CAT[cat]; const Ic = cc.Icon;
               const label = ci ? itemText(ci) : (r.content_type === "content_item" ? "(contenido eliminado)" : r.content_type);
@@ -241,7 +247,6 @@ export function Programacion() {
                   onDrop={(e) => { e.preventDefault(); e.stopPropagation(); const rc = (e.currentTarget as HTMLElement).getBoundingClientRect(); onDropAt(r.id, e.clientY > rc.top + rc.height / 2); }}
                   onClick={() => setSel(r.id)}>
                   <GripVertical size={16} className="pv-grip" />
-                  <span className="pv-num">{i + 1}</span>
                   <span className="pv-badge" style={{ background: cc.color }} title={ci ? TYPE_LABEL[ci.type] : ""}><Ic size={15} color="#fff" /></span>
                   <span className="pv-lbl">{label}</span>
                   <input className="pv-dur" type="number" value={r.duration_sec} onClick={(e) => e.stopPropagation()} onChange={(e) => setDur(r.id, +e.target.value)} />
@@ -269,7 +274,7 @@ export function Programacion() {
                     placa off_air.jpg ya lo dice — no le agregamos texto encima. */}
                 {monUrl ? <iframe key={monUrl} src={monUrl} title="monitor" /> : <div className="pv-ph">Elegí un contenido para previsualizarlo.</div>}
               </div>
-              {monHasAudio && <Vu audio />}
+              <Vu audio={monHasAudio} />
             </div>
           </div>
 
@@ -283,7 +288,7 @@ export function Programacion() {
               }</b></div>
               <div>Salida: <b>1920×1080</b> · FPS: <b>{liveStatus ? liveStatus.fps : "—"}</b></div>
             </div>
-            <div className="pv-clock"><span className="lb">al aire</span><span className="dg">{fmt(secs)}</span></div>
+            <div className="pv-clock"><span className="lb">al aire</span><span className="dg">{fmt(airSec)}</span></div>
           </div>
 
           <div className="pv-kpis">
@@ -323,8 +328,9 @@ function Fader({ onPublish, publishing }: { onPublish: () => void; publishing: b
   );
 }
 
-// Sólo se renderiza cuando el clip/vivo tiene audio (ver monHasAudio). Es un VU
-// simulado (no lee el audio real del iframe, el navegador no lo permite cross-origin).
+// Siempre visible; cuando el clip/vivo no tiene audio, se queda quieto en cero
+// (no desaparece). VU simulado (no lee el audio real del iframe, el navegador
+// no lo permite cross-origin).
 function Vu({ audio }: { audio: boolean }) {
   const [lvl, setLvl] = useState(0);
   useEffect(() => {
@@ -340,7 +346,7 @@ function Vu({ audio }: { audio: boolean }) {
           <i key={i} style={{ background: i < lit ? color(i) : "#e6e9f0" }} />
         ))}
       </div>
-      <div className="pv-vulb">AUDIO</div>
+      <div className="pv-vulb">{audio ? "AUDIO" : "SIN\nAUDIO"}</div>
     </div>
   );
 }
@@ -387,7 +393,7 @@ const CSS = `
 .pv-rows{flex:1;min-height:0;overflow:auto;padding:2px 14px 14px}
 .pv-row{display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:11px;cursor:grab;background:#fff;border:1px solid var(--ln)}
 .pv-row+.pv-row{margin-top:8px}.pv-row.sel{outline:2px solid var(--ac);outline-offset:-1px}.pv-row.off{opacity:.5}
-.pv-grip{color:#b8c0d4;flex:none}.pv-num{color:var(--dim);font-size:12px;font-weight:800;width:16px;text-align:center;flex:none}
+.pv-grip{color:#b8c0d4;flex:none}
 .pv-badge{border-radius:7px;padding:4px 6px;display:inline-flex;flex:none}
 .pv-lbl{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px;font-weight:500}
 .pv-dur{width:56px;background:#f4f5f7;border:1px solid var(--ln);color:var(--tx);border-radius:8px;padding:6px 8px;font:inherit;font-size:13px;text-align:center;flex:none;-moz-appearance:textfield}

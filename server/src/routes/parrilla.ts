@@ -2,13 +2,15 @@ import { Router } from "express";
 import { LAYOUTS, type ContentType } from "@newsroller/shared";
 import { getSupabase } from "../db/supabase.js";
 import { requireAuth } from "../auth/middleware.js";
+import type { IO } from "../realtime/socket.js";
+import { writeSettings } from "./settings.js";
 
 const TYPES: ContentType[] = ["short", "placa", "ad", "background", "data", "template", "content_item"];
 const TEMPLATE_IDS = new Set(LAYOUTS.map((t) => t.id));
 const SELF_LAYOUT = new Set<ContentType>(["template", "content_item"]);
 
 // Parrilla en BORRADOR (parrilla_draft). Se publica a playlist_items (el aire) con /publish.
-export function parrillaRouter(): Router {
+export function parrillaRouter(io: IO): Router {
   const r = Router();
   r.use(requireAuth);
   const sb = () => getSupabase()!;
@@ -91,6 +93,9 @@ export function parrillaRouter(): Router {
       const { error: insErr } = await sb().from("playlist_items").insert(rows);
       if (insErr) return res.status(500).json({ error: insErr.message });
     }
+    // Estampa "al aire desde" para el reloj del Monitor (persiste entre refrescos
+    // del navegador). No bloquea la respuesta si esto falla por algún motivo.
+    try { await writeSettings(io, { airSince: new Date().toISOString() }); } catch { /* noop */ }
     res.json({ ok: true, count: rows.length });
   });
 

@@ -55,7 +55,7 @@ app.use("/api/users", usersRouter());
 app.use("/api/content", contentRouter());
 app.use("/api/content-items", contentItemsRouter());
 app.use("/api/playlist", playlistRouter());
-app.use("/api/parrilla", parrillaRouter());
+app.use("/api/parrilla", parrillaRouter(io));
 app.use("/api/templates", templatesRouter());
 app.use("/api/output", outputRouter()); // público (sin auth) para vMix
 
