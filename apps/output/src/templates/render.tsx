@@ -155,6 +155,12 @@ export function YouTubePlayer({ videoId, onEnded, allowAudio = true }: { videoId
   const endedRef = useRef(onEnded);
   endedRef.current = onEnded;
 
+  // Sólo reintentamos play() tras un PAUSED si pasó DENTRO de esta ventana desde que
+  // intentamos unMute() — si no, un PAUSED es el propio YouTube frenando brevemente
+  // antes de ENDED (buffering del último tramo), y forzar playVideo() ahí impedía que
+  // ENDED se disparara nunca (el video quedaba "trabado" reproduciéndose sin fin).
+  const unmuteAttemptedAtRef = useRef(0);
+
   useEffect(() => {
     let player: any;
     let cancelled = false;
@@ -171,13 +177,20 @@ export function YouTubePlayer({ videoId, onEnded, allowAudio = true }: { videoId
             try { e.target.playVideo(); } catch { /* noop */ }
             // Solo intentar sonido si se pidió (OBS/vMix con ?audio=1). En el navegador normal
             // NO se toca: así el autoplay muteado nunca se bloquea.
-            if (allowAudio && WANT_AUDIO) setTimeout(() => { try { e.target.unMute(); e.target.setVolume(100); } catch { /* noop */ } }, 500);
+            if (allowAudio && WANT_AUDIO) {
+              setTimeout(() => {
+                unmuteAttemptedAtRef.current = Date.now();
+                try { e.target.unMute(); e.target.setVolume(100); } catch { /* noop */ }
+              }, 500);
+            }
           },
           onStateChange: (e: any) => {
             const S = window.YT?.PlayerState;
             if (e.data === S?.ENDED) { endedRef.current(); return; }
-            // Si el navegador lo pausó (por el intento de sonido sin gesto), seguí reproduciendo muteado.
-            if (e.data === S?.PAUSED) {
+            // Si el navegador lo pausó por el intento de sonido sin gesto (ventana de 2s
+            // tras el unMute), seguí reproduciendo muteado. Fuera de esa ventana, dejalo:
+            // puede ser el video llegando a su fin natural.
+            if (e.data === S?.PAUSED && Date.now() - unmuteAttemptedAtRef.current < 2000) {
               try { e.target.mute(); e.target.playVideo(); } catch { /* noop */ }
             }
           },
