@@ -431,7 +431,7 @@ function ElementProps({
 
   async function upload(file: File) {
     try {
-      const url = await uploadMedia(file, "ad");
+      const url = await uploadMedia(file, "media");
       onProps({ src: url });
     } catch (e) {
       setErr(e instanceof Error ? e.message : "error");

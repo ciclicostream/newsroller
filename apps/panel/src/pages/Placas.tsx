@@ -46,7 +46,7 @@ export function Placas() {
     setErr(null);
     setUploading(true);
     try {
-      setMediaUrl(await uploadMedia(file, "ad"));
+      setMediaUrl(await uploadMedia(file, "media"));
     } catch (e) {
       setErr(e instanceof Error ? e.message : "error subiendo");
     } finally {

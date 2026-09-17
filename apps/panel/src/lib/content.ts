@@ -27,9 +27,10 @@ export async function uploadAsset(kind: AssetKind, file: File): Promise<Asset> {
   });
 }
 
-// Sube media para usar dentro de plantillas (a Storage) y devuelve la URL pública,
-// SIN registrar un asset (no aparece en Publicidad).
-export async function uploadMedia(file: File, kind: AssetKind = "ad"): Promise<string> {
+// Sube media para usar dentro de plantillas/placas (a Storage) y devuelve la URL pública,
+// SIN registrar un asset (no aparece en Publicidad). Default: bucket "media" (NO "ads",
+// que los adblockers bloquean por la ruta /ads/ → no cargaba en Chrome).
+export async function uploadMedia(file: File, kind: AssetKind | "media" = "media"): Promise<string> {
   const sign = await api.post<SignResponse>("/api/content/uploads/sign", { kind, filename: file.name });
   const { error } = await supabase.storage.from(sign.bucket).uploadToSignedUrl(sign.path, sign.token, file);
   if (error) throw new Error(`subida a Storage: ${error.message}`);

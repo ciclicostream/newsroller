@@ -13,6 +13,13 @@ const BUCKETS: Record<AssetKind, string> = {
 const isKind = (v: unknown): v is AssetKind =>
   typeof v === "string" && v in BUCKETS;
 
+// Buckets válidos para SUBIR (firma). Incluye "media": bucket neutro para la media
+// embebida en plantillas/placas/última hora. NO usar "ads" para eso: su ruta (/ads/)
+// la bloquean los adblockers (uBlock/AdBlock) → la imagen no carga en Chrome.
+const UPLOAD_BUCKETS: Record<string, string> = { ...BUCKETS, media: "media" };
+const isUploadKind = (v: unknown): v is string =>
+  typeof v === "string" && v in UPLOAD_BUCKETS;
+
 const safeName = (name: string) =>
   name.normalize("NFKD").replace(/[^a-zA-Z0-9._-]/g, "-").slice(-80);
 
@@ -28,9 +35,9 @@ export function contentRouter(): Router {
   // 1) Pedir URL firmada para subir directo a Storage (sin pasar el archivo por el server).
   r.post("/uploads/sign", async (req, res) => {
     const { kind, filename } = req.body ?? {};
-    if (!isKind(kind)) return res.status(400).json({ error: "kind inválido" });
+    if (!isUploadKind(kind)) return res.status(400).json({ error: "kind inválido" });
     if (typeof filename !== "string" || !filename) return res.status(400).json({ error: "filename requerido" });
-    const bucket = BUCKETS[kind];
+    const bucket = UPLOAD_BUCKETS[kind]!; // isUploadKind garantiza que existe
     const path = `${Date.now()}-${crypto.randomUUID()}-${safeName(filename)}`;
     const { data, error } = await sb().storage.from(bucket).createSignedUploadUrl(path);
     if (error || !data) return res.status(500).json({ error: error?.message ?? "no se pudo firmar" });

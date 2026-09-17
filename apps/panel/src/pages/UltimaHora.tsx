@@ -29,7 +29,7 @@ export function UltimaHora() {
     setErr(null);
     setUploading(true);
     try {
-      const url = await uploadMedia(file, "ad");
+      const url = await uploadMedia(file, "media");
       setMediaUrl(url);
       setMediaKind(file.type.startsWith("video/") ? "video" : "image");
     } catch (e) {
