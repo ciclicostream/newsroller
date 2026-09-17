@@ -7,6 +7,7 @@ import { contentItems } from "../lib/content-items";
 import { OUTPUT_BASE } from "../lib/parrilla";
 import { UltimaHora } from "./UltimaHora";
 import { Placas } from "./Placas";
+import { Dolar } from "./Dolar";
 
 // Plantilla mostrada por defecto al entrar a Contenido.
 const DEFAULT_TYPE = "placas";
@@ -65,6 +66,7 @@ export function NuevoContenido() {
 function TemplateForm({ type }: { type: string }) {
   if (type === "ultima_hora") return <UltimaHora />;
   if (type === "placas") return <Placas />;
+  if (type === "dolar") return <Dolar />;
   const def = TIPO_BY_KEY[type];
   return <TipoEnConstruccion type={type} label={def?.label ?? type} />;
 }

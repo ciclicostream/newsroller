@@ -29,11 +29,23 @@ export interface DolarCasa {
   compra: number | null;
   venta: number | null;
   fecha: string; // ISO
+  ventaPrev?: number | null; // venta del día hábil anterior (para variación ▲/▼); null si no hay dato aún
 }
 export interface DolarPayload {
   casas: DolarCasa[];
   updatedAt: string; // ISO, la fecha más reciente entre casas
 }
+
+// Casas de cambio elegibles para la placa Dólar (id de dolarapi.com → etiqueta).
+export const DOLAR_CASAS: Record<string, string> = {
+  oficial: "Oficial",
+  blue: "Blue",
+  bolsa: "MEP",
+  contadoconliqui: "CCL",
+  tarjeta: "Tarjeta",
+  mayorista: "Mayorista",
+  cripto: "Cripto",
+};
 
 export interface SerieValor {
   key: string; // ipc, salarios, energia, petroleo...
@@ -150,6 +162,14 @@ export interface PlacasData {
   media_url?: string | null;          // foto opcional (card izquierda, debajo del título)
   media_kind?: "image" | "video" | null;
   source?: string;                    // fuente (opcional, no se muestra)
+}
+
+// Datos del tipo "dolar": 3 cotizaciones elegidas, la del medio (índice 1) es la ancla.
+// El valor en vivo sale de la fuente `dolar` (dolarapi.com); `overrides` permite
+// forzar un valor manual por casa (ignora la API para esa cotización).
+export interface DolarData {
+  casas: [string, string, string]; // ids de DOLAR_CASAS; casas[1] = ancla (pill "EL DÓLAR")
+  overrides?: Partial<Record<string, number>>; // casa -> valor manual (pisa el venta de la API)
 }
 
 // ---- Plantillas propias (editor visual) ----

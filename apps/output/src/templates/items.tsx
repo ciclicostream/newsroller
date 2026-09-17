@@ -1,15 +1,30 @@
-import type { UltimaHoraData, PlacasData } from "@newsroller/shared";
+import type { UltimaHoraData, PlacasData, DolarData, DolarPayload } from "@newsroller/shared";
 import { UltimaHora } from "./UltimaHora";
 import { Placas } from "./Placas";
+import { Dolar } from "./Dolar";
 
 // Despacha un contenido tipado del banco 2026 a su componente de output.
+// `liveData` = scene.data (payloads en vivo por fuente, ej. liveData.dolar) para
+// los tipos que necesitan un valor de API además de lo cargado a mano.
 // A medida que se portan más tipos, se agregan acá.
-export function ItemView({ type, data, durationSec }: { type: string; data: Record<string, any>; durationSec?: number }) {
+export function ItemView({
+  type,
+  data,
+  durationSec,
+  liveData,
+}: {
+  type: string;
+  data: Record<string, any>;
+  durationSec?: number;
+  liveData?: Record<string, unknown>;
+}) {
   switch (type) {
     case "ultima_hora":
       return <UltimaHora data={data as UltimaHoraData} />;
     case "placas":
       return <Placas data={data as PlacasData} durationSec={durationSec} />;
+    case "dolar":
+      return <Dolar data={data as DolarData} live={liveData?.dolar as DolarPayload | undefined} durationSec={durationSec} />;
     default:
       return null;
   }
