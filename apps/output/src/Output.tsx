@@ -1,15 +1,18 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { io } from "socket.io-client";
+import { contentHasAudio } from "@newsroller/shared";
 import { API_BASE, fetchScene, dataView, tickerText, type Block, type Scene } from "./lib/scene";
 import { TemplateView } from "./templates/render";
 import { ItemView } from "./templates/items";
+import offAir from "./assets/off-air.jpg";
 
 export function Output() {
   const [scene, setScene] = useState<Scene | null>(null);
   const [index, setIndex] = useState(0);
   const [scale, setScale] = useState(1);
   const [now, setNow] = useState(() => new Date());
+  const [onAir, setOnAir] = useState(true);
 
   const load = useCallback(async () => {
     try {
@@ -26,15 +29,25 @@ export function Output() {
     return () => clearInterval(t);
   }, [load]);
 
-  // Data en vivo por Socket.IO (actualiza valores sin recargar la escena).
+  // Data en vivo por Socket.IO (actualiza valores sin recargar la escena) +
+  // corte manual de emisión (onAir), que aplica al instante sin esperar el poll.
   useEffect(() => {
     const socket = io(API_BASE || undefined, { transports: ["websocket", "polling"] });
     socket.on("data:update", (d: { source: string; payload: unknown }) => {
       setScene((prev) => (prev ? { ...prev, data: { ...prev.data, [d.source]: d.payload } } : prev));
     });
+    socket.on("settings:update", (s: Record<string, unknown>) => setOnAir(s?.onAir !== false));
     return () => {
       socket.disconnect();
     };
+  }, []);
+
+  // Estado inicial de onAir (por si el socket tarda en conectar).
+  useEffect(() => {
+    fetch(`${API_BASE}/api/settings`)
+      .then((r) => r.json())
+      .then((s) => setOnAir(s?.onAir !== false))
+      .catch(() => {});
   }, []);
 
   // Escalar el lienzo 1920x1080 al viewport.
@@ -88,6 +101,49 @@ export function Output() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [current?.id, current?.duration_sec, advance]);
 
+  // FPS real de rendering (frames de pantalla por segundo) — diagnóstico técnico
+  // para el Monitor del panel; no hay forma de leer el bitrate de OBS desde acá,
+  // eso lo fija el encoder de OBS, no la página.
+  const frameCountRef = useRef(0);
+  const fpsRef = useRef(0);
+  useEffect(() => {
+    let raf: number;
+    const tick = () => { frameCountRef.current++; raf = requestAnimationFrame(tick); };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, []);
+
+  // Telemetría para el Monitor de Programación (postMessage al padre, cuando el
+  // output está embebido en un iframe). Se reenvía cada vez que cambia el reloj
+  // (1x/seg) o el bloque actual, y de paso trae el fps medido en esa ventana.
+  useEffect(() => {
+    fpsRef.current = frameCountRef.current;
+    frameCountRef.current = 0;
+    if (window.parent === window) return;
+    const next = items.length ? items[(index + 1) % items.length] : null;
+    window.parent.postMessage(
+      {
+        source: "ciclico-output",
+        updatedAt: new Date().toISOString(),
+        fps: fpsRef.current,
+        onAir,
+        current: current
+          ? {
+              id: current.id,
+              itemType: current.item?.type ?? null,
+              hasAudio: current.item ? contentHasAudio(current.item.type, current.item.data) : false,
+              durationSec: current.duration_sec,
+            }
+          : null,
+        next: next
+          ? { id: next.id, itemType: next.item?.type ?? null, durationSec: next.duration_sec }
+          : null,
+      },
+      "*",
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [now, current?.id, items.length, index, onAir]);
+
   const clock = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
   const logo = scene?.logos?.[0];
   const bg = scene?.background;
@@ -95,6 +151,18 @@ export function Output() {
   const isItem = !!current?.item;
   // Bloques con diseño propio (plantilla o contenido tipado 2026): traen su propio fondo/chrome.
   const isCustom = isTemplate || isItem;
+
+  // Corte manual de emisión: muestra la placa de "fuera del aire" a pantalla
+  // completa, sin ticker ni rotación, hasta que se reanuda desde el Monitor.
+  if (!onAir) {
+    return (
+      <div className="viewport">
+        <div className="stage" style={{ transform: `scale(${scale})` }}>
+          <img src={offAir} alt="Fuera del aire" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="viewport">

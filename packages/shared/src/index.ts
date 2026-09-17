@@ -453,8 +453,19 @@ export interface PlaylistItem {
 export interface ServerToClientEvents {
   "data:update": (data: CachedData) => void;
   "sources:status": (statuses: SourceStatus[]) => void;
+  "settings:update": (settings: Record<string, unknown>) => void;
 }
 export interface ClientToServerEvents {
   // reservado para futuras acciones del panel (ej: forzar refetch)
   "data:request": (source: SourceId) => void;
+}
+
+// Determina si un contenido tipado trae audio propio (para el VU del Monitor de
+// Programación). No es una medición real de audio, es heurística por tipo/data.
+export function contentHasAudio(type: string, data: Record<string, any> = {}): boolean {
+  if (data?.audio_url) return true;
+  if (type === "camaras") return false; // las cámaras nunca llevan audio
+  if (type === "shorts" || type === "promos") return true; // siempre video de YouTube
+  const kind = data?.media_kind;
+  return kind === "video" || kind === "youtube";
 }

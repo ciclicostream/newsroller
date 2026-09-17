@@ -4,8 +4,10 @@ import {
   MonitorPlay, Zap, ArrowRight, Plus, PauseCircle, Radio,
 } from "lucide-react";
 import type { ContentItem, PlaylistItem } from "@newsroller/shared";
+import { contentHasAudio } from "@newsroller/shared";
 import { parrilla, OUTPUT_BASE } from "../lib/parrilla";
 import { contentItems as contentItemsApi } from "../lib/content-items";
+import { settingsApi } from "../lib/settings";
 
 // ---- catálogo de tipos ----
 const TYPE_CAT: Record<string, string> = {
@@ -32,7 +34,33 @@ function itemText(ci: ContentItem): string {
   return (d.text || d.title || d.subt || TYPE_LABEL[ci.type] || ci.type || "").toString();
 }
 const catOf = (t: string) => TYPE_CAT[t] || "media";
-const hasAudio = (ci?: ContentItem | null) => !!ci && ci.data?.media_kind === "video";
+
+interface LiveStatus {
+  updatedAt: string;
+  fps: number;
+  onAir: boolean;
+  current: { id: string; itemType: string | null; hasAudio: boolean; durationSec: number } | null;
+  next: { id: string; itemType: string | null; durationSec: number } | null;
+}
+
+// Cuántos segundos/minutos/horas pasaron (para "Última actualización").
+function relAgo(ms: number): string {
+  const s = Math.max(0, Math.round(ms / 1000));
+  if (s < 2) return "ahora";
+  if (s < 60) return `hace ${s}s`;
+  const m = Math.round(s / 60);
+  if (m < 60) return `hace ${m}min`;
+  return `hace ${Math.round(m / 60)}h`;
+}
+
+// Duración del ciclo en un formato legible (no siempre segundos crudos).
+function fmtCiclo(s: number): string {
+  if (s < 60) return `${s}s`;
+  const m = Math.floor(s / 60), rem = s % 60;
+  if (m < 60) return rem ? `${m}m ${rem}s` : `${m}m`;
+  const h = Math.floor(m / 60), remM = m % 60;
+  return remM ? `${h}h ${remM}m` : `${h}h`;
+}
 
 export function Programacion() {
   const [draft, setDraft] = useState<PlaylistItem[]>([]);
@@ -44,9 +72,31 @@ export function Programacion() {
   const [sel, setSel] = useState<string | null>(null);
   const [mode, setMode] = useState<"preview" | "aire" | "clip">("preview");
   const [clipId, setClipId] = useState<string | null>(null);
-  const [emitting, setEmitting] = useState(true);
+  const [onAir, setOnAirState] = useState(true);
+  const [liveStatus, setLiveStatus] = useState<LiveStatus | null>(null);
   const [secs, setSecs] = useState(0);
   const [publishing, setPublishing] = useState(false);
+
+  // Estado real del corte de emisión (persistido en /api/settings, no local).
+  useEffect(() => {
+    settingsApi.get().then((s) => setOnAirState(s.onAir !== false)).catch(() => {});
+  }, []);
+  async function toggleOnAir() {
+    const next = !onAir;
+    setOnAirState(next);
+    try { await settingsApi.update({ onAir: next }); }
+    catch (e) { setOnAirState(!next); setErr(e instanceof Error ? e.message : "error"); }
+  }
+
+  // Telemetría en vivo que el output (embebido en AIRE) manda por postMessage.
+  useEffect(() => {
+    function onMsg(e: MessageEvent) {
+      if (e.data?.source !== "ciclico-output") return;
+      setLiveStatus(e.data as LiveStatus);
+    }
+    window.addEventListener("message", onMsg);
+    return () => window.removeEventListener("message", onMsg);
+  }, []);
 
   const itemById = useMemo(() => new Map(items.map((c) => [c.id, c])), [items]);
 
@@ -105,12 +155,16 @@ export function Programacion() {
     if (mode === "aire") return null;
     return selRow?.content_type === "content_item" && selRow.content_id ? itemById.get(selRow.content_id) ?? null : null;
   };
+  // AIRE siempre carga el output real (aunque esté cortado, el propio output
+  // muestra la placa de "fuera del aire" — no hace falta un placeholder local).
   const monUrl = (() => {
-    if (mode === "aire") return emitting ? `${OUTPUT_BASE}/output` : null;
+    if (mode === "aire") return `${OUTPUT_BASE}/output`;
     const ci = previewCi();
     return ci ? `${OUTPUT_BASE}/output?preview=${ci.id}` : null;
   })();
-  const monAudioCi = mode === "aire" ? null : previewCi();
+  const monHasAudio = mode === "aire"
+    ? !!liveStatus?.current?.hasAudio
+    : (() => { const ci = previewCi(); return !!ci && contentHasAudio(ci.type, ci.data); })();
 
   // pills por tipo en parrilla
   const pills = useMemo(() => {
@@ -211,20 +265,24 @@ export function Programacion() {
             </div>
             <div className="pv-mon-row">
               <div className="pv-mon">
-                {mode === "aire" && !emitting
-                  ? <div className="pv-standby"><Radio size={40} opacity={.5} /><div>SIN EMISIÓN</div></div>
-                  : monUrl ? <iframe key={monUrl} src={monUrl} title="monitor" />
-                  : <div className="pv-ph">Elegí un contenido para previsualizarlo.</div>}
+                {monUrl ? <iframe key={monUrl} src={monUrl} title="monitor" /> : <div className="pv-ph">Elegí un contenido para previsualizarlo.</div>}
+                {mode === "aire" && liveStatus && !liveStatus.onAir && (
+                  <div className="pv-standby"><Radio size={40} opacity={.5} /><div>FUERA DEL AIRE</div></div>
+                )}
               </div>
-              <Vu audio={hasAudio(monAudioCi)} />
+              {monHasAudio && <Vu audio />}
             </div>
           </div>
 
           <div className="pv-airrow">
             <div className="pv-airmeta">
-              <div>Última actualización: <b>ahora</b></div>
-              <div>Próximo item: <b>{draft[0] ? (itemById.get(draft[0].content_id ?? "") ? TYPE_LABEL[itemById.get(draft[0].content_id!)!.type] : draft[0].content_type) + " · " + draft[0].duration_sec + "s" : "—"}</b></div>
-              <div>Salida: <b>1920×1080</b></div>
+              <div>Última actualización: <b>{liveStatus ? relAgo(Date.now() - new Date(liveStatus.updatedAt).getTime()) : "—"}</b></div>
+              <div>Próximo item: <b>{
+                liveStatus?.next
+                  ? (TYPE_LABEL[liveStatus.next.itemType ?? ""] ?? liveStatus.next.itemType ?? "—") + " · " + liveStatus.next.durationSec + "s"
+                  : draft[0] ? (itemById.get(draft[0].content_id ?? "") ? TYPE_LABEL[itemById.get(draft[0].content_id!)!.type] : draft[0].content_type) + " · " + draft[0].duration_sec + "s" : "—"
+              }</b></div>
+              <div>Salida: <b>1920×1080</b> · FPS: <b>{liveStatus ? liveStatus.fps : "—"}</b></div>
             </div>
             <div className="pv-clock"><span className="lb">al aire</span><span className="dg">{fmt(secs)}</span></div>
           </div>
@@ -232,10 +290,10 @@ export function Programacion() {
           <div className="pv-kpis">
             <div className="pv-kpi"><div className="v">{items.length}</div><div className="l">en el banco</div></div>
             <div className="pv-kpi"><div className="v">{draft.length}</div><div className="l">en parrilla</div></div>
-            <div className="pv-kpi"><div className="v">{cicloSec}s</div><div className="l">Ciclo</div></div>
-            <div className={"pv-kpi live" + (emitting ? "" : " off")} onClick={() => setEmitting((v) => !v)} style={{ cursor: "pointer" }}>
-              {emitting ? <><div className="v"><span className="pv-dot" />Vivo</div><div className="l">tocar para cortar</div></>
-                : <><div className="v off"><PauseCircle size={16} />Placa fija</div><div className="l">sin emisión · tocar</div></>}
+            <div className="pv-kpi"><div className="v">{fmtCiclo(cicloSec)}</div><div className="l">Ciclo</div></div>
+            <div className={"pv-kpi live" + (onAir ? "" : " off")} onClick={() => void toggleOnAir()} style={{ cursor: "pointer" }}>
+              {onAir ? <><div className="v"><span className="pv-dot" />Vivo</div><div className="l">tocar para cortar</div></>
+                : <><div className="v off"><PauseCircle size={16} />Fuera de aire</div><div className="l">tocar para reanudar</div></>}
             </div>
           </div>
         </div>
@@ -266,6 +324,8 @@ function Fader({ onPublish, publishing }: { onPublish: () => void; publishing: b
   );
 }
 
+// Sólo se renderiza cuando el clip/vivo tiene audio (ver monHasAudio). Es un VU
+// simulado (no lee el audio real del iframe, el navegador no lo permite cross-origin).
 function Vu({ audio }: { audio: boolean }) {
   const [lvl, setLvl] = useState(0);
   useEffect(() => {
@@ -281,7 +341,7 @@ function Vu({ audio }: { audio: boolean }) {
           <i key={i} style={{ background: i < lit ? color(i) : "#e6e9f0" }} />
         ))}
       </div>
-      <div className="pv-vulb">{audio ? "AUDIO" : "SIN\nAUDIO"}</div>
+      <div className="pv-vulb">AUDIO</div>
     </div>
   );
 }
