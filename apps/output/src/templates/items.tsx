@@ -1,10 +1,11 @@
-import type { UltimaHoraData, PlacasData, DolarData, DolarPayload, CifrasData, EfemeridesData, CarteleraData } from "@newsroller/shared";
+import type { UltimaHoraData, PlacasData, DolarData, DolarPayload, CifrasData, EfemeridesData, CarteleraData, DeclaracionesData } from "@newsroller/shared";
 import { UltimaHora } from "./UltimaHora";
 import { Placas } from "./Placas";
 import { Dolar } from "./Dolar";
 import { Cifras } from "./Cifras";
 import { Efemerides } from "./Efemerides";
 import { Cartelera } from "./Cartelera";
+import { Declaraciones } from "./Declaraciones";
 
 // Despacha un contenido tipado del banco 2026 a su componente de output.
 // `liveData` = scene.data (payloads en vivo por fuente, ej. liveData.dolar) para
@@ -34,6 +35,8 @@ export function ItemView({
       return <Efemerides data={data as EfemeridesData} durationSec={durationSec} />;
     case "cartelera":
       return <Cartelera data={data as CarteleraData} durationSec={durationSec} />;
+    case "declaraciones":
+      return <Declaraciones data={data as DeclaracionesData} durationSec={durationSec} />;
     default:
       return null;
   }

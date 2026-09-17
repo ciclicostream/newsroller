@@ -32,7 +32,7 @@ export function Cartelera({ data, durationSec }: { data: CarteleraData; duration
     <div className={"cl" + (play ? " play" : "") + (exiting ? " exit" : "") + (hasVideo ? " has-video" : "")} style={{ position: "absolute", inset: 0 }}>
       <style>{CSS}</style>
       <img className="cl-bg" src={fondo} alt="" />
-      <Chrome hideClockTemp={hasVideo} />
+      <Chrome hideClock={hasVideo} hideTemp={hasVideo} />
 
       <div className="cl-left cl-el">
         <img className="cl-photo" src={data.photo_url} alt="" />

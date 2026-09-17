@@ -12,7 +12,7 @@ interface ClimaCity { city: string; tempC: number | null }
 // y newsticker con titulares en vivo de somosciclico.com. No entra/sale con el contenido.
 // tickerSpeed = segundos que tarda una vuelta completa del texto (mayor = más lento).
 // Valor por defecto; el real se lee de /api/settings (editable desde AJUSTES).
-export function Chrome({ tickerSpeed = 90, hideClockTemp = false }: { tickerSpeed?: number; hideClockTemp?: boolean } = {}) {
+export function Chrome({ tickerSpeed = 90, hideClock = false, hideTemp = false }: { tickerSpeed?: number; hideClock?: boolean; hideTemp?: boolean } = {}) {
   const [now, setNow] = useState(() => new Date());
   const [ticker, setTicker] = useState<TickerItem[]>([]);
   const [cities, setCities] = useState<ClimaCity[]>([]);
@@ -66,8 +66,8 @@ export function Chrome({ tickerSpeed = 90, hideClockTemp = false }: { tickerSpee
     <>
       <style>{CSS}</style>
 
-      {!hideClockTemp && <div className="ck-clock">{clock} | {fecha}</div>}
-      {!hideClockTemp && cur && cur.tempC != null && (
+      {!hideClock && <div className="ck-clock">{clock} | {fecha}</div>}
+      {!hideTemp && cur && cur.tempC != null && (
         <div className="ck-temp">
           <span className="ck-temp-val">{cur.tempC}°C</span>
           <span className="ck-temp-city">{cur.city.toUpperCase()}</span>

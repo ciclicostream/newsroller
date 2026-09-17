@@ -11,6 +11,7 @@ import { Dolar } from "./Dolar";
 import { Cifras } from "./Cifras";
 import { Efemerides } from "./Efemerides";
 import { Cartelera } from "./Cartelera";
+import { Declaraciones } from "./Declaraciones";
 
 // Plantilla mostrada por defecto al entrar a Contenido.
 const DEFAULT_TYPE = "placas";
@@ -73,6 +74,7 @@ function TemplateForm({ type }: { type: string }) {
   if (type === "cifras") return <Cifras />;
   if (type === "efemerides") return <Efemerides />;
   if (type === "cartelera") return <Cartelera />;
+  if (type === "declaraciones") return <Declaraciones />;
   const def = TIPO_BY_KEY[type];
   return <TipoEnConstruccion type={type} label={def?.label ?? type} />;
 }

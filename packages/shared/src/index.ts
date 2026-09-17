@@ -248,6 +248,21 @@ export interface CarteleraData {
   video_url?: string | null; // opcional, 9:16
 }
 
+// Programas sugeridos para "Entrevista completa en …" (el editor puede escribir otro).
+export const DECLARACIONES_PROGRAMAS = ["EPA!", "REC!", "Cíclico Noticias", "Modo Cíclico"];
+
+// Datos del tipo "declaraciones". Foto + ficha + cita son obligatorios; titular
+// y programa de entrevista son opcionales (si están vacíos, no se muestran).
+export interface DeclaracionesData {
+  photo_url: string; // cuadrada, obligatoria
+  name: string;
+  role: string;   // cargo
+  place: string;  // lugar
+  quote: string;  // cita, máx 450
+  headline?: string;          // titular de la nota (opcional)
+  interview_program?: string; // "Entrevista completa en …" (opcional)
+}
+
 // ---- Plantillas propias (editor visual) ----
 export type ElementType = "text" | "image" | "video" | "weather" | "data" | "logo" | "shape" | "camera";
 

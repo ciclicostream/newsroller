@@ -32,7 +32,7 @@ export const TIPOS: TipoDef[] = [
   { type: "cifras", label: "Cifras", desc: "Dato destacado con fuente", Icon: BarChart3, ready: true },
   { type: "efemerides", label: "Efemérides", desc: "Fecha + cuerpo + imagen", Icon: CalendarDays, ready: true },
   { type: "cartelera", label: "Cartelera", desc: "Estreno / obra con ficha", Icon: Clapperboard, ready: true },
-  { type: "declaraciones", label: "Declaraciones", desc: "Cita textual + foto", Icon: Quote },
+  { type: "declaraciones", label: "Declaraciones", desc: "Cita textual + foto", Icon: Quote, ready: true },
   { type: "informe", label: "Informe Cíclico", desc: "Hasta 10 tarjetas en secuencia", Icon: ListOrdered },
   { type: "publicidad", label: "Publicidad", desc: "Full o vertical (genera reporte)", Icon: Megaphone },
   { type: "video_full", label: "Video Full", desc: "Video a pantalla completa", Icon: MonitorPlay },
