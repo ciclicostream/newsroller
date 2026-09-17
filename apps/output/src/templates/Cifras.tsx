@@ -69,7 +69,7 @@ export function Cifras({ data, durationSec }: { data: CifrasData; durationSec?: 
       <div className={"cf-pill" + (stage >= 4 ? " in" : "")}>LA CIFRA</div>
 
       <div className={"cf-explain cf-card" + (stage >= 3 ? " in" : "")}>
-        {Ic && <div className="cf-icon"><Ic size={48} /></div>}
+        {Ic && <div className="cf-icon"><Ic size={100} strokeWidth={1.8} /></div>}
         <div className="cf-explain-text">{data.explanation}</div>
       </div>
     </div>
@@ -82,34 +82,33 @@ const CSS = `
 .cf-card{opacity:0;transition:opacity .6s ease, transform .6s cubic-bezier(.2,.8,.2,1)}
 .cf-card.in{opacity:1}
 
-.cf-main{position:absolute;left:210px;top:140px;width:1290px;height:480px;z-index:15;
-  background:#fff;border-radius:26px;box-shadow:0 16px 34px rgba(0,0,0,.28);
+.cf-main{position:absolute;left:60px;top:90px;width:1800px;height:460px;z-index:15;
+  background:#fff;border-radius:40px;box-shadow:0 16px 34px rgba(0,0,0,.28);
   display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;
   transform:translateY(-120px)}
 .cf-main.in{transform:translateY(0)}
-.cf-num{color:#2f80ed;font-weight:800;font-size:160px;line-height:1;letter-spacing:-.01em}
-.cf-subtitle{color:#0b2b6b;font-weight:700;font-size:34px;text-align:center;max-width:1050px}
+.cf-num{color:#2f80ed;font-weight:800;font-size:210px;line-height:1;letter-spacing:-.01em}
+.cf-subtitle{color:#2f80ed;font-weight:700;font-size:50px;text-align:center;max-width:1500px}
 
-.cf-source{position:absolute;left:210px;top:660px;width:610px;height:216px;z-index:14;
-  background:#fff;border-radius:22px;box-shadow:0 12px 28px rgba(0,0,0,.24);
-  display:flex;flex-direction:column;justify-content:center;gap:10px;padding:0 40px;
+.cf-source{position:absolute;left:60px;top:578px;width:340px;height:250px;z-index:14;
+  background:#fff;border-radius:26px;box-shadow:0 12px 28px rgba(0,0,0,.24);
+  display:flex;flex-direction:column;justify-content:center;gap:10px;padding:0 34px;
   transform:translateX(-160px)}
 .cf-source.in{transform:translateX(0)}
 .cf-source-label{color:#e8542f;font-weight:800;font-size:16px;letter-spacing:.14em}
-.cf-source-text{color:#10151f;font-weight:600;font-size:22px;line-height:1.3}
-.cf-pill{position:absolute;left:210px;top:894px;z-index:15;background:linear-gradient(180deg,#3b82f6,#2f6bff);
-  color:#fff;font-weight:800;font-size:20px;letter-spacing:.04em;padding:10px 26px;border-radius:11px;
+.cf-source-text{color:#0b2b6b;font-weight:600;font-size:30px;line-height:1.3}
+.cf-pill{position:absolute;left:60px;top:848px;z-index:15;background:#3b82f6;
+  color:#fff;font-weight:800;font-size:40px;letter-spacing:.02em;padding:16px 40px;border-radius:16px;
   box-shadow:0 8px 18px rgba(0,0,0,.25);opacity:0;transition:opacity .5s ease .1s}
 .cf-pill.in{opacity:1}
 
-.cf-explain{position:absolute;left:860px;top:660px;width:850px;height:216px;z-index:14;
-  background:linear-gradient(160deg,#2f6bff,#1a3aa8);border-radius:22px;box-shadow:0 12px 28px rgba(0,0,0,.28);
-  display:flex;align-items:center;gap:26px;padding:0 40px;color:#fff;
+.cf-explain{position:absolute;left:430px;top:578px;width:1390px;height:318px;z-index:14;
+  background:#3b82f6;border-radius:32px;box-shadow:0 12px 28px rgba(0,0,0,.28);
+  display:flex;align-items:center;gap:26px;padding:0 60px;color:#fff;
   transform:translateX(160px)}
 .cf-explain.in{transform:translateX(0)}
-.cf-icon{flex:none;width:72px;height:72px;border-radius:16px;background:rgba(255,255,255,.18);
-  display:flex;align-items:center;justify-content:center}
-.cf-explain-text{font-weight:600;font-size:22px;line-height:1.32}
+.cf-icon{flex:none;width:150px;height:150px;display:flex;align-items:center;justify-content:center}
+.cf-explain-text{font-weight:600;font-size:44px;line-height:1.28}
 
 .cf.exit .cf-card,.cf.exit .cf-pill{transition:opacity .7s ease;opacity:0!important;transform:none!important}
 `;

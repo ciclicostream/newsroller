@@ -28,7 +28,7 @@ interface CardData {
   id: string;
   nombre: string;
   venta: number | null;
-  diff: number | null;
+  diffPct: number | null; // variación % vs día anterior
 }
 
 // Placa Dólar: 3 cotizaciones elegidas por el editor (casas[1] = ancla, va al medio
@@ -43,8 +43,10 @@ export function Dolar({ data, live, durationSec }: { data: DolarData; live?: Dol
     const override = data.overrides?.[id];
     const venta = override ?? c?.venta ?? null;
     const prev = c?.ventaPrev ?? null;
-    const diff = venta != null && prev != null && override == null ? Math.round(venta - prev) : null;
-    return { id, nombre: DOLAR_CASAS[id] ?? id.toUpperCase(), venta, diff };
+    const diffPct = venta != null && prev != null && prev !== 0 && override == null
+      ? Math.round(((venta - prev) / prev) * 1000) / 10
+      : null;
+    return { id, nombre: DOLAR_CASAS[id] ?? id.toUpperCase(), venta, diffPct };
   });
 
   // Coreografía: fade del medio → cuenta el medio → los laterales emergen desde
@@ -85,12 +87,10 @@ export function Dolar({ data, live, durationSec }: { data: DolarData; live?: Dol
           <div key={c.id} className={`dl-card dl-card-${i}` + (isMid ? " mid" : "") + (shown ? " in" : "")}>
             {isMid && <div className="dl-pill">EL DÓLAR</div>}
             <div className="dl-val">{c.venta != null ? vals[i] : "—"}</div>
-            {c.diff != null && c.diff !== 0 && (
-              <div className={"dl-var " + (c.diff > 0 ? "up" : "down")}>
-                {c.diff > 0 ? "▲" : "▼"} {Math.abs(c.diff)}
-              </div>
-            )}
-            <div className="dl-label">DOLAR<br />{c.nombre.toUpperCase()}</div>
+            <div className={"dl-var " + (c.diffPct != null && c.diffPct < 0 ? "down" : "up")} style={{ opacity: c.diffPct != null && c.diffPct !== 0 ? 1 : 0 }}>
+              {c.diffPct != null && c.diffPct !== 0 ? `${c.diffPct > 0 ? "▲" : "▼"} ${Math.abs(c.diffPct).toString().replace(".", ",")}%` : "—"}
+            </div>
+            <div className="dl-foot"><div className="dl-lbl">DOLAR</div><div className="dl-name">{c.nombre.toUpperCase()}</div></div>
           </div>
         );
       })}
@@ -102,23 +102,25 @@ const CSS = `
 .dl{font-family:Inter,system-ui,sans-serif}
 .dl-bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 
-.dl-card{position:absolute;top:97px;width:426px;height:848px;border-radius:26px;background:#fff;
+.dl-card{position:absolute;top:95px;width:430px;height:850px;border-radius:34px;background:#fff;
   box-shadow:inset 0 0 0 1px rgba(0,0,0,.04), 0 16px 34px rgba(0,0,0,.28);
-  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;
   transition:transform .7s cubic-bezier(.2,.8,.2,1), opacity .7s cubic-bezier(.2,.8,.2,1)}
-.dl-card-0{left:258px;z-index:14;transform:translateX(514px);opacity:0}
-.dl-card-1{left:772px;z-index:16;transition:opacity .5s ease;opacity:0}
-.dl-card-2{left:1284px;z-index:14;transform:translateX(-512px);opacity:0}
+.dl-card-0{left:230px;z-index:14;transform:translateX(515px);opacity:0}
+.dl-card-1{left:745px;z-index:16;transition:opacity .5s ease;opacity:0}
+.dl-card-2{left:1260px;z-index:14;transform:translateX(-515px);opacity:0}
 .dl-card-0.in,.dl-card-2.in{transform:translateX(0);opacity:1}
 .dl-card-1.in{opacity:1}
 
-.dl-pill{position:absolute;top:-26px;background:linear-gradient(180deg,#3b82f6,#2f6bff);color:#fff;font-weight:800;
-  font-size:24px;letter-spacing:.02em;padding:12px 30px;border-radius:12px;box-shadow:0 8px 18px rgba(0,0,0,.25)}
-.dl-val{color:#2f80ed;font-weight:800;font-size:120px;line-height:1;letter-spacing:-.01em}
-.dl-var{font-weight:800;font-size:26px;display:flex;align-items:center;gap:6px}
+.dl-pill{position:absolute;top:-30px;left:50%;transform:translateX(-50%);background:#3b82f6;color:#fff;font-weight:800;
+  font-size:34px;letter-spacing:.02em;padding:14px 34px;border-radius:16px;white-space:nowrap;box-shadow:0 8px 18px rgba(0,0,0,.25)}
+.dl-val{color:#2f80ed;font-weight:800;font-size:150px;line-height:1;letter-spacing:-.01em}
+.dl-var{margin-top:14px;font-weight:800;font-size:38px}
 .dl-var.up{color:#16a34a}
-.dl-var.down{color:#c0392b}
-.dl-label{color:#0b2b6b;font-weight:800;font-size:28px;line-height:1.25;text-align:center;letter-spacing:.01em}
+.dl-var.down{color:#e0322a}
+.dl-foot{margin-top:70px;text-align:center;line-height:1.05}
+.dl-lbl{font-weight:800;font-size:44px;color:#2f80ed}
+.dl-name{font-weight:800;font-size:44px;color:#0b2b6b}
 
 .dl.exit .dl-card{transition:opacity .7s ease;opacity:0!important;transform:none!important}
 `;

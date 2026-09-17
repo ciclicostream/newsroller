@@ -28,10 +28,11 @@ const ICON: Record<ClimaIconKey, string> = {
 
 const DIAS = ["DOM", "LUN", "MAR", "MIÉ", "JUE", "VIE", "SÁB"];
 
-// Placa Clima: BIG flotante arriba-izquierda + card principal (temp+condición+
-// datos) a la derecha + 3 días (HOY/MAÑANA/+2) abajo con ícono. Dato en vivo de
-// la fuente `clima` (no se congela: el pronóstico debe seguir actualizado).
-// Entrada: cards tipo carta (flip). Salida: fade. Marco Chrome.
+// Placa Clima: BIG grande a la izquierda (se superpone levemente, con flotado) +
+// card principal (temp gigante+ciudad+chips de máx/mín/sensación/humedad/viento)
+// + franja de condición + nota "EL CLIMA" + 3 días (HOY/MAÑANA/+2) en cards
+// celestes con ícono. Entrada tipo carta (flip). Salida: fade. Header: sólo
+// hora. Dato en vivo de la fuente `clima` (no se congela). Usa <Chrome/>.
 export function Clima({ data, live, durationSec }: { data: ClimaData; live?: ClimaPayload; durationSec?: number }) {
   const city: ClimaCiudad | undefined = useMemo(
     () => live?.cities.find((c) => c.city === data.city) ?? live?.cities[0],
@@ -66,32 +67,33 @@ export function Clima({ data, live, durationSec }: { data: ClimaData; live?: Cli
     <div className={"cw" + (play ? " play" : "") + (exiting ? " exit" : "")} style={{ position: "absolute", inset: 0 }}>
       <style>{CSS}</style>
       <img className="cw-bg" src={fondo} alt="" />
-      <Chrome />
+      <Chrome hideTemp />
 
       <img className="cw-big" src={BIG[key]} alt="" />
 
       <div className="cw-main cw-flip">
-        <div className="cw-temp">{city.tempC != null ? `${city.tempC}°` : "--"}</div>
+        <div className="cw-t">{city.tempC != null ? `${city.tempC}°` : "--"}</div>
         <div className="cw-city">{city.city.toUpperCase()}</div>
-        <div className="cw-cond">{city.desc.toUpperCase()}</div>
-        <div className="cw-extra">
-          <div><span>MÁX/MÍN</span><b>{days[0]?.max ?? "--"}° / {days[0]?.min ?? "--"}°</b></div>
-          <div><span>SENSACIÓN</span><b>{city.feelsLike != null ? `${city.feelsLike}°` : "--"}</b></div>
-          <div><span>HUMEDAD</span><b>{city.humidity != null ? `${city.humidity}%` : "--"}</b></div>
-          <div><span>VIENTO</span><b>{city.windKmh != null ? `${city.windKmh} km/h` : "--"}</b></div>
+        <div className="cw-stats">
+          <div className="cw-chip">Máx <b>{days[0]?.max ?? "--"}°</b> · Mín <b>{days[0]?.min ?? "--"}°</b></div>
+          <div className="cw-chip">Sensación <b>{city.feelsLike != null ? `${city.feelsLike}°` : "--"}</b></div>
+          <div className="cw-chip">Humedad <b>{city.humidity != null ? `${city.humidity}%` : "--"}</b></div>
+          <div className="cw-chip">Viento <b>{city.windKmh != null ? `${city.windKmh} km/h` : "--"}</b></div>
         </div>
       </div>
 
-      <div className="cw-note cw-flip">EL CLIMA</div>
+      <div className="cw-cond cw-flip"><span>{city.desc.toUpperCase()}</span></div>
+      <div className="cw-note cw-flip">Pronóstico actualizado en vivo.</div>
+      <div className="cw-pill cw-flip">EL CLIMA</div>
 
       {days.map((d, i) => {
         const dKey = weatherIconKey(d.code);
         const label = i === 0 ? "HOY" : i === 1 ? "MAÑANA" : DIAS[new Date(d.date + "T12:00:00").getDay()];
         return (
-          <div key={d.date} className={`cw-day cw-day-${i} cw-flip`}>
-            <div className="cw-day-label">{label}</div>
-            <img className="cw-day-icon" src={ICON[dKey]} alt="" />
-            <div className="cw-day-temp">{d.max ?? "--"}°/{d.min ?? "--"}°</div>
+          <div key={d.date} className={`cw-day cw-day-d${i + 1} cw-flip`}>
+            <img className="cw-day-ic" src={ICON[dKey]} alt="" />
+            <div className="cw-day-tmp">{d.max ?? "--"}°</div>
+            <div className="cw-day-name">{label}</div>
           </div>
         );
       })}
@@ -103,44 +105,52 @@ const CSS = `
 .cw{font-family:Inter,system-ui,sans-serif}
 .cw-bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 
-.cw-big{position:absolute;left:60px;top:40px;width:560px;z-index:13;filter:drop-shadow(0 20px 30px rgba(0,0,0,.35));
-  opacity:0;transform:translateY(20px)}
+.cw-big{position:absolute;left:-40px;top:20px;width:940px;z-index:6;
+  opacity:0;filter:drop-shadow(0 20px 40px rgba(0,0,0,.35))}
 .cw.play .cw-big{animation:cw-float-in 1s cubic-bezier(.2,.8,.2,1) .1s forwards, cw-float 4s ease-in-out 1.1s infinite}
-@keyframes cw-float-in{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+@keyframes cw-float-in{from{opacity:0}to{opacity:1}}
 @keyframes cw-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-16px)}}
 
 .cw-flip{opacity:0;transform:perspective(1000px) rotateY(-90deg);transform-origin:left center}
 .cw.play .cw-flip{animation:cw-flip .6s cubic-bezier(.2,.8,.2,1) forwards}
 .cw.play .cw-main{animation-delay:.25s}
-.cw.play .cw-note{animation-delay:.55s}
-.cw.play .cw-day-0{animation-delay:.65s}
-.cw.play .cw-day-1{animation-delay:.78s}
-.cw.play .cw-day-2{animation-delay:.91s}
+.cw.play .cw-cond{animation-delay:.45s}
+.cw.play .cw-note{animation-delay:.6s}
+.cw.play .cw-pill{animation-delay:.72s}
+.cw.play .cw-day-d1{animation-delay:.8s}
+.cw.play .cw-day-d2{animation-delay:.92s}
+.cw.play .cw-day-d3{animation-delay:1.04s}
 @keyframes cw-flip{from{opacity:0;transform:perspective(1000px) rotateY(-90deg)}to{opacity:1;transform:perspective(1000px) rotateY(0)}}
 
-.cw-main{position:absolute;left:900px;top:100px;width:620px;height:430px;z-index:14;
-  background:#fff;border-radius:26px;box-shadow:0 18px 36px rgba(0,0,0,.3);
-  padding:36px 48px;display:flex;flex-direction:column;justify-content:center;gap:6px}
-.cw-temp{color:#2f80ed;font-weight:800;font-size:110px;line-height:1}
-.cw-city{color:#0b2b6b;font-weight:800;font-size:30px;letter-spacing:.03em}
-.cw-cond{color:#e8542f;font-weight:700;font-size:20px;letter-spacing:.06em;margin-bottom:10px}
-.cw-extra{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;border-top:1px solid #e3e6ea;padding-top:16px}
-.cw-extra span{display:block;color:#6b7688;font-size:13px;font-weight:600;letter-spacing:.04em}
-.cw-extra b{display:block;color:#10151f;font-size:22px;font-weight:800;margin-top:4px}
+.cw-main{position:absolute;left:940px;top:96px;width:900px;height:452px;z-index:14;
+  background:#fff;border-radius:32px;box-sizing:border-box;padding:34px 46px;color:#2f80ed;
+  box-shadow:0 18px 36px rgba(0,0,0,.3)}
+.cw-t{font-weight:800;font-size:190px;line-height:.9;letter-spacing:-.02em}
+.cw-city{font-weight:800;font-size:46px;color:#2f80ed;letter-spacing:.01em;margin-top:2px}
+.cw-stats{display:flex;gap:14px;margin-top:22px;flex-wrap:wrap}
+.cw-chip{background:#eaf2fe;color:#0b2b6b;font-weight:700;font-size:26px;padding:10px 18px;border-radius:12px}
+.cw-chip b{color:#2f80ed}
 
-.cw-note{position:absolute;left:900px;top:560px;z-index:14;background:linear-gradient(180deg,#3b82f6,#2f6bff);
-  color:#fff;font-weight:800;font-size:18px;letter-spacing:.06em;padding:10px 22px;border-radius:11px;
-  box-shadow:0 8px 18px rgba(0,0,0,.22)}
+.cw-cond{position:absolute;left:940px;top:566px;width:900px;height:60px;z-index:14;background:#0b1f52;
+  border-radius:12px;display:flex;align-items:center;justify-content:center}
+.cw-cond span{color:#fff;font-weight:800;font-size:28px;letter-spacing:.04em}
 
-.cw-day{position:absolute;top:640px;width:230px;height:200px;z-index:14;background:#fff;border-radius:20px;
-  box-shadow:0 12px 26px rgba(0,0,0,.24);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px}
-.cw-day-0{left:900px}
-.cw-day-1{left:1150px}
-.cw-day-2{left:1400px}
-.cw-day-label{color:#0b2b6b;font-weight:800;font-size:18px;letter-spacing:.04em}
-.cw-day-icon{width:64px;height:64px;object-fit:contain}
-.cw-day-temp{color:#1a3aa8;font-weight:700;font-size:20px}
+.cw-note{position:absolute;left:60px;top:648px;width:330px;height:196px;z-index:14;background:#fff;
+  border-radius:24px;box-sizing:border-box;padding:26px;display:flex;align-items:center;justify-content:center;
+  text-align:center;color:#0b2b6b;font-weight:600;font-size:26px;line-height:1.3;box-shadow:0 12px 26px rgba(0,0,0,.24)}
+.cw-pill{position:absolute;left:60px;top:864px;width:330px;z-index:14;box-sizing:border-box;text-align:center;
+  background:#3b82f6;color:#fff;font-weight:800;font-size:34px;letter-spacing:.02em;padding:14px 0;border-radius:14px}
 
-.cw.exit .cw-big,.cw.exit .cw-main,.cw.exit .cw-note,.cw.exit .cw-day{
+.cw-day{position:absolute;top:648px;width:430px;height:292px;z-index:14;background:#5aa2f2;border-radius:24px;
+  box-sizing:border-box;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;
+  color:#fff;box-shadow:0 12px 26px rgba(0,0,0,.24)}
+.cw-day-d1{left:450px}
+.cw-day-d2{left:940px}
+.cw-day-d3{left:1430px}
+.cw-day-ic{height:120px;width:auto;display:block}
+.cw-day-tmp{font-weight:800;font-size:64px;line-height:1}
+.cw-day-name{font-weight:800;font-size:44px;color:#0b2b6b;margin-top:8px}
+
+.cw.exit .cw-big,.cw.exit .cw-main,.cw.exit .cw-cond,.cw.exit .cw-note,.cw.exit .cw-pill,.cw.exit .cw-day{
   transition:opacity .6s ease;opacity:0!important;animation:none!important;transform:none!important}
 `;
