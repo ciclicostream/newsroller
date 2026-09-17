@@ -18,6 +18,7 @@ import { playlistRouter } from "./routes/playlist.js";
 import { parrillaRouter } from "./routes/parrilla.js";
 import { outputRouter } from "./routes/output.js";
 import { templatesRouter } from "./routes/templates.js";
+import { settingsRouter } from "./routes/settings.js";
 import { getStore } from "./db/store.js";
 import { getSupabase } from "./db/supabase.js";
 import { ensureAdmins } from "./auth/bootstrap.js";
@@ -45,6 +46,7 @@ io.on("connection", async (socket) => {
 
 app.use(healthRouter(registry));
 app.use("/api", dataRouter());
+app.use("/api", settingsRouter()); // GET público (output); PUT autenticado (panel)
 app.use("/api", sourcesRouter(registry));
 app.use("/api", meRouter());
 // Cada router en su sub-ruta: así el requireAdmin de usuarios NO afecta a contenido.
