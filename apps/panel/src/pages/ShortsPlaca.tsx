@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Plus, Trash2, Check, Youtube } from "lucide-react";
+import { Plus, Trash2, Check, Youtube, Pencil } from "lucide-react";
 import type { ContentItem, ShortsData, Short } from "@newsroller/shared";
 import { contentItems } from "../lib/content-items";
 import { content } from "../lib/content";
@@ -9,6 +9,7 @@ export function ShortsPlaca() {
   const [available, setAvailable] = useState<Short[]>([]);
   const [err, setErr] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   const [count, setCount] = useState<1 | 2>(1);
   const [video1, setVideo1] = useState("");
@@ -53,8 +54,14 @@ export function ShortsPlaca() {
     setSaving(true);
     try {
       const data: ShortsData = { count, video1, video2: count === 2 ? video2 : undefined, title: title.trim() };
-      await contentItems.create({ type: "shorts", data, duration_sec: dur });
-      setMsg("Guardado en el banco.");
+      if (editingId) {
+        await contentItems.patch(editingId, { data, duration_sec: dur });
+        setMsg("Cambios guardados.");
+      } else {
+        await contentItems.create({ type: "shorts", data, duration_sec: dur });
+        setMsg("Guardado en el banco.");
+      }
+      cancelEdit();
       await load();
     } catch (e) {
       setErr(e instanceof Error ? e.message : "error");
@@ -63,9 +70,26 @@ export function ShortsPlaca() {
     }
   }
 
+  function startEdit(it: ContentItem) {
+    const d = it.data as ShortsData;
+    setEditingId(it.id);
+    setCount(d.count);
+    setVideo1(d.video1 ?? "");
+    setVideo2(d.video2 ?? "");
+    setTitle(d.title ?? "");
+    setDur(it.duration_sec);
+    setErr(null); setMsg(null);
+  }
+  function cancelEdit() {
+    setEditingId(null);
+    setTitle("");
+    setDur(15);
+  }
+
   async function remove(it: ContentItem) {
     if (!confirm("¿Eliminar esta placa de shorts?")) return;
     await contentItems.remove(it.id);
+    if (editingId === it.id) cancelEdit();
     await load();
   }
   async function toggleDisponible(it: ContentItem) {
@@ -92,7 +116,10 @@ export function ShortsPlaca() {
 
       <div style={{ display: "grid", gridTemplateColumns: "420px 1fr", gap: 20, alignItems: "start" }}>
         <form className="card" style={{ padding: 18 }} onSubmit={save}>
-          <div style={{ fontWeight: 500, marginBottom: 14 }}>Nueva placa de shorts</div>
+          <div style={{ fontWeight: 500, marginBottom: 14, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            {editingId ? "Editar placa de shorts" : "Nueva placa de shorts"}
+            {editingId && <button type="button" className="btn" onClick={cancelEdit}>Cancelar</button>}
+          </div>
 
           <div className="field">
             <label>Cantidad</label>
@@ -132,7 +159,7 @@ export function ShortsPlaca() {
           </div>
 
           <button className="btn primary" type="submit" disabled={saving} style={{ width: "100%", justifyContent: "center" }}>
-            <Plus size={16} /> {saving ? "Guardando…" : "Guardar en el banco"}
+            <Plus size={16} /> {saving ? "Guardando…" : editingId ? "Guardar cambios" : "Guardar en el banco"}
           </button>
         </form>
 
@@ -155,6 +182,7 @@ export function ShortsPlaca() {
                 <button className={"toggle-pill" + (it.in_parrilla !== false ? " on" : "")} onClick={() => toggleDisponible(it)}>
                   {it.in_parrilla !== false && <Check size={14} />} {it.in_parrilla !== false ? "En parrilla" : "Disponible: no"}
                 </button>
+                <button className="btn" onClick={() => startEdit(it)}><Pencil size={15} /></button>
                 <button className="btn" onClick={() => remove(it)}><Trash2 size={15} /></button>
               </div>
             );

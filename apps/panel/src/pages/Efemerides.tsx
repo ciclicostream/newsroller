@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Plus, Trash2, Check, X, Loader2, CalendarDays } from "lucide-react";
+import { Plus, Trash2, Check, X, Loader2, CalendarDays, Pencil } from "lucide-react";
 import type { ContentItem, EfemeridesData } from "@newsroller/shared";
 import { formatEfemeridesDate } from "@newsroller/shared";
 import { contentItems } from "../lib/content-items";
@@ -13,6 +13,7 @@ export function Efemerides() {
   const [items, setItems] = useState<ContentItem[]>([]);
   const [err, setErr] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   const [dateKind, setDateKind] = useState<"full" | "month" | "year">("full");
   const [day, setDay] = useState(1);
@@ -65,9 +66,14 @@ export function Efemerides() {
         body: body.trim().slice(0, B_MAX),
         media_url: mediaUrl, media_kind: mediaKind,
       };
-      await contentItems.create({ type: "efemerides", data, duration_sec: dur });
-      setTitle(""); setBody(""); clearMedia();
-      setMsg("Guardado en el banco.");
+      if (editingId) {
+        await contentItems.patch(editingId, { data, duration_sec: dur });
+        setMsg("Cambios guardados.");
+      } else {
+        await contentItems.create({ type: "efemerides", data, duration_sec: dur });
+        setMsg("Guardado en el banco.");
+      }
+      cancelEdit();
       await load();
     } catch (e) {
       setErr(e instanceof Error ? e.message : "error");
@@ -76,9 +82,30 @@ export function Efemerides() {
     }
   }
 
+  function startEdit(it: ContentItem) {
+    const d = it.data as EfemeridesData;
+    setEditingId(it.id);
+    setDateKind(d.dateKind);
+    setDay(d.day ?? 1);
+    setMonth(d.month ?? 0);
+    setYear(d.year);
+    setTitle(d.title ?? "");
+    setBody(d.body ?? "");
+    setMediaUrl(d.media_url ?? null);
+    setMediaKind(d.media_kind ?? "image");
+    setDur(it.duration_sec);
+    setErr(null); setMsg(null);
+  }
+  function cancelEdit() {
+    setEditingId(null);
+    setTitle(""); setBody(""); clearMedia();
+    setDur(10);
+  }
+
   async function remove(it: ContentItem) {
     if (!confirm("¿Eliminar esta efeméride?")) return;
     await contentItems.remove(it.id);
+    if (editingId === it.id) cancelEdit();
     await load();
   }
   async function toggleDisponible(it: ContentItem) {
@@ -100,7 +127,10 @@ export function Efemerides() {
 
       <div style={{ display: "grid", gridTemplateColumns: "420px 1fr", gap: 20, alignItems: "start" }}>
         <form className="card" style={{ padding: 18 }} onSubmit={save}>
-          <div style={{ fontWeight: 500, marginBottom: 14 }}>Nueva efeméride</div>
+          <div style={{ fontWeight: 500, marginBottom: 14, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            {editingId ? "Editar efeméride" : "Nueva efeméride"}
+            {editingId && <button type="button" className="btn" onClick={cancelEdit}>Cancelar</button>}
+          </div>
 
           <div className="field">
             <label>Precisión de la fecha</label>
@@ -157,7 +187,7 @@ export function Efemerides() {
           </div>
 
           <button className="btn primary" type="submit" disabled={saving || uploading} style={{ width: "100%", justifyContent: "center" }}>
-            <Plus size={16} /> {saving ? "Guardando…" : "Guardar en el banco"}
+            <Plus size={16} /> {saving ? "Guardando…" : editingId ? "Guardar cambios" : "Guardar en el banco"}
           </button>
         </form>
 
@@ -178,6 +208,7 @@ export function Efemerides() {
                 <button className={"toggle-pill" + (it.in_parrilla !== false ? " on" : "")} onClick={() => toggleDisponible(it)}>
                   {it.in_parrilla !== false && <Check size={14} />} {it.in_parrilla !== false ? "En parrilla" : "Disponible: no"}
                 </button>
+                <button className="btn" onClick={() => startEdit(it)}><Pencil size={15} /></button>
                 <button className="btn" onClick={() => remove(it)}><Trash2 size={15} /></button>
               </div>
             );

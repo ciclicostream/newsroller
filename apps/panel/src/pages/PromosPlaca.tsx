@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Plus, Trash2, Check, Search, Sparkles } from "lucide-react";
+import { Plus, Trash2, Check, Search, Sparkles, Pencil } from "lucide-react";
 import type { ContentItem, PromosData } from "@newsroller/shared";
 import { contentItems } from "../lib/content-items";
 import { api } from "../lib/api";
@@ -11,6 +11,7 @@ export function PromosPlaca() {
   const [items, setItems] = useState<ContentItem[]>([]);
   const [err, setErr] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   const [source, setSource] = useState<"search" | "manual">("search");
   const [query, setQuery] = useState("#avance");
@@ -52,9 +53,14 @@ export function PromosPlaca() {
     setSaving(true);
     try {
       const data: PromosData = { title: title.trim().slice(0, 24), body: body.trim().slice(0, 160), format, video_id: id };
-      await contentItems.create({ type: "promos", data, duration_sec: dur });
-      setTitle(""); setBody(""); setManualInput("");
-      setMsg("Guardado en el banco.");
+      if (editingId) {
+        await contentItems.patch(editingId, { data, duration_sec: dur });
+        setMsg("Cambios guardados.");
+      } else {
+        await contentItems.create({ type: "promos", data, duration_sec: dur });
+        setMsg("Guardado en el banco.");
+      }
+      cancelEdit();
       await load();
     } catch (e) {
       setErr(e instanceof Error ? e.message : "error");
@@ -63,9 +69,28 @@ export function PromosPlaca() {
     }
   }
 
+  function startEdit(it: ContentItem) {
+    const d = it.data as PromosData;
+    setEditingId(it.id);
+    setSource("manual");
+    setManualInput(d.video_id ?? "");
+    setVideoId(d.video_id ?? "");
+    setTitle(d.title ?? "");
+    setBody(d.body ?? "");
+    setFormat(d.format);
+    setDur(it.duration_sec);
+    setErr(null); setMsg(null);
+  }
+  function cancelEdit() {
+    setEditingId(null);
+    setTitle(""); setBody(""); setManualInput("");
+    setDur(15);
+  }
+
   async function remove(it: ContentItem) {
     if (!confirm("¿Eliminar esta promo?")) return;
     await contentItems.remove(it.id);
+    if (editingId === it.id) cancelEdit();
     await load();
   }
   async function toggleDisponible(it: ContentItem) {
@@ -87,7 +112,10 @@ export function PromosPlaca() {
 
       <div style={{ display: "grid", gridTemplateColumns: "420px 1fr", gap: 20, alignItems: "start" }}>
         <form className="card" style={{ padding: 18 }} onSubmit={save}>
-          <div style={{ fontWeight: 500, marginBottom: 14 }}>Nueva promo</div>
+          <div style={{ fontWeight: 500, marginBottom: 14, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            {editingId ? "Editar promo" : "Nueva promo"}
+            {editingId && <button type="button" className="btn" onClick={cancelEdit}>Cancelar</button>}
+          </div>
 
           <div className="field">
             <label>Video</label>
@@ -151,7 +179,7 @@ export function PromosPlaca() {
           </div>
 
           <button className="btn primary" type="submit" disabled={saving} style={{ width: "100%", justifyContent: "center" }}>
-            <Plus size={16} /> {saving ? "Guardando…" : "Guardar en el banco"}
+            <Plus size={16} /> {saving ? "Guardando…" : editingId ? "Guardar cambios" : "Guardar en el banco"}
           </button>
         </form>
 
@@ -174,6 +202,7 @@ export function PromosPlaca() {
                 <button className={"toggle-pill" + (it.in_parrilla !== false ? " on" : "")} onClick={() => toggleDisponible(it)}>
                   {it.in_parrilla !== false && <Check size={14} />} {it.in_parrilla !== false ? "En parrilla" : "Disponible: no"}
                 </button>
+                <button className="btn" onClick={() => startEdit(it)}><Pencil size={15} /></button>
                 <button className="btn" onClick={() => remove(it)}><Trash2 size={15} /></button>
               </div>
             );

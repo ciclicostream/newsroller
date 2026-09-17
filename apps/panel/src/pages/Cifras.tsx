@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { Plus, Trash2, Check, BarChart3, Sparkles } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Plus, Trash2, Check, BarChart3, Sparkles, Pencil } from "lucide-react";
 import * as Icons from "lucide-react";
 import type { ContentItem, CifrasData, CifrasIcon, DatosGobPayload, CammesaPayload, DolarPayload } from "@newsroller/shared";
 import { CIFRAS_ICONS, CIFRAS_METRICS } from "@newsroller/shared";
@@ -57,6 +57,8 @@ export function Cifras() {
   const [items, setItems] = useState<ContentItem[]>([]);
   const [err, setErr] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const skipNextAutoFetch = useRef(false);
 
   const [mode, setMode] = useState<"api" | "manual">("api");
   const [metric, setMetric] = useState("ipc");
@@ -90,7 +92,11 @@ export function Cifras() {
       setResolving(false);
     }
   }
-  useEffect(() => { if (mode === "api") void pickMetric(metric); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [mode]);
+  useEffect(() => {
+    if (skipNextAutoFetch.current) { skipNextAutoFetch.current = false; return; }
+    if (mode === "api") void pickMetric(metric);
+    /* eslint-disable-next-line react-hooks/exhaustive-deps */
+  }, [mode]);
 
   async function save(e: React.FormEvent) {
     e.preventDefault();
@@ -107,10 +113,14 @@ export function Cifras() {
         subtitle: subtitle.trim().slice(0, S_MAX), source: source.trim(), sourceAuto: mode === "api" && sourceAuto,
         explanation: explanation.trim().slice(0, E_MAX), icon: (icon || null) as CifrasIcon | null,
       };
-      await contentItems.create({ type: "cifras", data, duration_sec: dur });
-      setValue(""); setValueNum(""); setSuffix(""); setSubtitle(""); setSource(""); setSourceAuto(false);
-      setExplanation(""); setIcon("");
-      setMsg("Guardado en el banco.");
+      if (editingId) {
+        await contentItems.patch(editingId, { data, duration_sec: dur });
+        setMsg("Cambios guardados.");
+      } else {
+        await contentItems.create({ type: "cifras", data, duration_sec: dur });
+        setMsg("Guardado en el banco.");
+      }
+      cancelEdit();
       await load();
     } catch (e) {
       setErr(e instanceof Error ? e.message : "error");
@@ -119,9 +129,33 @@ export function Cifras() {
     }
   }
 
+  function startEdit(it: ContentItem) {
+    const d = it.data as CifrasData;
+    setEditingId(it.id);
+    skipNextAutoFetch.current = true;
+    setMode(d.mode);
+    setMetric(d.metric ?? "ipc");
+    setValue(d.value ?? "");
+    setValueNum(d.valueNum ?? "");
+    setSuffix(d.suffix ?? "");
+    setSubtitle(d.subtitle ?? "");
+    setSource(d.source ?? "");
+    setSourceAuto(!!d.sourceAuto);
+    setExplanation(d.explanation ?? "");
+    setIcon(d.icon ?? "");
+    setDur(it.duration_sec);
+    setErr(null); setMsg(null);
+  }
+  function cancelEdit() {
+    setEditingId(null);
+    setValue(""); setValueNum(""); setSuffix(""); setSubtitle(""); setSource(""); setSourceAuto(false);
+    setExplanation(""); setIcon(""); setDur(10);
+  }
+
   async function remove(it: ContentItem) {
     if (!confirm("¿Eliminar esta cifra?")) return;
     await contentItems.remove(it.id);
+    if (editingId === it.id) cancelEdit();
     await load();
   }
   async function toggleDisponible(it: ContentItem) {
@@ -143,7 +177,10 @@ export function Cifras() {
 
       <div style={{ display: "grid", gridTemplateColumns: "440px 1fr", gap: 20, alignItems: "start" }}>
         <form className="card" style={{ padding: 18 }} onSubmit={save}>
-          <div style={{ fontWeight: 500, marginBottom: 14 }}>Nueva cifra</div>
+          <div style={{ fontWeight: 500, marginBottom: 14, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            {editingId ? "Editar cifra" : "Nueva cifra"}
+            {editingId && <button type="button" className="btn" onClick={cancelEdit}>Cancelar</button>}
+          </div>
 
           <div className="field">
             <label>Origen del dato</label>
@@ -202,7 +239,7 @@ export function Cifras() {
           </div>
 
           <button className="btn primary" type="submit" disabled={saving || resolving} style={{ width: "100%", justifyContent: "center" }}>
-            <Plus size={16} /> {saving ? "Guardando…" : "Guardar en el banco"}
+            <Plus size={16} /> {saving ? "Guardando…" : editingId ? "Guardar cambios" : "Guardar en el banco"}
           </button>
         </form>
 
@@ -226,6 +263,7 @@ export function Cifras() {
                 <button className={"toggle-pill" + (it.in_parrilla !== false ? " on" : "")} onClick={() => toggleDisponible(it)}>
                   {it.in_parrilla !== false && <Check size={14} />} {it.in_parrilla !== false ? "En parrilla" : "Disponible: no"}
                 </button>
+                <button className="btn" onClick={() => startEdit(it)}><Pencil size={15} /></button>
                 <button className="btn" onClick={() => remove(it)}><Trash2 size={15} /></button>
               </div>
             );

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Plus, Trash2, Check, DollarSign } from "lucide-react";
+import { Plus, Trash2, Check, DollarSign, Pencil } from "lucide-react";
 import type { ContentItem, DolarData, DolarPayload } from "@newsroller/shared";
 import { DOLAR_CASAS } from "@newsroller/shared";
 import { contentItems } from "../lib/content-items";
@@ -11,6 +11,7 @@ export function Dolar() {
   const [items, setItems] = useState<ContentItem[]>([]);
   const [err, setErr] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [live, setLive] = useState<DolarPayload | null>(null);
 
   // 3 cotizaciones elegidas: [izquierda, centro/ancla, derecha].
@@ -43,9 +44,14 @@ export function Dolar() {
         if (raw != null && raw.trim() !== "") ov[id] = Number(raw);
       }
       const data: DolarData = { casas, overrides: Object.keys(ov).length ? ov : undefined };
-      await contentItems.create({ type: "dolar", data, duration_sec: dur });
-      setOverrides({});
-      setMsg("Guardado en el banco.");
+      if (editingId) {
+        await contentItems.patch(editingId, { data, duration_sec: dur });
+        setMsg("Cambios guardados.");
+      } else {
+        await contentItems.create({ type: "dolar", data, duration_sec: dur });
+        setMsg("Guardado en el banco.");
+      }
+      cancelEdit();
       await load();
     } catch (e) {
       setErr(e instanceof Error ? e.message : "error");
@@ -54,9 +60,28 @@ export function Dolar() {
     }
   }
 
+  function startEdit(it: ContentItem) {
+    const d = it.data as DolarData;
+    setEditingId(it.id);
+    setIzq(d.casas?.[0] ?? "oficial");
+    setCentro(d.casas?.[1] ?? "blue");
+    setDer(d.casas?.[2] ?? "bolsa");
+    setOverrides(
+      Object.fromEntries(Object.entries(d.overrides ?? {}).map(([k, v]) => [k, String(v)])),
+    );
+    setDur(it.duration_sec);
+    setErr(null); setMsg(null);
+  }
+  function cancelEdit() {
+    setEditingId(null);
+    setOverrides({});
+    setDur(10);
+  }
+
   async function remove(it: ContentItem) {
     if (!confirm("¿Eliminar esta placa?")) return;
     await contentItems.remove(it.id);
+    if (editingId === it.id) cancelEdit();
     await load();
   }
   async function toggleDisponible(it: ContentItem) {
@@ -78,7 +103,10 @@ export function Dolar() {
 
       <div style={{ display: "grid", gridTemplateColumns: "420px 1fr", gap: 20, alignItems: "start" }}>
         <form className="card" style={{ padding: 18 }} onSubmit={save}>
-          <div style={{ fontWeight: 500, marginBottom: 14 }}>Nueva placa</div>
+          <div style={{ fontWeight: 500, marginBottom: 14, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            {editingId ? "Editar placa" : "Nueva placa"}
+            {editingId && <button type="button" className="btn" onClick={cancelEdit}>Cancelar</button>}
+          </div>
 
           {[
             { label: "Izquierda", val: izq, set: setIzq },
@@ -111,7 +139,7 @@ export function Dolar() {
           </div>
 
           <button className="btn primary" type="submit" disabled={saving} style={{ width: "100%", justifyContent: "center" }}>
-            <Plus size={16} /> {saving ? "Guardando…" : "Guardar en el banco"}
+            <Plus size={16} /> {saving ? "Guardando…" : editingId ? "Guardar cambios" : "Guardar en el banco"}
           </button>
         </form>
 
@@ -137,6 +165,7 @@ export function Dolar() {
                 <button className={"toggle-pill" + (it.in_parrilla !== false ? " on" : "")} onClick={() => toggleDisponible(it)}>
                   {it.in_parrilla !== false && <Check size={14} />} {it.in_parrilla !== false ? "En parrilla" : "Disponible: no"}
                 </button>
+                <button className="btn" onClick={() => startEdit(it)}><Pencil size={15} /></button>
                 <button className="btn" onClick={() => remove(it)}><Trash2 size={15} /></button>
               </div>
             );

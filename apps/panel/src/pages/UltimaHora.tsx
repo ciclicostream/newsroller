@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Plus, Trash2, Check, Loader2, Image as ImageIcon, Video, Music, X } from "lucide-react";
+import { Plus, Trash2, Check, Loader2, Image as ImageIcon, Video, Music, X, Pencil } from "lucide-react";
 import type { ContentItem, UltimaHoraData } from "@newsroller/shared";
 import { contentItems } from "../lib/content-items";
 import { uploadMedia } from "../lib/content";
@@ -10,6 +10,7 @@ export function UltimaHora() {
   const [items, setItems] = useState<ContentItem[]>([]);
   const [err, setErr] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [text, setText] = useState("");
   const [dur, setDur] = useState(8);
   const [mediaUrl, setMediaUrl] = useState<string | null>(null);
@@ -70,12 +71,14 @@ export function UltimaHora() {
     setSaving(true);
     try {
       const data: UltimaHoraData = { text: text.trim().slice(0, MAX), media_url: mediaUrl, media_kind: mediaKind, audio_url: audioUrl };
-      await contentItems.create({ type: "ultima_hora", data, duration_sec: dur });
-      setText("");
-      setDur(8);
-      clearMedia();
-      clearAudio();
-      setMsg("Guardado en el banco.");
+      if (editingId) {
+        await contentItems.patch(editingId, { data, duration_sec: dur });
+        setMsg("Cambios guardados.");
+      } else {
+        await contentItems.create({ type: "ultima_hora", data, duration_sec: dur });
+        setMsg("Guardado en el banco.");
+      }
+      cancelEdit();
       await load();
     } catch (e) {
       setErr(e instanceof Error ? e.message : "error");
@@ -84,9 +87,28 @@ export function UltimaHora() {
     }
   }
 
+  function startEdit(it: ContentItem) {
+    const d = it.data as UltimaHoraData;
+    setEditingId(it.id);
+    setText(d.text ?? "");
+    setDur(it.duration_sec);
+    setMediaUrl(d.media_url ?? null);
+    setMediaKind(d.media_kind ?? null);
+    setAudioUrl(d.audio_url ?? null);
+    setErr(null); setMsg(null);
+  }
+  function cancelEdit() {
+    setEditingId(null);
+    setText("");
+    setDur(8);
+    clearMedia();
+    clearAudio();
+  }
+
   async function remove(it: ContentItem) {
     if (!confirm("¿Eliminar esta placa de Última Hora?")) return;
     await contentItems.remove(it.id);
+    if (editingId === it.id) cancelEdit();
     await load();
   }
 
@@ -114,7 +136,10 @@ export function UltimaHora() {
 
       <div style={{ display: "grid", gridTemplateColumns: "360px 1fr", gap: 20, alignItems: "start" }}>
         <form className="card" style={{ padding: 18 }} onSubmit={save}>
-          <div style={{ fontWeight: 500, marginBottom: 14 }}>Nueva placa</div>
+          <div style={{ fontWeight: 500, marginBottom: 14, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            {editingId ? "Editar placa" : "Nueva placa"}
+            {editingId && <button type="button" className="btn" onClick={cancelEdit}>Cancelar</button>}
+          </div>
 
           <div className="field">
             <label>Texto de la noticia</label>
@@ -165,7 +190,7 @@ export function UltimaHora() {
           </div>
 
           <button className="btn primary" type="submit" disabled={saving || uploading || uploadingAudio} style={{ width: "100%", justifyContent: "center" }}>
-            <Plus size={16} /> {saving ? "Guardando…" : "Guardar en el banco"}
+            <Plus size={16} /> {saving ? "Guardando…" : editingId ? "Guardar cambios" : "Guardar en el banco"}
           </button>
         </form>
 
@@ -190,6 +215,7 @@ export function UltimaHora() {
                 <button className={"toggle-pill" + (it.in_parrilla !== false ? " on" : "")} onClick={() => toggleDisponible(it)}>
                   {it.in_parrilla !== false && <Check size={14} />} {it.in_parrilla !== false ? "En parrilla" : "Disponible: no"}
                 </button>
+                <button className="btn" onClick={() => startEdit(it)}><Pencil size={15} /></button>
                 <button className="btn" onClick={() => remove(it)}><Trash2 size={15} /></button>
               </div>
             );

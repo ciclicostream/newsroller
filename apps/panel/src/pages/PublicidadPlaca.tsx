@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Plus, Trash2, Check, X, Loader2, Megaphone } from "lucide-react";
+import { Plus, Trash2, Check, X, Loader2, Megaphone, Pencil } from "lucide-react";
 import type { ContentItem, PublicidadData } from "@newsroller/shared";
 import { contentItems } from "../lib/content-items";
 import { uploadMedia } from "../lib/content";
@@ -10,6 +10,7 @@ export function PublicidadPlaca() {
   const [err, setErr] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
   const [report, setReport] = useState<Record<string, number>>({});
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   const [format, setFormat] = useState<"full" | "vertical">("vertical");
   const [mediaUrl, setMediaUrl] = useState<string | null>(null);
@@ -68,12 +69,14 @@ export function PublicidadPlaca() {
         logo_url: format === "vertical" ? logoUrl ?? undefined : undefined,
         brand_qr_url: format === "vertical" ? qrUrl ?? undefined : undefined,
       };
-      await contentItems.create({ type: "publicidad", data, duration_sec: dur });
-      setMediaUrl(null); setLogoUrl(null); setQrUrl(null);
-      if (mediaRef.current) mediaRef.current.value = "";
-      if (logoRef.current) logoRef.current.value = "";
-      if (qrRef.current) qrRef.current.value = "";
-      setMsg("Guardado en el banco.");
+      if (editingId) {
+        await contentItems.patch(editingId, { data, duration_sec: dur });
+        setMsg("Cambios guardados.");
+      } else {
+        await contentItems.create({ type: "publicidad", data, duration_sec: dur });
+        setMsg("Guardado en el banco.");
+      }
+      cancelEdit();
       await load();
     } catch (e) {
       setErr(e instanceof Error ? e.message : "error");
@@ -82,9 +85,30 @@ export function PublicidadPlaca() {
     }
   }
 
+  function startEdit(it: ContentItem) {
+    const d = it.data as PublicidadData;
+    setEditingId(it.id);
+    setFormat(d.format);
+    setMediaUrl(d.media_url ?? null);
+    setMediaKind(d.media_kind);
+    setLogoUrl(d.logo_url ?? null);
+    setQrUrl(d.brand_qr_url ?? null);
+    setDur(it.duration_sec);
+    setErr(null); setMsg(null);
+  }
+  function cancelEdit() {
+    setEditingId(null);
+    setMediaUrl(null); setLogoUrl(null); setQrUrl(null);
+    if (mediaRef.current) mediaRef.current.value = "";
+    if (logoRef.current) logoRef.current.value = "";
+    if (qrRef.current) qrRef.current.value = "";
+    setDur(15);
+  }
+
   async function remove(it: ContentItem) {
     if (!confirm("¿Eliminar este aviso?")) return;
     await contentItems.remove(it.id);
+    if (editingId === it.id) cancelEdit();
     await load();
   }
   async function toggleDisponible(it: ContentItem) {
@@ -106,7 +130,10 @@ export function PublicidadPlaca() {
 
       <div style={{ display: "grid", gridTemplateColumns: "420px 1fr", gap: 20, alignItems: "start" }}>
         <form className="card" style={{ padding: 18 }} onSubmit={save}>
-          <div style={{ fontWeight: 500, marginBottom: 14 }}>Nuevo aviso</div>
+          <div style={{ fontWeight: 500, marginBottom: 14, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            {editingId ? "Editar aviso" : "Nuevo aviso"}
+            {editingId && <button type="button" className="btn" onClick={cancelEdit}>Cancelar</button>}
+          </div>
 
           <div className="field">
             <label>Formato</label>
@@ -162,7 +189,7 @@ export function PublicidadPlaca() {
           </div>
 
           <button className="btn primary" type="submit" disabled={saving || uploading} style={{ width: "100%", justifyContent: "center" }}>
-            <Plus size={16} /> {saving ? "Guardando…" : "Guardar en el banco"}
+            <Plus size={16} /> {saving ? "Guardando…" : editingId ? "Guardar cambios" : "Guardar en el banco"}
           </button>
         </form>
 
@@ -186,6 +213,7 @@ export function PublicidadPlaca() {
                 <button className={"toggle-pill" + (it.in_parrilla !== false ? " on" : "")} onClick={() => toggleDisponible(it)}>
                   {it.in_parrilla !== false && <Check size={14} />} {it.in_parrilla !== false ? "En parrilla" : "Disponible: no"}
                 </button>
+                <button className="btn" onClick={() => startEdit(it)}><Pencil size={15} /></button>
                 <button className="btn" onClick={() => remove(it)}><Trash2 size={15} /></button>
               </div>
             );
