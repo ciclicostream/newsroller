@@ -330,11 +330,11 @@ export interface CamarasData {
   ads: string[]; // URLs de imagen (1 o más); si hay 1 sola no rota
 }
 
-// Datos del tipo "video_full": video o imagen a pantalla completa, sin
-// overlay. A diferencia de Publicidad, NO genera reporte.
+// Datos del tipo "video_full": video, imagen o video de YouTube a pantalla
+// completa, sin overlay. A diferencia de Publicidad, NO genera reporte.
 export interface VideoFullData {
-  media_url: string;
-  media_kind: "image" | "video";
+  media_url: string; // URL de archivo (image/video) o id de video de YouTube (kind="youtube")
+  media_kind: "image" | "video" | "youtube";
 }
 
 // ---- Plantillas propias (editor visual) ----

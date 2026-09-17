@@ -33,12 +33,23 @@ export function ShortsPlaca() {
     if (s && count === 1) setTitle(s.custom_title ?? s.title);
   }
 
+  const s1 = available.find((x) => x.id === video1);
+  const s2 = available.find((x) => x.id === video2);
+  const minDur = count === 2
+    ? (s1?.duration_sec ?? 0) + (s2?.duration_sec ?? 0)
+    : (s1?.duration_sec ?? 0);
+
+  useEffect(() => {
+    if (minDur > 0) setDur((d) => Math.max(d, minDur));
+  }, [minDur]);
+
   async function save(e: React.FormEvent) {
     e.preventDefault();
     setErr(null); setMsg(null);
     if (!video1) return setErr("Elegí al menos un short.");
     if (count === 2 && !video2) return setErr("Elegí el segundo short.");
     if (!title.trim()) return setErr("El título es obligatorio.");
+    if (dur < minDur) return setErr(`La duración mínima es ${minDur}s (la duración real del/los video/s).`);
     setSaving(true);
     try {
       const data: ShortsData = { count, video1, video2: count === 2 ? video2 : undefined, title: title.trim() };
@@ -116,7 +127,8 @@ export function ShortsPlaca() {
 
           <div className="field">
             <label>Duración (segundos)</label>
-            <input type="number" min={2} value={dur} onChange={(e) => setDur(Math.max(2, Number(e.target.value) || 15))} />
+            <input type="number" min={minDur || 2} value={dur} onChange={(e) => setDur(Math.max(minDur || 2, Number(e.target.value) || minDur || 15))} />
+            {minDur > 0 && <div style={{ fontSize: 12, color: "#6b7688", marginTop: 4 }}>Mínimo {minDur}s (duración real del/los video/s).</div>}
           </div>
 
           <button className="btn primary" type="submit" disabled={saving} style={{ width: "100%", justifyContent: "center" }}>

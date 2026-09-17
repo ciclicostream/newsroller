@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Plus, Trash2, Video, Play, Square } from "lucide-react";
+import { Plus, Trash2, Video, Play, Square, Check } from "lucide-react";
 import type { Camera, CameraType } from "@newsroller/shared";
 import { camerasApi, youtubeId } from "../lib/cameras";
 
@@ -40,6 +40,10 @@ export function Camaras() {
   async function remove(cam: Camera) {
     if (!confirm(`¿Eliminar la cámara "${cam.name}"?`)) return;
     await camerasApi.remove(cam.id);
+    await load();
+  }
+  async function toggleActive(cam: Camera) {
+    await camerasApi.patch(cam.id, { active: !cam.active });
     await load();
   }
 
@@ -97,6 +101,9 @@ export function Camaras() {
                     <span className="cam-type">{c.type.toUpperCase()}</span>
                   </div>
                   <div className="asset-actions">
+                    <button className={"toggle-pill" + (c.active ? " on" : "")} onClick={() => toggleActive(c)}>
+                      {c.active && <Check size={14} />} {c.active ? "Al aire" : "Al aire: no"}
+                    </button>
                     <button className="icon-btn" onClick={() => remove(c)} aria-label="Eliminar"><Trash2 size={16} /></button>
                   </div>
                 </div>

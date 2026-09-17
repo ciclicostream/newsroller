@@ -1,16 +1,19 @@
 import { useEffect, useRef, useState } from "react";
-import { Plus, Trash2, Check, MonitorPlay, X, Loader2 } from "lucide-react";
+import { Plus, Trash2, Check, MonitorPlay, Youtube, X, Loader2 } from "lucide-react";
 import type { ContentItem, VideoFullData } from "@newsroller/shared";
 import { contentItems } from "../lib/content-items";
 import { uploadMedia } from "../lib/content";
+import { youtubeId } from "../lib/cameras";
 
 export function VideoFullPlaca() {
   const [items, setItems] = useState<ContentItem[]>([]);
   const [err, setErr] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
 
+  const [source, setSource] = useState<"file" | "youtube">("file");
   const [mediaUrl, setMediaUrl] = useState<string | null>(null);
   const [mediaKind, setMediaKind] = useState<"image" | "video">("video");
+  const [ytInput, setYtInput] = useState("");
   const [uploading, setUploading] = useState(false);
   const [dur, setDur] = useState(15);
   const [saving, setSaving] = useState(false);
@@ -40,12 +43,17 @@ export function VideoFullPlaca() {
   async function save(e: React.FormEvent) {
     e.preventDefault();
     setErr(null); setMsg(null);
-    if (!mediaUrl) return setErr("El video o imagen es obligatorio.");
+    const yt = source === "youtube" ? youtubeId(ytInput) : null;
+    if (source === "file" && !mediaUrl) return setErr("El video o imagen es obligatorio.");
+    if (source === "youtube" && !yt) return setErr("Pegá el link o ID del video de YouTube.");
     setSaving(true);
     try {
-      const data: VideoFullData = { media_url: mediaUrl, media_kind: mediaKind };
+      const data: VideoFullData = source === "youtube"
+        ? { media_url: yt!, media_kind: "youtube" }
+        : { media_url: mediaUrl!, media_kind: mediaKind };
       await contentItems.create({ type: "video_full", data, duration_sec: dur });
       clearMedia();
+      setYtInput("");
       setMsg("Guardado en el banco.");
       await load();
     } catch (e) {
@@ -70,7 +78,7 @@ export function VideoFullPlaca() {
       <div className="page-head">
         <div>
           <h1>Video Full</h1>
-          <p>Video o imagen a pantalla completa, sin overlay. Igual que Publicidad Full, pero NO genera reporte.</p>
+          <p>Video, imagen o video de YouTube a pantalla completa, sin overlay. Igual que Publicidad Full, pero NO genera reporte.</p>
         </div>
       </div>
 
@@ -82,17 +90,32 @@ export function VideoFullPlaca() {
           <div style={{ fontWeight: 500, marginBottom: 14 }}>Nuevo video full</div>
 
           <div className="field">
-            <label>Video o imagen</label>
-            {mediaUrl ? (
-              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                {mediaKind === "video" ? <video src={mediaUrl} style={{ width: 72, height: 40, objectFit: "cover", borderRadius: 6 }} muted /> : <img src={mediaUrl} alt="" style={{ width: 72, height: 40, objectFit: "cover", borderRadius: 6 }} />}
-                <button type="button" className="btn" onClick={clearMedia}><X size={14} /> quitar</button>
-              </div>
-            ) : (
-              <input ref={fileRef} type="file" accept="image/*,video/*" onChange={onFile} disabled={uploading} required />
-            )}
-            {uploading && <div style={{ fontSize: 12, color: "#6b7688", marginTop: 4 }}><Loader2 size={13} className="spin" /> subiendo…</div>}
+            <label>Origen</label>
+            <div className="tabs" style={{ marginBottom: 0 }}>
+              <button type="button" className={"tab" + (source === "file" ? " active" : "")} onClick={() => setSource("file")}>Archivo</button>
+              <button type="button" className={"tab" + (source === "youtube" ? " active" : "")} onClick={() => setSource("youtube")}>YouTube</button>
+            </div>
           </div>
+
+          {source === "file" ? (
+            <div className="field">
+              <label>Video o imagen</label>
+              {mediaUrl ? (
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  {mediaKind === "video" ? <video src={mediaUrl} style={{ width: 72, height: 40, objectFit: "cover", borderRadius: 6 }} muted /> : <img src={mediaUrl} alt="" style={{ width: 72, height: 40, objectFit: "cover", borderRadius: 6 }} />}
+                  <button type="button" className="btn" onClick={clearMedia}><X size={14} /> quitar</button>
+                </div>
+              ) : (
+                <input ref={fileRef} type="file" accept="image/*,video/*" onChange={onFile} disabled={uploading} />
+              )}
+              {uploading && <div style={{ fontSize: 12, color: "#6b7688", marginTop: 4 }}><Loader2 size={13} className="spin" /> subiendo…</div>}
+            </div>
+          ) : (
+            <div className="field">
+              <label>Link o ID del video de YouTube</label>
+              <input value={ytInput} onChange={(e) => setYtInput(e.target.value)} placeholder="https://youtube.com/watch?v=…" />
+            </div>
+          )}
 
           <div className="field">
             <label>Duración (segundos)</label>
@@ -111,11 +134,18 @@ export function VideoFullPlaca() {
             return (
               <div key={it.id} className="card" style={{ padding: 16, display: "flex", gap: 16, alignItems: "center" }}>
                 <div style={{ width: 72, height: 40, borderRadius: 6, background: "#0d2168", flex: "0 0 auto", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  {d.media_kind === "video" ? <video src={d.media_url} style={{ width: "100%", height: "100%", objectFit: "cover" }} muted /> : <img src={d.media_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />}
+                  {d.media_kind === "video" ? (
+                    <video src={d.media_url} style={{ width: "100%", height: "100%", objectFit: "cover" }} muted />
+                  ) : d.media_kind === "youtube" ? (
+                    <img src={`https://img.youtube.com/vi/${d.media_url}/hqdefault.jpg`} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                  ) : (
+                    <img src={d.media_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                  )}
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontWeight: 600, display: "flex", alignItems: "center", gap: 8 }}>
-                    <MonitorPlay size={15} /> {d.media_kind === "video" ? "Video" : "Imagen"}
+                    {d.media_kind === "youtube" ? <Youtube size={15} /> : <MonitorPlay size={15} />}
+                    {d.media_kind === "video" ? "Video" : d.media_kind === "youtube" ? "YouTube" : "Imagen"}
                   </div>
                   <div style={{ fontSize: 12, color: "#6b7688", marginTop: 4 }}>{it.duration_sec}s</div>
                 </div>

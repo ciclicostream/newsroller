@@ -11,6 +11,7 @@ import { useAutoFit } from "../lib/autofit";
 export function Shorts({ data, durationSec }: { data: ShortsData; durationSec?: number }) {
   const [play, setPlay] = useState(false);
   const [exiting, setExiting] = useState(false);
+  const [s1Ended, setS1Ended] = useState(false);
   const titleRef = useRef<HTMLSpanElement>(null);
 
   useEffect(() => {
@@ -33,8 +34,22 @@ export function Shorts({ data, durationSec }: { data: ShortsData; durationSec?: 
       <img className="sh-bg" src={fondo} alt="" />
       <Chrome />
 
-      <div className="sh-video sh-s1 sh-el"><YouTubePlayer videoId={data.video1} onEnded={() => {}} /></div>
-      {two && <div className="sh-video sh-s2 sh-el"><YouTubePlayer videoId={data.video2!} onEnded={() => {}} /></div>}
+      <div className="sh-video sh-s1 sh-el">
+        <YouTubePlayer videoId={data.video1} onEnded={() => setS1Ended(true)} />
+      </div>
+      {two && (
+        <div className="sh-video sh-s2 sh-el">
+          {s1Ended ? (
+            <YouTubePlayer videoId={data.video2!} onEnded={() => {}} />
+          ) : (
+            <img
+              className="sh-thumb"
+              src={`https://img.youtube.com/vi/${data.video2}/hqdefault.jpg`}
+              alt=""
+            />
+          )}
+        </div>
+      )}
 
       <div className="sh-titlecard sh-el">
         {!two && <span className="sh-kicker">SHORT</span>}
@@ -51,6 +66,7 @@ const CSS = `
 .sh.play .sh-el{transition:opacity .5s ease;opacity:1}
 
 .sh-video{position:absolute;border-radius:22px;overflow:hidden;background:#0b1330;box-shadow:0 14px 34px rgba(0,0,0,.4)}
+.sh-thumb{width:100%;height:100%;object-fit:cover;display:block}
 .sh.one .sh-s1{left:470px;top:110px;width:462px;height:820px}
 .sh.two .sh-s1{left:150px;top:150px;width:404px;height:718px}
 .sh.two .sh-s2{left:576px;top:150px;width:404px;height:718px}
