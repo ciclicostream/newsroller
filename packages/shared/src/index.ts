@@ -29,7 +29,9 @@ export interface DolarCasa {
   compra: number | null;
   venta: number | null;
   fecha: string; // ISO
-  ventaPrev?: number | null; // venta del día hábil anterior (para variación ▲/▼); null si no hay dato aún
+  // Última cotización DISTINTA a la actual (no la del poll anterior, que casi siempre es igual): sirve para
+  // ▲/▼/= según la última variación real. Igual a `venta` = nunca varió en el historial; null = sin dato.
+  ventaPrev?: number | null;
 }
 export interface DolarPayload {
   casas: DolarCasa[];

@@ -11,6 +11,34 @@ interface DolarApiItem {
   fechaActualizacion: string;
 }
 
+// Historial diario por casa (ArgentinaDatos, sin API key). Se cachea porque cada respuesta trae años de
+// datos: sólo se guardan los últimos ~120 días y se refresca cada 30 min.
+interface HistRow { fecha: string; venta: number | null }
+const HIST_TTL_MS = 30 * 60_000;
+const histCache = new Map<string, { at: number; rows: HistRow[] }>();
+async function historial(casa: string): Promise<HistRow[] | null> {
+  const hit = histCache.get(casa);
+  if (hit && Date.now() - hit.at < HIST_TTL_MS) return hit.rows;
+  try {
+    const raw = await fetchJson<{ fecha: string; venta: number | null }[]>(`https://api.argentinadatos.com/v1/cotizaciones/dolares/${encodeURIComponent(casa)}`);
+    const rows = raw.filter((r) => r.venta != null).slice(-120).map((r) => ({ fecha: r.fecha, venta: r.venta }));
+    histCache.set(casa, { at: Date.now(), rows });
+    return rows;
+  } catch {
+    // Si falla se usa lo último que se tenía (o nada). Se reintenta en el próximo poll (~1 min).
+    return hit?.rows ?? null;
+  }
+}
+
+// Última cotización distinta a `venta`, buscando hacia atrás. `venta` si nunca varió en la ventana.
+function ultimaDistinta(rows: HistRow[], venta: number): number {
+  for (let i = rows.length - 1; i >= 0; i--) {
+    const v = rows[i]!.venta;
+    if (v != null && Math.abs(v - venta) > 0.005) return v;
+  }
+  return venta;
+}
+
 const todayStr = () => new Date().toISOString().slice(0, 10);
 const yesterdayStr = () => {
   const d = new Date();
@@ -48,7 +76,7 @@ export const dolarSource: DataSource<DolarPayload> = {
   intervalMs: env.pollDolarMs,
   async fetch() {
     const items = await fetchJson<DolarApiItem[]>("https://dolarapi.com/v1/dolares");
-    const casas: DolarCasa[] = await withVariacion(
+    const conDiaAnterior: DolarCasa[] = await withVariacion(
       items.map((i) => ({
         casa: i.casa,
         nombre: i.nombre,
@@ -56,6 +84,18 @@ export const dolarSource: DataSource<DolarPayload> = {
         venta: i.venta ?? null,
         fecha: i.fechaActualizacion,
       })),
+    );
+    // ▲/▼/= según la última variación real (historial de ArgentinaDatos). Si el historial no está
+    // disponible se conserva el cálculo contra el cierre del día anterior (dolar_history).
+    const casas: DolarCasa[] = await Promise.all(
+      conDiaAnterior.map(async (c) => {
+        if (c.venta == null) return c;
+        const rows = await historial(c.casa);
+        if (rows && rows.length) return { ...c, ventaPrev: ultimaDistinta(rows, c.venta) };
+        // Sin historial: el cierre de ayer sólo vale si difiere (si es igual no sabemos cuál fue la
+        // última variación, así que no se muestra nada en vez de un "sin cambios" falso).
+        return { ...c, ventaPrev: c.ventaPrev != null && Math.abs(c.ventaPrev - c.venta) > 0.005 ? c.ventaPrev : null };
+      }),
     );
     const updatedAt =
       casas
