@@ -52,7 +52,6 @@ export function Shorts({ data, durationSec }: { data: ShortsData; durationSec?: 
       )}
 
       <div className="sh-titlecard sh-el">
-        {!two && <span className="sh-kicker">SHORT</span>}
         <span ref={titleRef}>{data.title}</span>
       </div>
     </div>
@@ -75,7 +74,6 @@ const CSS = `
   padding:52px 56px;color:#0b2b6b;font-weight:800;font-size:64px;line-height:1.15;max-height:520px;overflow:hidden}
 .sh.one .sh-titlecard{left:972px;bottom:150px}
 .sh.two .sh-titlecard{left:1040px;top:360px}
-.sh-kicker{display:block;font-size:32px;font-weight:800;letter-spacing:.03em;color:#2f80ed;text-transform:uppercase;margin-bottom:14px}
 
 .sh.exit .sh-el{transition:transform .8s cubic-bezier(.4,0,.8,.2), opacity .8s ease;transform:translateY(260px);opacity:0}
 `;
