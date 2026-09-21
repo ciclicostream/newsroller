@@ -8,6 +8,9 @@ import { ItemView } from "./templates/items";
 import offAir from "./assets/off-air.jpg";
 import { reportAiring, reportIncident, isLiveOutput } from "./lib/telemetry";
 
+// Horas de encendido tras las cuales el output se recarga solo al cerrar una vuelta de la parrilla.
+const MAX_UPTIME_H = 12;
+
 export function Output() {
   const [scene, setScene] = useState<Scene | null>(null);
   const [index, setIndex] = useState(0);
@@ -80,10 +83,22 @@ export function Output() {
   const itemsLenRef = useRef(items.length);
   itemsLenRef.current = items.length;
 
+  // Higiene para emisión 24/7: con el output encendido hace más de MAX_UPTIME_H horas, al completar una
+  // vuelta de la parrilla se recarga la página (libera la memoria que el navegador acumula con los días).
+  // El corte cae justo entre el último y el primer bloque. Sólo en el output real (no en el monitor).
+  const bootAt = useRef(Date.now());
+  const indexRef = useRef(index);
+  indexRef.current = index;
+
   const advanced = useRef(false);
   const advance = useCallback(() => {
     if (advanced.current) return;
     advanced.current = true;
+    const len = itemsLenRef.current || 1;
+    if ((indexRef.current + 1) % len === 0 && isLiveOutput() && Date.now() - bootAt.current > MAX_UPTIME_H * 3_600_000) {
+      window.location.reload();
+      return;
+    }
     setIndex((i) => {
       const len = itemsLenRef.current || 1;
       const next = (i + 1) % len;
