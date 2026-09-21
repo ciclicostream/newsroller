@@ -15,6 +15,7 @@ import { useAuth } from "../auth/AuthProvider";
 import { IdleGuard } from "./IdleGuard";
 import { Avatar } from "./Avatar";
 import { PresenceStrip } from "./PresenceStrip";
+import { Toaster } from "./Toaster";
 import ciclicoBlack from "../assets/ciclico-black.png";
 
 interface NavDef {
@@ -91,6 +92,7 @@ export function Layout({ children }: { children: ReactNode }) {
       </header>
 
       <main className="main">{children}</main>
+      <Toaster />
       {me && <IdleGuard minutes={me.idleMinutes} onIdle={() => { void signOut("idle").then(() => navigate("/login")); }} />}
     </div>
   );

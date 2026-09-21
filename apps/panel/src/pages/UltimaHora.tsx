@@ -107,7 +107,7 @@ export function UltimaHora() {
   }
 
   async function remove(it: ContentItem) {
-    if (!confirm("¿Eliminar esta placa de Última Hora?")) return;
+    if (!confirm("¿Enviar esta placa de Última Hora a la papelera?")) return;
     await contentItems.remove(it.id);
     if (editingId === it.id) cancelEdit();
     await load();

@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { getSupabase } from "../db/supabase.js";
 import { requireAuth, requirePermByMethod } from "../auth/middleware.js";
+import { logActivity } from "../activity.js";
 
 // CRUD de plantillas (editor visual).
 export function templatesRouter(): Router {
@@ -34,6 +35,7 @@ export function templatesRouter(): Router {
       .select()
       .single();
     if (error) return res.status(500).json({ error: error.message });
+    logActivity(req.user, { action: "plantilla.crear", entity: "plantilla", entityId: data.id, summary: `Creó la plantilla "${data.name}"` });
     res.status(201).json(data);
   });
 
@@ -46,12 +48,14 @@ export function templatesRouter(): Router {
     const { data, error } = await sb().from("templates").update(patch).eq("id", req.params.id).select().maybeSingle();
     if (error) return res.status(500).json({ error: error.message });
     if (!data) return res.status(404).json({ error: "plantilla no encontrada" });
+    logActivity(req.user, { action: "plantilla.editar", entity: "plantilla", entityId: data.id, summary: `Modificó la plantilla "${data.name}"` });
     res.json(data);
   });
 
   r.delete("/:id", async (req, res) => {
     const { error } = await sb().from("templates").delete().eq("id", req.params.id);
     if (error) return res.status(500).json({ error: error.message });
+    logActivity(req.user, { action: "plantilla.borrar", entity: "plantilla", entityId: req.params.id as string, summary: "Borró una plantilla" });
     res.status(204).end();
   });
 

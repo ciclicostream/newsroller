@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { ROLES, ROLE_LABEL, IDLE_MINUTES_DEFAULT, type Role } from "@newsroller/shared";
-import { Users as UsersIcon, Youtube, Tv, Images, Rss, CloudSun, Clapperboard } from "lucide-react";
+import { Users as UsersIcon, Youtube, Tv, Images, Rss, CloudSun, Clapperboard, History } from "lucide-react";
 import { useAuth } from "../auth/AuthProvider";
 import { settingsApi } from "../lib/settings";
 
@@ -91,6 +91,15 @@ export function Ajustes() {
             <span className="tipo-desc">Imágenes grandes según el cielo</span>
           </span>
         </Link>
+        {can("reportes") && (
+          <Link to="/ajustes/actividad" className="tipo-card">
+            <span className="tipo-ic"><History size={22} /></span>
+            <span className="tipo-main">
+              <span className="tipo-name">Actividad</span>
+              <span className="tipo-desc">Quién hizo qué y cuándo</span>
+            </span>
+          </Link>
+        )}
         <Link to="/ajustes/plataformas" className="tipo-card">
           <span className="tipo-ic"><Clapperboard size={22} /></span>
           <span className="tipo-main">

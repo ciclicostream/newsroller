@@ -4,6 +4,7 @@ import { getSupabase } from "../db/supabase.js";
 import { requireAuth, requirePerm } from "../auth/middleware.js";
 import { syncShorts, searchUploads } from "../content/youtube.js";
 import { efemeridesDeWikipedia } from "../content/wikipedia.js";
+import { logActivity } from "../activity.js";
 import { env } from "../config/env.js";
 
 const BUCKETS: Record<AssetKind, string> = {
@@ -220,6 +221,7 @@ export function contentRouter(): Router {
       .select()
       .single();
     if (error) return res.status(400).json({ error: error.message });
+    logActivity(req.user, { action: "camara.crear", entity: "camara", entityId: data.id, summary: `Agregó la cámara "${data.name}"` });
     res.status(201).json(data);
   });
 
@@ -230,12 +232,14 @@ export function contentRouter(): Router {
     const { data, error } = await sb().from("cameras").update(patch).eq("id", req.params.id).select().maybeSingle();
     if (error) return res.status(500).json({ error: error.message });
     if (!data) return res.status(404).json({ error: "cámara no encontrada" });
+    logActivity(req.user, { action: "camara.editar", entity: "camara", entityId: data.id, summary: `Editó la cámara "${data.name}"` });
     res.json(data);
   });
 
   r.delete("/cameras/:id", requirePerm("camaras"), async (req, res) => {
     const { error } = await sb().from("cameras").delete().eq("id", req.params.id);
     if (error) return res.status(500).json({ error: error.message });
+    logActivity(req.user, { action: "camara.borrar", entity: "camara", entityId: req.params.id as string, summary: "Borró una cámara" });
     res.status(204).end();
   });
 

@@ -205,7 +205,7 @@ export function Cartelera() {
   }
 
   async function remove(it: ContentItem) {
-    if (!confirm("¿Eliminar esta cartelera?")) return;
+    if (!confirm("¿Enviar esta cartelera a la papelera?")) return;
     await contentItems.remove(it.id);
     if (editingId === it.id) cancelEdit();
     await load();

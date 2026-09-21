@@ -57,7 +57,7 @@ export function Clima() {
   }
 
   async function remove(it: ContentItem) {
-    if (!confirm("¿Eliminar esta placa de clima?")) return;
+    if (!confirm("¿Enviar esta placa de clima a la papelera?")) return;
     await contentItems.remove(it.id);
     if (editingId === it.id) cancelEdit();
     await load();

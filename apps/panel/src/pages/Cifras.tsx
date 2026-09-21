@@ -166,7 +166,7 @@ export function Cifras() {
   }
 
   async function remove(it: ContentItem) {
-    if (!confirm("¿Eliminar esta cifra?")) return;
+    if (!confirm("¿Enviar esta cifra a la papelera?")) return;
     await contentItems.remove(it.id);
     if (editingId === it.id) cancelEdit();
     await load();

@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { getSupabase } from "../db/supabase.js";
 import { getStore } from "../db/store.js";
+import { liveContentItems } from "../db/contentItems.js";
 
 // Escena pública para el output (vMix). Sin auth: sólo lectura de lo activo.
 export function outputRouter(): Router {
@@ -29,7 +30,7 @@ export function outputRouter(): Router {
         sb.from("shorts").select("*"),
         sb.from("templates").select("*"),
         sb.from("cameras").select("*"),
-        sb.from("content_items").select("*"),
+        liveContentItems(sb, (q) => q.select("*")),
       ]);
 
     const assetById = new Map((assets ?? []).map((a) => [a.id, a]));

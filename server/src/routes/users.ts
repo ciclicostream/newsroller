@@ -2,6 +2,7 @@ import { Router } from "express";
 import { ROLES, assignableRoles, normalizeRole, type Role } from "@newsroller/shared";
 import { getSupabase } from "../db/supabase.js";
 import { requireAuth, requirePerm } from "../auth/middleware.js";
+import { logActivity } from "../activity.js";
 
 const isRole = (v: unknown): v is Role => typeof v === "string" && (ROLES as string[]).includes(v);
 const isEmail = (v: unknown): v is string => typeof v === "string" && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
@@ -75,6 +76,7 @@ export function usersRouter(): Router {
 
     const { error: upErr } = await sb().from("profiles").update({ role: finalRole, first_name: first || null, last_name: last || null, full_name: fullName || null }).eq("id", data.user.id);
     if (upErr) return res.status(500).json({ error: upErr.message });
+    logActivity(req.user, { action: "usuario.invitar", entity: "usuario", entityId: data.user.id, summary: `Invitó a ${email} como ${finalRole}`, meta: { role: finalRole } });
     res.status(201).json({ id: data.user.id, email, role: finalRole, link: data.properties.action_link });
   });
 
@@ -99,6 +101,7 @@ export function usersRouter(): Router {
       if (r2.error) return res.status(400).json({ error: r2.error.message });
       link = r2.data?.properties?.action_link;
     }
+    logActivity(req.user, { action: "usuario.link", entity: "usuario", entityId: id, summary: `Generó un link de ${kind === "invite" ? "invitación" : "acceso"} para ${email}` });
     res.json({ link, kind, email });
   });
 
@@ -140,6 +143,8 @@ export function usersRouter(): Router {
 
     const { data, error } = await sb().from("profiles").update(patch).eq("id", id).select().maybeSingle();
     if (error) return res.status(500).json({ error: error.message });
+    if ("role" in patch) logActivity(req.user, { action: "usuario.rol", entity: "usuario", entityId: id, summary: `Cambió el rol de ${target.email} a ${patch.role}`, meta: { role: patch.role } });
+    if ("active" in patch) logActivity(req.user, { action: patch.active ? "usuario.activar" : "usuario.desactivar", entity: "usuario", entityId: id, summary: `${patch.active ? "Activó" : "Desactivó"} a ${target.email}` });
     res.json(data);
   });
 
@@ -152,6 +157,7 @@ export function usersRouter(): Router {
       return res.status(400).json({ error: "tiene que quedar al menos un Master" });
     const { error } = await sb().auth.admin.deleteUser(id);
     if (error) return res.status(400).json({ error: error.message });
+    logActivity(req.user, { action: "usuario.eliminar", entity: "usuario", entityId: id, summary: "Eliminó a una persona" });
     res.status(204).end();
   });
 

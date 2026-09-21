@@ -90,7 +90,7 @@ export function CamarasPlaca() {
   }
 
   async function remove(it: ContentItem) {
-    if (!confirm("¿Eliminar esta placa de cámara?")) return;
+    if (!confirm("¿Enviar esta placa de cámara a la papelera?")) return;
     await contentItems.remove(it.id);
     if (editingId === it.id) cancelEdit();
     await load();

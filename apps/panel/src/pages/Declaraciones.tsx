@@ -109,7 +109,7 @@ export function Declaraciones() {
   }
 
   async function remove(it: ContentItem) {
-    if (!confirm("¿Eliminar esta declaración?")) return;
+    if (!confirm("¿Enviar esta declaración a la papelera?")) return;
     await contentItems.remove(it.id);
     if (editingId === it.id) cancelEdit();
     await load();

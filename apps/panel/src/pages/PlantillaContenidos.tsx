@@ -32,7 +32,7 @@ export function PlantillaContenidos() {
     await load();
   }
   async function remove(it: ContentItem) {
-    if (!confirm("¿Eliminar este contenido?")) return;
+    if (!confirm("¿Enviar este contenido a la papelera?")) return;
     await contentItems.remove(it.id);
     await load();
   }

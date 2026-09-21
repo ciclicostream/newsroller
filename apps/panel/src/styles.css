@@ -288,3 +288,11 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 6px
 .presence-more{margin-left:6px;font-size:12px;font-weight:700;color:var(--muted)}
 .avatar-link{display:inline-flex;border-radius:50%;transition:box-shadow .12s}
 .avatar-link:hover{box-shadow:0 0 0 3px var(--accent-weak)}
+
+/* Avisos flotantes */
+.toaster{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);display:flex;flex-direction:column;gap:8px;z-index:400;align-items:center;pointer-events:none}
+.toast{pointer-events:auto;max-width:560px;padding:11px 18px;border-radius:12px;font-size:14px;font-weight:600;box-shadow:0 10px 30px rgba(15,20,32,.28);background:#1a2235;color:#fff;cursor:pointer}
+.toast.ok{background:#15803d}.toast.error{background:#c0392b}
+/* Papelera en el submenú de Contenido */
+.tpl-chip.trash .tpl-chip-ic{color:#b3b8c2}
+.tpl-chip.trash.active .tpl-chip-ic{color:#fff}

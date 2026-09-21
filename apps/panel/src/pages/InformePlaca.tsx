@@ -79,7 +79,7 @@ export function InformePlaca() {
   }
 
   async function remove(it: ContentItem) {
-    if (!confirm("¿Eliminar este informe?")) return;
+    if (!confirm("¿Enviar este informe a la papelera?")) return;
     await contentItems.remove(it.id);
     if (editingId === it.id) cancelEdit();
     await load();

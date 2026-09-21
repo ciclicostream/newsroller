@@ -2,6 +2,7 @@ import { Router } from "express";
 import { getSupabase } from "../db/supabase.js";
 import { requireAuth, requirePerm } from "../auth/middleware.js";
 import { clearLimitsCache } from "../auth/sessions.js";
+import { logActivity } from "../activity.js";
 import { CLIMA_SLOT_KEYS, PLATAFORMAS_DEFAULT, IDLE_MINUTES_DEFAULT, ROLES, can, type Plataforma, type Role } from "@newsroller/shared";
 import type { IO } from "../realtime/socket.js";
 
@@ -138,6 +139,10 @@ export function settingsRouter(io: IO): Router {
     try {
       const all = await writeSettings(io, updates);
       if ("idleMinutes" in updates) clearLimitsCache();
+      // Registro: corte / reanudación del aire y cambios de ajustes (sin los relojes internos del reloj "al aire").
+      if ("onAir" in updates) logActivity(req.user, { action: updates.onAir === false ? "aire.cortar" : "aire.reanudar", entity: "aire", summary: updates.onAir === false ? "Cortó la emisión (fuera de aire)" : "Reanudó la emisión" });
+      const changed = Object.keys(updates).filter((k) => !["onAir", "airSince", "airPausedAt"].includes(k));
+      if (changed.length) logActivity(req.user, { action: "ajustes.cambiar", entity: "ajustes", summary: `Cambió ajustes: ${changed.join(", ")}`, meta: { keys: changed } });
       res.json(all);
     } catch (e) {
       res.status(500).json({ error: e instanceof Error ? e.message : "error" });

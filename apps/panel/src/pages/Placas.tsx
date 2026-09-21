@@ -149,7 +149,7 @@ export function Placas() {
   }
 
   async function remove(it: ContentItem) {
-    if (!confirm("¿Eliminar esta placa?")) return;
+    if (!confirm("¿Enviar esta placa a la papelera?")) return;
     await contentItems.remove(it.id);
     if (editingId === it.id) cancelEdit();
     await load();

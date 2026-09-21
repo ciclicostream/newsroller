@@ -4,6 +4,7 @@ import { getSupabase } from "../db/supabase.js";
 import { requireAuth, requirePermByMethod } from "../auth/middleware.js";
 import type { IO } from "../realtime/socket.js";
 import { writeSettings, readAll } from "./settings.js";
+import { logActivity } from "../activity.js";
 
 const TYPES: ContentType[] = ["short", "placa", "ad", "background", "data", "template", "content_item"];
 const TEMPLATE_IDS = new Set(LAYOUTS.map((t) => t.id));
@@ -101,6 +102,7 @@ export function parrillaRouter(io: IO): Router {
       const st = await readAll();
       if (st.onAir !== false) await writeSettings(io, { airSince: new Date().toISOString() });
     } catch { /* noop */ }
+    logActivity(_req.user, { action: "parrilla.publicar", entity: "parrilla", summary: `Envió a vivo la parrilla (${rows.length} bloques)`, meta: { count: rows.length } });
     res.json({ ok: true, count: rows.length });
   });
 

@@ -94,7 +94,7 @@ export function VideoFullPlaca() {
   }
 
   async function remove(it: ContentItem) {
-    if (!confirm("¿Eliminar este video full?")) return;
+    if (!confirm("¿Enviar este video full a la papelera?")) return;
     await contentItems.remove(it.id);
     if (editingId === it.id) cancelEdit();
     await load();

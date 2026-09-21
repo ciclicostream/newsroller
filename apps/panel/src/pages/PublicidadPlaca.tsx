@@ -107,7 +107,7 @@ export function PublicidadPlaca() {
   }
 
   async function remove(it: ContentItem) {
-    if (!confirm("¿Eliminar este aviso?")) return;
+    if (!confirm("¿Enviar este aviso a la papelera?")) return;
     await contentItems.remove(it.id);
     if (editingId === it.id) cancelEdit();
     await load();

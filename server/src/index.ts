@@ -13,6 +13,8 @@ import { sourcesRouter } from "./routes/sources.js";
 import { meRouter } from "./routes/me.js";
 import { usersRouter } from "./routes/users.js";
 import { contentRouter } from "./routes/content.js";
+import { activityRouter } from "./routes/activity.js";
+import { startTrashPurger } from "./trash.js";
 import { contentItemsRouter } from "./routes/content-items.js";
 import { playlistRouter } from "./routes/playlist.js";
 import { parrillaRouter } from "./routes/parrilla.js";
@@ -54,6 +56,7 @@ app.use("/api", meRouter());
 app.use("/api/users", usersRouter());
 app.use("/api/content", contentRouter());
 app.use("/api/content-items", contentItemsRouter());
+app.use("/api/activity", activityRouter());
 app.use("/api/playlist", playlistRouter());
 app.use("/api/parrilla", parrillaRouter(io));
 app.use("/api/templates", templatesRouter());
@@ -87,6 +90,7 @@ http.listen(env.port, () => {
   console.log(`[server] store: ${registry.storeKind()}`);
   void ensureAdmins();
   registry.start();
+  startTrashPurger();
 
   // Auto-sync de shorts de YouTube (si hay key + Supabase).
   const sb = getSupabase();

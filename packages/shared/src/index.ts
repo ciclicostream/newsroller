@@ -585,11 +585,12 @@ export type Perm =
   | "ajustes"
   | "perfiles" // invitar/editar/desactivar personas (salvo Master)
   | "eliminar_personas" // borrar personas
+  | "vaciar_papelera" // borrar definitivamente (de la papelera)
   | "config_sistema"; // configuración sensible del sistema (ej. tiempos de inactividad)
 
 export const ROLE_PERMS: Record<Role, Perm[]> = {
-  master: ["programar", "contenidos", "plantillas_ver", "plantillas_editar", "camaras", "fuentes", "reportes", "ajustes", "perfiles", "eliminar_personas", "config_sistema"],
-  administrador: ["programar", "contenidos", "plantillas_ver", "camaras", "reportes", "ajustes", "perfiles"],
+  master: ["programar", "contenidos", "plantillas_ver", "plantillas_editar", "camaras", "fuentes", "reportes", "ajustes", "perfiles", "eliminar_personas", "vaciar_papelera", "config_sistema"],
+  administrador: ["programar", "contenidos", "plantillas_ver", "camaras", "reportes", "ajustes", "perfiles", "vaciar_papelera"],
   programador: ["programar", "contenidos", "camaras", "fuentes", "ajustes"],
   generador: ["contenidos"],
 };

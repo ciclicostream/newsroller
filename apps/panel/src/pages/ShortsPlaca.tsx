@@ -88,7 +88,7 @@ export function ShortsPlaca() {
   }
 
   async function remove(it: ContentItem) {
-    if (!confirm("¿Eliminar esta placa de shorts?")) return;
+    if (!confirm("¿Enviar esta placa de shorts a la papelera?")) return;
     await contentItems.remove(it.id);
     if (editingId === it.id) cancelEdit();
     await load();

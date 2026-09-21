@@ -30,6 +30,10 @@ export function NuevoContenido() {
   const { type: param } = useParams();
   const type = param ?? DEFAULT_TYPE;
 
+  // Cantidad de contenidos en la papelera (para el chip).
+  const [trashCount, setTrashCount] = useState(0);
+  useEffect(() => { contentItems.trash().then((l) => setTrashCount(l.length)).catch(() => {}); }, []);
+
   // Tipos de plantilla que tienen contenido en la PARRILLA (borrador que se edita en
   // Programación). Se refresca cada tanto y al volver a la pestaña.
   const [inGrid, setInGrid] = useState<Set<string>>(new Set());
@@ -73,6 +77,11 @@ export function NuevoContenido() {
             </Link>
           );
         })}
+        {/* Papelera (30 días) */}
+        <Link to="/contenido/papelera" className="tpl-chip trash" title="Contenidos borrados: se conservan 30 días">
+          <span className="tpl-chip-ic"><Trash2 size={16} /></span>
+          <span className="tpl-chip-lbl"><span>Papelera</span>{trashCount ? <span>({trashCount})</span> : null}</span>
+        </Link>
       </nav>
 
       {/* Plantilla elegida (por defecto, Placas). */}
@@ -111,7 +120,7 @@ function TipoEnConstruccion({ type, label }: { type: string; label: string }) {
   }, [type]);
 
   async function remove(id: string) {
-    if (!confirm("¿Eliminar este contenido?")) return;
+    if (!confirm("¿Enviar este contenido a la papelera?")) return;
     await contentItems.remove(id);
     await load();
   }

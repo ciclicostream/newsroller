@@ -6,6 +6,8 @@ import { Login } from "./pages/Login";
 import { AjustesClima } from "./pages/AjustesClima";
 import { AjustesPlataformas } from "./pages/AjustesPlataformas";
 import { Perfil } from "./pages/Perfil";
+import { Papelera } from "./pages/Papelera";
+import { Actividad } from "./pages/Actividad";
 import { Programacion } from "./pages/Programacion";
 import { NuevoContenido } from "./pages/NuevoContenido";
 import { Plantillas } from "./pages/Plantillas";
@@ -33,6 +35,7 @@ export function App() {
       <Route path="/login" element={<Login />} />
       <Route path="/" element={<Protected perm="programar"><Programacion /></Protected>} />
       <Route path="/contenido" element={<Protected perm="contenidos"><NuevoContenido /></Protected>} />
+      <Route path="/contenido/papelera" element={<Protected perm="contenidos"><Papelera /></Protected>} />
       <Route path="/contenido/:type" element={<Protected perm="contenidos"><NuevoContenido /></Protected>} />
       <Route path="/plantillas" element={<Protected perm="plantillas_ver"><Plantillas /></Protected>} />
       <Route path="/plantillas/:type" element={<Protected perm="plantillas_ver"><PlantillaContenidos /></Protected>} />
@@ -43,6 +46,7 @@ export function App() {
       <Route path="/banco" element={<Protected perm="ajustes"><Banco /></Protected>} />
       <Route path="/reportes" element={<Protected perm="reportes"><Reportes /></Protected>} />
       <Route path="/ajustes" element={<Protected perm="ajustes"><Ajustes /></Protected>} />
+      <Route path="/ajustes/actividad" element={<Protected perm="reportes"><Actividad /></Protected>} />
       <Route path="/ajustes/clima" element={<Protected perm="ajustes"><AjustesClima /></Protected>} />
       <Route path="/ajustes/plataformas" element={<Protected perm="ajustes"><AjustesPlataformas /></Protected>} />
       <Route path="/perfil" element={<Protected><Perfil /></Protected>} />

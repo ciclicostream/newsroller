@@ -89,7 +89,7 @@ export function PromosPlaca() {
   }
 
   async function remove(it: ContentItem) {
-    if (!confirm("¿Eliminar esta promo?")) return;
+    if (!confirm("¿Enviar esta promo a la papelera?")) return;
     await contentItems.remove(it.id);
     if (editingId === it.id) cancelEdit();
     await load();
