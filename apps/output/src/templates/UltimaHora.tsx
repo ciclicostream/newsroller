@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { UltimaHoraData } from "@newsroller/shared";
 import ciclicoWhite from "../assets/ciclico-white.png";
+import { IS_VERTICAL, STAGE_H } from "../lib/orientation";
 
 const WANT_AUDIO = typeof window !== "undefined" && new URLSearchParams(window.location.search).has("audio");
 const MESES = ["ENE", "FEB", "MAR", "ABR", "MAY", "JUN", "JUL", "AGO", "SEP", "OCT", "NOV", "DIC"];
@@ -34,9 +35,9 @@ export function UltimaHora({ data }: { data: UltimaHoraData }) {
   useLayoutEffect(() => {
     const el = bajadaRef.current;
     if (!el) return;
-    const base = hasMedia ? 52 : 78;
-    const top = hasMedia ? 452 : 560;
-    const tickerTop = 1080 - 56 - 56; // bottom + alto del ticker
+    const base = IS_VERTICAL ? (hasMedia ? 56 : 68) : hasMedia ? 52 : 78;
+    const top = IS_VERTICAL ? (hasMedia ? 1310 : 760) : hasMedia ? 452 : 560;
+    const tickerTop = STAGE_H - 56 - 56; // bottom + alto del ticker
     const maxH = tickerTop - 28 - top;
     let px = base;
     el.style.fontSize = px + "px";
@@ -51,8 +52,8 @@ export function UltimaHora({ data }: { data: UltimaHoraData }) {
   const fecha = `${now.getDate()} ${MESES[now.getMonth()]}`;
 
   return (
-    <div className={"uh" + (play ? " play" : "") + (hasMedia ? " has-media" : "")} style={{ position: "absolute", inset: 0 }}>
-      <style>{CSS}</style>
+    <div className={"uh" + (play ? " play" : "") + (hasMedia ? " has-media" : "") + (IS_VERTICAL ? " v" : "")} style={{ position: "absolute", inset: 0 }}>
+      <style>{CSS + (IS_VERTICAL ? CSS_V : "")}</style>
       <div className="uh-bg" />
       <div className="uh-placa" />
       <div className="uh-flash" />
@@ -84,6 +85,18 @@ export function UltimaHora({ data }: { data: UltimaHoraData }) {
     </div>
   );
 }
+
+// Vertical (1080x1920): con media, la foto/video arriba (cuadrada) y el texto debajo; sin media, todo centrado.
+const CSS_V = `
+.uh-clock{top:56px;right:auto;left:66px;font-size:36px}
+.uh-logo{top:190px;width:130px;margin-left:-65px}
+.uh-titulo{top:360px;font-size:118px}
+.uh-bajada{top:760px;left:90px;right:90px;font-size:68px}
+.uh.has-media .uh-media{left:90px;top:150px;width:900px;height:900px}
+.uh.has-media .uh-logo{top:1090px;left:90px;margin-left:0;width:72px}
+.uh.has-media .uh-titulo{top:1190px;left:90px;right:90px;text-align:left;font-size:96px}
+.uh.has-media .uh-bajada{top:1310px;left:90px;right:90px;text-align:left;font-size:56px}
+`;
 
 const CSS = `
 .uh{font-family:Inter,system-ui,sans-serif}

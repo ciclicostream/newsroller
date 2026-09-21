@@ -3,6 +3,7 @@ import type { DeclaracionesData } from "@newsroller/shared";
 import fondo from "../assets/fondo2.jpg";
 import { Chrome } from "./Chrome";
 import { useAutoFit } from "../lib/autofit";
+import { IS_VERTICAL } from "../lib/orientation";
 
 const WANT_AUDIO = typeof window !== "undefined" && new URLSearchParams(window.location.search).has("audio");
 
@@ -44,11 +45,11 @@ export function Declaraciones({ data, durationSec }: { data: DeclaracionesData; 
     return () => clearTimeout(t);
   }, [durationSec]);
 
-  useAutoFit(quoteRef, 54, 28, [data.quote]);
+  useAutoFit(quoteRef, IS_VERTICAL ? 62 : 54, 28, [data.quote]);
 
   return (
-    <div className={"dc" + (play ? " play" : "") + (exiting ? " exit" : "")} style={{ position: "absolute", inset: 0 }}>
-      <style>{CSS}</style>
+    <div className={"dc" + (play ? " play" : "") + (exiting ? " exit" : "") + (IS_VERTICAL ? " v" : "")} style={{ position: "absolute", inset: 0 }}>
+      <style>{CSS + (IS_VERTICAL ? CSS_V : "")}</style>
       <img className="dc-bg" src={fondo} alt="" />
       <Chrome hideTemp hideLogo />
 
@@ -69,6 +70,19 @@ export function Declaraciones({ data, durationSec }: { data: DeclaracionesData; 
     </div>
   );
 }
+
+// Vertical: foto + ficha arriba, la cita a todo el ancho debajo y el titular y "Entrevista completa" al pie.
+const CSS_V = `
+.dc.v .dc-photo{left:60px;top:200px;width:380px;height:380px}
+.dc.v .dc-idcard{left:470px;width:550px}
+.dc.v .dc-idcard-name{top:200px;font-size:44px}
+.dc.v .dc-idcard-role{top:392px;font-size:38px}
+.dc.v .dc-idcard-place{top:472px;font-size:34px}
+.dc.v .dc-quote{left:60px;top:640px;width:960px;height:830px;padding:100px 56px 50px}
+.dc.v .dc-qmark{left:80px;top:590px}
+.dc.v .dc-titbar{left:60px;top:1500px;width:960px;height:140px;font-size:40px}
+.dc.v .dc-epa{left:60px;top:1660px;width:960px;height:96px;font-size:32px}
+`;
 
 const CSS = `
 .dc{font-family:Inter,system-ui,sans-serif}
@@ -93,6 +107,7 @@ const CSS = `
 .dc-titbar{position:absolute;left:600px;top:779px;width:1030px;height:104px;z-index:14;background:#fff;
   border-radius:16px;box-sizing:border-box;padding:12px 28px;display:flex;align-items:center;overflow:hidden;
   color:#0b2b6b;font-weight:800;font-size:34px;line-height:1.08;box-shadow:0 10px 22px rgba(0,0,0,.22)}
+.dc-epa b{margin-left:.3em}
 .dc-epa{position:absolute;left:1650px;top:779px;width:222px;height:104px;z-index:14;background:#fff;
   border-radius:16px;box-sizing:border-box;padding:12px 20px;display:flex;align-items:center;overflow:hidden;
   color:#0b2b6b;font-weight:800;font-size:28px;line-height:1.12;box-shadow:0 10px 22px rgba(0,0,0,.22)}

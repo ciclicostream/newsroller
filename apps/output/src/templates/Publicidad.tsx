@@ -1,6 +1,7 @@
 import type { PublicidadData } from "@newsroller/shared";
 import fondo from "../assets/fondo2.jpg";
 import { Chrome } from "./Chrome";
+import { IS_VERTICAL } from "../lib/orientation";
 
 const WANT_AUDIO = typeof window !== "undefined" && new URLSearchParams(window.location.search).has("audio");
 
@@ -24,8 +25,8 @@ export function Publicidad({ data }: { id?: string; data: PublicidadData }) {
   }
 
   return (
-    <div style={{ position: "absolute", inset: 0 }}>
-      <style>{CSS}</style>
+    <div className={IS_VERTICAL ? "pbv" : ""} style={{ position: "absolute", inset: 0 }}>
+      <style>{CSS + (IS_VERTICAL ? CSS_V : "")}</style>
       <img className="pb-bg" src={fondo} alt="" />
       <Chrome hideTemp />
       <div className="pb-vad">
@@ -44,6 +45,14 @@ export function Publicidad({ data }: { id?: string; data: PublicidadData }) {
     </div>
   );
 }
+
+// Vertical: el aviso 9:16 arriba y las cards de marca (logo y QR) una al lado de la otra debajo.
+const CSS_V = `
+.pbv .pb-vad{left:194px;top:150px;width:692px;height:1230px}
+.pbv .pb-brand{width:300px;height:300px;padding:26px;bottom:auto;top:1440px}
+.pbv .pb-brand.pb-logo{left:225px}
+.pbv .pb-brand.pb-qr{left:555px}
+`;
 
 const CSS = `
 .pb-bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}

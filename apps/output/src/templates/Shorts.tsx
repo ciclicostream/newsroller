@@ -4,6 +4,7 @@ import fondo from "../assets/fondo2.jpg";
 import { Chrome } from "./Chrome";
 import { YouTubePlayer } from "./render";
 import { useAutoFit } from "../lib/autofit";
+import { IS_VERTICAL } from "../lib/orientation";
 
 // Placa Shorts: 1 o 2 videos verticales del canal (YouTube) + card de título
 // (viene de la API, editable). Sin logo de programa. Entrada en fade por
@@ -29,8 +30,8 @@ export function Shorts({ data, durationSec }: { data: ShortsData; durationSec?: 
   const two = data.count === 2 && !!data.video2;
 
   return (
-    <div className={"sh" + (play ? " play" : "") + (exiting ? " exit" : "") + (two ? " two" : " one")} style={{ position: "absolute", inset: 0 }}>
-      <style>{CSS}</style>
+    <div className={"sh" + (play ? " play" : "") + (exiting ? " exit" : "") + (two ? " two" : " one") + (IS_VERTICAL ? " v" : "")} style={{ position: "absolute", inset: 0 }}>
+      <style>{CSS + (IS_VERTICAL ? CSS_V : "")}</style>
       <img className="sh-bg" src={fondo} alt="" />
       <Chrome />
 
@@ -57,6 +58,12 @@ export function Shorts({ data, durationSec }: { data: ShortsData; durationSec?: 
     </div>
   );
 }
+
+// Vertical (sólo 1 short): el short casi a pantalla completa y la card de título encima, apenas sobre el ticker.
+const CSS_V = `
+.sh.v.one .sh-s1{left:65px;top:120px;width:950px;height:1690px;border-radius:0}
+.sh.v .sh-titlecard{left:60px;top:auto;bottom:142px;width:960px;padding:40px 52px;font-size:56px;max-height:420px;z-index:5;box-shadow:0 14px 34px rgba(0,0,0,.4)}
+`;
 
 const CSS = `
 .sh{font-family:Inter,system-ui,sans-serif}

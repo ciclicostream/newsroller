@@ -4,6 +4,7 @@ import fondo from "../assets/fondo2.jpg";
 import { Chrome } from "./Chrome";
 import { YouTubePlayer } from "./render";
 import { useAutoFit } from "../lib/autofit";
+import { IS_VERTICAL } from "../lib/orientation";
 
 // Placa Promos/Avances: pill (título editable) + card (texto libre, auto-fit)
 // a la izquierda, video 9:16 o 4:3 del canal de YouTube a la derecha (desde
@@ -29,8 +30,8 @@ export function Promos({ data, durationSec }: { data: PromosData; durationSec?: 
   const is916 = data.format === "916";
 
   return (
-    <div className={"pr" + (play ? " play" : "") + (exiting ? " exit" : "")} style={{ position: "absolute", inset: 0 }}>
-      <style>{CSS}</style>
+    <div className={"pr" + (play ? " play" : "") + (exiting ? " exit" : "") + (IS_VERTICAL ? " v" : "")} style={{ position: "absolute", inset: 0 }}>
+      <style>{CSS + (IS_VERTICAL ? CSS_V : "")}</style>
       <img className="pr-bg" src={fondo} alt="" />
       <Chrome />
 
@@ -45,6 +46,16 @@ export function Promos({ data, durationSec }: { data: PromosData; durationSec?: 
     </div>
   );
 }
+
+// Vertical: el video casi a pantalla completa (9:16) o el 4:3 arriba, y el pill + la card de texto encima, apenas sobre el ticker.
+const CSS_V = `
+.pr.v .pr-916{left:65px;top:120px;width:950px;height:1690px;border-radius:0;padding:0}
+.pr.v .pr-916 .pr-m{border-radius:0}
+.pr.v .pr-43{left:60px;top:200px;width:960px;height:720px}
+.pr.v .pr-card{left:60px;right:auto;top:auto;bottom:142px;width:960px;height:250px;min-height:0;justify-content:center;z-index:5}
+.pr.v .pr-body{text-align:center;max-height:190px}
+.pr.v .pr-pill{left:60px;right:auto;top:auto;bottom:392px;z-index:5}
+`;
 
 const CSS = `
 .pr{font-family:Inter,system-ui,sans-serif}

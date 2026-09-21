@@ -3,6 +3,7 @@ import type { PlacasData } from "@newsroller/shared";
 import fondo from "../assets/fondo-placas.jpg";
 import { Chrome } from "./Chrome";
 import { useAutoFit } from "../lib/autofit";
+import { IS_VERTICAL } from "../lib/orientation";
 
 const WANT_AUDIO = typeof window !== "undefined" && new URLSearchParams(window.location.search).has("audio");
 
@@ -31,12 +32,12 @@ export function Placas({ data, durationSec }: { data: PlacasData; durationSec?: 
     return () => clearTimeout(t);
   }, [durationSec]);
 
-  useAutoFit(titleRef, 56, 32, [data.title]);
-  useAutoFit(bodyRef, 42, 24, [data.body]);
+  useAutoFit(titleRef, IS_VERTICAL ? 64 : 56, 32, [data.title]);
+  useAutoFit(bodyRef, IS_VERTICAL ? 50 : 42, 24, [data.body]);
 
   return (
-    <div className={"pl" + (play ? " play" : "") + (exiting ? " exit" : "") + (hasMedia ? " has-media" : "")} style={{ position: "absolute", inset: 0 }}>
-      <style>{CSS}</style>
+    <div className={"pl" + (play ? " play" : "") + (exiting ? " exit" : "") + (hasMedia ? " has-media" : "") + (IS_VERTICAL ? " v" : "")} style={{ position: "absolute", inset: 0 }}>
+      <style>{CSS + (IS_VERTICAL ? CSS_V : "")}</style>
 
       {/* Fondo + marco estándar persistente (pills, ticker en vivo, QR) */}
       <img className="pl-bg" src={fondo} alt="" />
@@ -64,6 +65,17 @@ export function Placas({ data, durationSec }: { data: PlacasData; durationSec?: 
     </div>
   );
 }
+
+// Vertical (1080x1920): volanta, título, foto y cuerpo apilados a todo el ancho, entre el encabezado y el ticker.
+const CSS_V = `
+.pl.v .pl-date{top:190px;left:60px;right:auto}
+.pl.v .pl-titlecard{left:60px;top:262px;width:960px;height:300px;justify-content:flex-start}
+.pl.v:not(.has-media) .pl-titlecard{height:380px}
+.pl.v .pl-title{text-align:left}
+.pl.v .pl-photo{left:60px;top:592px;width:960px;height:540px}
+.pl.v .pl-bodycard{left:60px;top:1162px;width:960px;height:610px}
+.pl.v:not(.has-media) .pl-bodycard{top:672px;height:1100px}
+`;
 
 const CSS = `
 .pl{font-family:Inter,system-ui,sans-serif}
