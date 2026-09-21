@@ -2,6 +2,9 @@ import { Component, useEffect, useState, type ReactNode } from "react";
 import { API_BASE, fetchScene, type Scene } from "./lib/scene";
 import { ItemView } from "./templates/items";
 
+// El panel pide sonido con ?audio=1 (botón del parlante); sin eso la vista previa va muda.
+const WANT_SOUND = typeof window !== "undefined" && new URLSearchParams(window.location.search).has("audio");
+
 // Preview de un contenido tipado (MONITOR del panel). Renderiza una placa, con su animación,
 // y la reproduce en loop para que el operador la vea antes de mandarla al aire.
 export function Preview({ id }: { id: string }) {
@@ -81,7 +84,7 @@ export function DraftPreview() {
       if (e.source !== window.parent || e.data?.source !== "ciclico-panel-draft") return;
       const { type, data, durationSec, replay } = e.data;
       if (replay) { setLoop((n) => n + 1); return; }
-      setDraft((d) => ({ type, data: { ...(data ?? {}), audio_url: null }, dur: Math.max(4, durationSec ?? 8), v: (d?.v ?? 0) + 1 }));
+      setDraft((d) => ({ type, data: { ...(data ?? {}), ...(WANT_SOUND ? {} : { audio_url: null }) }, dur: Math.max(4, durationSec ?? 8), v: (d?.v ?? 0) + 1 }));
     }
     window.addEventListener("message", onMsg);
     window.parent.postMessage({ source: "ciclico-draft-ready" }, "*");
@@ -102,6 +105,7 @@ export function DraftPreview() {
   }, [dur]);
 
   useEffect(() => {
+    if (WANT_SOUND) return; // el panel pidió escuchar (?audio=1): no se fuerza el silencio
     const t = setInterval(() => document.querySelectorAll("video").forEach((v) => { v.muted = true; }), 400);
     return () => clearInterval(t);
   }, []);

@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   AlertTriangle, TrendingUp, Newspaper, Megaphone, Video, GripVertical, X,
-  MonitorPlay, Zap, ArrowRight, ChevronDown, PauseCircle, LayoutGrid, Check, Inbox,
+  MonitorPlay, Zap, ArrowRight, ChevronDown, PauseCircle, LayoutGrid, Check, Inbox, Volume2, VolumeX,
 } from "lucide-react";
 import type { ContentItem, PlaylistItem, Camera } from "@newsroller/shared";
 import { contentHasAudio, DOLAR_CASAS } from "@newsroller/shared";
 import { TIPO_BY_KEY } from "../lib/tipos";
+import { useMonitorAudio } from "../lib/monitorAudio";
 import { parrilla, OUTPUT_FRAME_BASE } from "../lib/parrilla";
 import { contentItems as contentItemsApi } from "../lib/content-items";
 import { settingsApi } from "../lib/settings";
@@ -279,10 +280,13 @@ export function Programacion() {
   };
   // AIRE siempre carga el output real (aunque esté cortado, el propio output
   // muestra la placa de "fuera del aire" — no hace falta un placeholder local).
+  // Sonido: sólo en PREVIEW y CLIP. En AIRE no se escucha desde el panel (sería un eco desfasado del aire real).
+  const [monSound, toggleMonSound] = useMonitorAudio();
+  const soundOn = monSound && mode !== "aire";
   const monUrl = (() => {
     if (mode === "aire") return `${OUTPUT_FRAME_BASE}/output/`;
     const ci = previewCi();
-    return ci ? `${OUTPUT_FRAME_BASE}/output/?preview=${ci.id}` : null;
+    return ci ? `${OUTPUT_FRAME_BASE}/output/?preview=${ci.id}${soundOn ? "&audio=1" : ""}` : null;
   })();
   const monHasAudio = mode === "aire"
     ? !!liveStatus?.current?.hasAudio
@@ -418,12 +422,17 @@ export function Programacion() {
                   <button key={m} className={"pv-segb" + (mode === m ? " on " + m : "")} onClick={() => setMode(m)}>{m.toUpperCase()}</button>
                 ))}
               </div>
+              <button type="button" className={"pv-snd" + (soundOn ? " on" : "")} onClick={toggleMonSound} disabled={mode === "aire"}
+                aria-pressed={soundOn} aria-label={soundOn ? "Silenciar el monitor" : "Escuchar el monitor"}
+                title={mode === "aire" ? "En AIRE no se escucha desde el panel (evita el eco con el aire real)" : soundOn ? "Silenciar el monitor" : "Escuchar el monitor (PREVIEW y CLIP)"}>
+                {soundOn ? <Volume2 size={15} /> : <VolumeX size={15} />}
+              </button>
             </div>
             <div className="pv-mon-row">
               <div className="pv-mon">
                 {/* AIRE muestra el output real tal cual: si está cortado, la propia
                     placa off_air.jpg ya lo dice — no le agregamos texto encima. */}
-                {monUrl ? <iframe key={monUrl} src={monUrl} title="monitor" /> : <div className="pv-ph">Elegí un contenido para previsualizarlo.</div>}
+                {monUrl ? <iframe key={monUrl} src={monUrl} title="monitor" allow="autoplay; encrypted-media" /> : <div className="pv-ph">Elegí un contenido para previsualizarlo.</div>}
               </div>
               <Vu audio={monHasAudio} />
             </div>
@@ -572,7 +581,12 @@ const CSS = `
 .pv-rmv:hover{color:#fff;background:var(--rd);border-color:var(--rd)}
 
 .pv-mon-card{padding:14px;box-shadow:0 4px 16px rgba(20,30,60,.05),inset 0 2px 14px rgba(20,30,60,.07)}
-.pv-mon-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.pv-mon-hd{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.pv-mon-hd .pv-ct{flex:1}
+.pv-snd{border:1px solid var(--ln);background:#eef1f6;color:var(--dim);border-radius:9px;padding:6px 8px;display:inline-flex;cursor:pointer}
+.pv-snd:hover:not(:disabled){color:var(--tx);border-color:#c5cbd8}
+.pv-snd.on{background:var(--ac);border-color:var(--ac);color:#fff}
+.pv-snd:disabled{opacity:.45;cursor:not-allowed}
 .pv-seg{display:inline-flex;background:#eef1f6;border-radius:9px;padding:3px}
 .pv-segb{border:0;background:transparent;color:var(--dim);font:inherit;font-weight:800;font-size:11px;padding:5px 12px;border-radius:7px;cursor:pointer;letter-spacing:.04em}
 .pv-segb.on{background:#fff;color:var(--tx);box-shadow:0 1px 3px rgba(0,0,0,.12)}

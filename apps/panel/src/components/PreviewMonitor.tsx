@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { RotateCcw, X } from "lucide-react";
+import { RotateCcw, Volume2, VolumeX, X } from "lucide-react";
+import { useMonitorAudio } from "../lib/monitorAudio";
 import { api } from "../lib/api";
 import { OUTPUT_FRAME_BASE } from "../lib/parrilla";
 
@@ -17,6 +18,7 @@ export function PreviewMonitor({ type, data, dur, ready = true }: {
   ready?: boolean;
 }) {
   const frame = useRef<HTMLIFrameElement>(null);
+  const [sound, toggleSound] = useMonitorAudio();
   const [loaded, setLoaded] = useState(false); // el output avisó que está escuchando
   const [selId, setSelId] = useState<string | null>(null);
   const [saved, setSaved] = useState<Saved | null>(null);
@@ -85,6 +87,9 @@ export function PreviewMonitor({ type, data, dur, ready = true }: {
         <span>{saved ? "Contenido guardado" : "Vista previa"}</span>
         <span className="pm-hd-r">
           {saved && <button type="button" className="pm-back" onClick={() => setSelId(null)} title="Volver a lo que estoy cargando"><X size={12} /> Formulario</button>}
+          <button type="button" className={"pm-re pm-snd" + (sound ? " on" : "")} title={sound ? "Silenciar la vista previa" : "Escuchar la vista previa"} aria-pressed={sound} aria-label={sound ? "Silenciar" : "Escuchar"} onClick={toggleSound}>
+            {sound ? <Volume2 size={13} /> : <VolumeX size={13} />}
+          </button>
           <button type="button" className="pm-re" title="Repetir animación" disabled={!showReady}
             onClick={() => frame.current?.contentWindow?.postMessage({ source: "ciclico-panel-draft", replay: true }, "*")}>
             <RotateCcw size={13} />
@@ -92,7 +97,7 @@ export function PreviewMonitor({ type, data, dur, ready = true }: {
         </span>
       </div>
       <div className="pm-screen">
-        <iframe ref={frame} src={`${OUTPUT_FRAME_BASE}/output/?draft=1`} title="Vista previa" tabIndex={-1} />
+        <iframe key={sound ? "snd" : "mute"} ref={frame} src={`${OUTPUT_FRAME_BASE}/output/?draft=1${sound ? "&audio=1" : ""}`} title="Vista previa" tabIndex={-1} allow="autoplay; encrypted-media" />
         {!showReady && <div className="pm-ph">Completá los datos para ver la vista previa.</div>}
       </div>
     </div>
@@ -130,6 +135,7 @@ const CSS = `
 .pm-back{border:1px solid #2f6bff;background:#e8efff;color:#2f6bff;border-radius:7px;padding:3px 8px;font:inherit;font-size:10.5px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;display:inline-flex;align-items:center;gap:4px;cursor:pointer}
 .pm-col>.card[data-item]{cursor:pointer}
 .pm-re{border:1px solid #e3e7ef;background:#fff;color:#7c869b;border-radius:7px;padding:4px 6px;display:inline-flex;cursor:pointer}
+.pm-snd.on{background:#2f6bff;border-color:#2f6bff;color:#fff}.pm-snd.on:hover:not(:disabled){color:#fff}
 .pm-re:hover:not(:disabled){color:#2f6bff;border-color:#2f6bff}.pm-re:disabled{opacity:.4;cursor:default}
 .pm-screen{position:relative;aspect-ratio:16/9;background:#05081a;border-radius:9px;overflow:hidden}
 .pm-screen iframe{width:100%;height:100%;border:0;display:block;pointer-events:none}
