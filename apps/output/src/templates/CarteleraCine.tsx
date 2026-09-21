@@ -6,6 +6,7 @@ import { Chrome } from "./Chrome";
 import { YouTubePlayer } from "./render";
 import { useAutoFit } from "../lib/autofit";
 import { API_BASE } from "../lib/scene";
+import { IS_VERTICAL } from "../lib/orientation";
 
 // Placa Cartelera · CINE (película o serie). Card izquierda: trailer de YouTube (se repite) + título (a
 // lo sumo hasta la mitad de la pantalla, casi siempre en 2 líneas) + sinopsis, y un newsticker chico
@@ -15,8 +16,9 @@ import { API_BASE } from "../lib/scene";
 // Con short: suena el columnista (?audio=1) mientras el trailer se repite mudo; al terminar el short
 // queda su tapa y el trailer activa el sonido. Salida estándar: todo baja detrás del ticker.
 export function CarteleraCine({ data, durationSec }: { data: CarteleraData; durationSec?: number }) {
-  const hasShort = !!data.short_id;
-  const hasSide = hasShort || !!data.poster_url;
+  // En vertical sólo va el trailer horizontal con la info debajo: sin póster ni short.
+  const hasShort = !IS_VERTICAL && !!data.short_id;
+  const hasSide = !IS_VERTICAL && (hasShort || !!data.poster_url);
   const [play, setPlay] = useState(false);
   const [exiting, setExiting] = useState(false);
   const [shortDone, setShortDone] = useState(false);
@@ -42,8 +44,8 @@ export function CarteleraCine({ data, durationSec }: { data: CarteleraData; dura
   }, []);
 
   useAutoFit(titleRef, 64, 34, [data.title]);
-  useAutoFit(sinRef, 28, 18, [data.synopsis]);
-  useAutoFit(dataRef, 25, 15, [data.author, data.cast, data.genre, data.duration_text, data.is_series, data.platform, data.seasons, data.episodes, data.title]);
+  useAutoFit(sinRef, IS_VERTICAL ? 32 : 28, 18, [data.synopsis]);
+  useAutoFit(dataRef, IS_VERTICAL ? 32 : 25, 15, [data.author, data.cast, data.genre, data.duration_text, data.is_series, data.platform, data.seasons, data.episodes, data.title]);
 
   const plat = data.is_series ? plataformas.find((p) => p.id === data.platform) : undefined;
   const platName = plat?.name ?? data.platform_name ?? "";
@@ -54,8 +56,8 @@ export function CarteleraCine({ data, durationSec }: { data: CarteleraData; dura
   const tickerWord = data.ticker === "estreno" ? "ESTRENO" : data.ticker === "recomendada" ? "RECOMENDADA" : data.ticker === "clasico" ? "CLÁSICO" : "";
 
   return (
-    <div className={"cc" + (play ? " play" : "") + (exiting ? " exit" : "") + (hasSide ? " has-side" : "")} style={{ position: "absolute", inset: 0 }}>
-      <style>{CSS}</style>
+    <div className={"cc" + (play ? " play" : "") + (exiting ? " exit" : "") + (hasSide ? " has-side" : "") + (IS_VERTICAL ? " v" : "")} style={{ position: "absolute", inset: 0 }}>
+      <style>{CSS + (IS_VERTICAL ? CSS_V : "")}</style>
       <img className="cc-bg" src={fondo} alt="" />
       <Chrome hideClock={hasSide} hideTemp={hasSide} />
 
@@ -114,6 +116,19 @@ export function CarteleraCine({ data, durationSec }: { data: CarteleraData; dura
     </div>
   );
 }
+
+// Vertical: el trailer horizontal arriba; el newsticker, el título y la sinopsis debajo, y la ficha (director, actores, etc.) en otra card.
+const CSS_V = `
+.cc.v .cc-left{left:60px;top:170px;width:960px;height:950px}
+.cc.v .cc-trailer{left:30px;top:30px;width:900px;height:506px}
+.cc.v .cc-trailer-in{top:-38px;width:900px;height:582px}
+.cc.v .cc-text{left:30px;right:30px;top:640px;bottom:24px}
+.cc.v .cc-obra{width:900px}
+.cc.v .cc-ticker{left:30px;width:348px;top:580px}
+.cc.v .cc-side{left:60px;width:960px;top:1150px;bottom:auto;height:600px;padding:30px 44px}
+.cc.v .cc-ftitle{display:none}
+.cc.v .cc-data{max-height:470px}
+`;
 
 const CSS = `
 .cc{font-family:Inter,system-ui,sans-serif}

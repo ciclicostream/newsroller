@@ -4,6 +4,7 @@ import fondo from "../assets/fondo-cartelera.jpg";
 import { Chrome } from "./Chrome";
 import { CarteleraCine } from "./CarteleraCine";
 import { useAutoFit } from "../lib/autofit";
+import { IS_VERTICAL } from "../lib/orientation";
 
 const WANT_AUDIO = typeof window !== "undefined" && new URLSearchParams(window.location.search).has("audio");
 
@@ -43,15 +44,16 @@ function CarteleraClasica({ data, durationSec }: { data: CarteleraData; duration
   }, [durationSec]);
 
   useAutoFit(titleRef, 64, 34, [data.title]);
-  useAutoFit(elencoRef, 24, 16, [data.cast]);
+  useAutoFit(elencoRef, IS_VERTICAL ? 30 : 24, 16, [data.cast]);
   useAutoFit(evTitleRef, 64, 34, [data.title]);
   useAutoFit(evDescRef, 28, 18, [data.description]);
 
   return (
-    <div className={"cl" + (play ? " play" : "") + (exiting ? " exit" : "") + (hasVideo ? " has-video" : "") + " k-" + kind} style={{ position: "absolute", inset: 0 }}>
-      <style>{CSS}</style>
+    <div className={"cl" + (play ? " play" : "") + (exiting ? " exit" : "") + (hasVideo ? " has-video" : "") + " k-" + kind + (IS_VERTICAL ? " v" : "")} style={{ position: "absolute", inset: 0 }}>
+      <style>{CSS + (IS_VERTICAL ? CSS_V : "")}</style>
       <img className="cl-bg" src={fondo} alt="" />
-      <Chrome hideClock={hasVideo} hideTemp={hasVideo} />
+      {/* En vertical el marco (hora, temperatura, logo) queda siempre visible, aun con video. */}
+      <Chrome hideClock={hasVideo && !IS_VERTICAL} hideTemp={hasVideo && !IS_VERTICAL} />
 
       <div className="cl-left cl-el">
         <img className="cl-photo" src={data.photo_url} alt="" />
@@ -87,6 +89,7 @@ function CarteleraClasica({ data, durationSec }: { data: CarteleraData; duration
 
       <div className="cl-venue cl-el">
         <div className="cl-pill2">EN CARTELERA</div>
+        {IS_VERTICAL && hasVideo && <div className="cl-vtitle">{data.title}</div>}
         <div className="cl-data">
           <div className="cl-lugar">{data.venue}</div>
           <div className="cl-row">{data.address}</div>
@@ -98,6 +101,32 @@ function CarteleraClasica({ data, durationSec }: { data: CarteleraData; duration
     </div>
   );
 }
+
+// Vertical (1080x1920). Con video: sólo el video (casi a pantalla completa) y los datos en una card encima, sobre el ticker.
+// Sin video: la foto horizontal arriba con el título, el autor y el elenco (o la descripción) y, debajo, la card del lugar.
+const CSS_V = `
+.cl.v .cl-left{left:60px;top:170px;width:960px;height:1000px}
+.cl.v .cl-photo{left:30px;top:30px;width:900px;height:640px}
+.cl.v.k-teatro .cl-photo{height:640px}
+.cl.v .cl-tblock{left:30px;bottom:330px;width:900px}
+.cl.v .cl-obra{width:900px}
+.cl.v .cl-autor{left:34px;top:692px;font-size:44px}
+.cl.v .cl-elenco{left:34px;right:30px;top:760px;height:210px;font-size:32px}
+.cl.v .cl-etext{left:30px;right:30px;top:692px;bottom:30px}
+.cl.v .cl-edesc{font-size:32px}
+.cl.v .cl-venue{left:60px;top:1210px;width:960px;height:420px;padding:36px 44px;gap:18px}
+.cl.v .cl-pill2{font-size:34px}
+.cl.v .cl-lugar{font-size:44px}
+.cl.v .cl-row{font-size:34px}
+.cl-vtitle{display:none}
+.cl.v.has-video .cl-left{display:none}
+.cl.v.has-video .cl-video{left:65px;top:120px;width:950px;height:1690px;border-radius:0}
+.cl.v.has-video .cl-venue{left:60px;top:auto;bottom:142px;width:960px;height:auto;padding:32px 44px 36px;justify-content:flex-start;gap:12px;z-index:20}
+.cl.v.has-video .cl-pill2{align-self:flex-start;font-size:30px}
+.cl.v.has-video .cl-vtitle{display:block;color:#0b2b6b;font-weight:800;font-size:46px;line-height:1.08;text-transform:uppercase}
+.cl.v.has-video .cl-lugar{font-size:38px;margin-bottom:4px}
+.cl.v.has-video .cl-row{font-size:32px}
+`;
 
 const CSS = `
 .cl{font-family:Inter,system-ui,sans-serif}
