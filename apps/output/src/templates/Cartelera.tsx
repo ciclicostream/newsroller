@@ -24,9 +24,11 @@ function CarteleraClasica({ data, durationSec }: { data: CarteleraData; duration
   const kind = data.kind ?? "teatro";
   const isEvento = kind === "evento";
   const hasVideo = !!data.video_url;
+  const tickerWord = data.ticker === "estreno" ? "ESTRENO" : data.ticker === "recomendada" ? "RECOMENDADA" : data.ticker === "clasico" ? "CLÁSICO" : "";
   const [play, setPlay] = useState(false);
   const [exiting, setExiting] = useState(false);
-  const titleRef = useRef<HTMLSpanElement>(null);
+  const titleRef = useRef<HTMLDivElement>(null);
+  const elencoRef = useRef<HTMLDivElement>(null);
   const evTitleRef = useRef<HTMLDivElement>(null);
   const evDescRef = useRef<HTMLDivElement>(null);
 
@@ -41,6 +43,7 @@ function CarteleraClasica({ data, durationSec }: { data: CarteleraData; duration
   }, [durationSec]);
 
   useAutoFit(titleRef, 64, 34, [data.title]);
+  useAutoFit(elencoRef, 24, 16, [data.cast]);
   useAutoFit(evTitleRef, 64, 34, [data.title]);
   useAutoFit(evDescRef, 28, 18, [data.description]);
 
@@ -60,9 +63,18 @@ function CarteleraClasica({ data, durationSec }: { data: CarteleraData; duration
           </div>
         ) : (
           <>
-            <div className="cl-obra"><span ref={titleRef}>{data.title}</span></div>
+            {/* Título (a lo sumo hasta la mitad de la pantalla, en 1-2 líneas) con su newsticker encima; el borde inferior
+                del título queda sobre el borde inferior de la foto, y director y elenco van pegados debajo. */}
+            <div className="cl-tblock">
+              {tickerWord && (
+                <div className={"cl-ticker " + data.ticker}>
+                  <div className="cl-track">{Array.from({ length: 10 }).map((_, i) => <span key={i}>{tickerWord}</span>)}</div>
+                </div>
+              )}
+              <div className="cl-obra" ref={titleRef}><span>{data.title}</span></div>
+            </div>
             <div className="cl-autor">De {data.author}</div>
-            <div className="cl-elenco">Con: {data.cast}</div>
+            <div className="cl-elenco" ref={elencoRef}>Con: {data.cast}</div>
           </>
         )}
       </div>
@@ -98,11 +110,22 @@ const CSS = `
 .cl.has-video .cl-left{left:100px}
 .cl-photo{position:absolute;left:48px;top:40px;width:1164px;height:520px;border-radius:16px;
   object-fit:cover;background:#cfd3da}
-.cl-obra{position:absolute;left:48px;top:420px;right:120px}
+.cl.k-teatro .cl-photo{height:590px}
+/* Bloque título (+ newsticker encima): anclado al borde inferior de la foto (y=630), ancho máx. = mitad de pantalla */
+.cl-tblock{position:absolute;left:48px;bottom:190px;width:812px;display:flex;flex-direction:column;align-items:flex-start;gap:8px;z-index:2}
+.cl-obra{width:812px;max-height:200px;overflow:hidden;font-size:64px}
 .cl-obra span{background:#4ea0f5;color:#fff;box-decoration-break:clone;-webkit-box-decoration-break:clone;
-  padding:8px 18px;font-weight:800;font-size:64px;line-height:1.5;text-transform:uppercase;letter-spacing:.01em}
-.cl-autor{position:absolute;left:52px;top:640px;color:#2f80ed;font-weight:800;font-size:44px;text-transform:uppercase}
-.cl-elenco{position:absolute;left:52px;top:698px;right:48px;color:#0b2b6b;font-weight:600;font-size:24px;line-height:1.25}
+  padding:8px 18px;font-weight:800;line-height:1.5;text-transform:uppercase;letter-spacing:.01em}
+.cl-ticker{width:348px;height:42px;overflow:hidden;display:flex;align-items:center;border-radius:8px;flex:none;
+  -webkit-mask-image:linear-gradient(90deg,#000 78%,transparent);mask-image:linear-gradient(90deg,#000 78%,transparent)}
+.cl-ticker.estreno{background:#EE220C}
+.cl-ticker.recomendada{background:#2f6bff}
+.cl-ticker.clasico{background:#a9741c}
+.cl-track{display:flex;white-space:nowrap;animation:cl-scroll 14s linear infinite}
+.cl-track span{color:#fff;font-weight:800;font-size:24px;letter-spacing:.14em;padding:0 22px}
+@keyframes cl-scroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+.cl-autor{position:absolute;left:52px;top:648px;color:#2f80ed;font-weight:800;font-size:44px;line-height:1.1;text-transform:uppercase}
+.cl-elenco{position:absolute;left:52px;top:712px;right:48px;height:84px;overflow:hidden;color:#0b2b6b;font-weight:600;font-size:24px;line-height:1.25}
 
 .cl-video{position:absolute;left:1444px;top:108px;width:281px;height:500px;z-index:15;border-radius:20px;
   overflow:hidden;background:#c9ccd2;box-shadow:0 12px 30px rgba(0,0,0,.35);transform:translateX(70px)}

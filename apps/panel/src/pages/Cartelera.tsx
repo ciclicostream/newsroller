@@ -127,7 +127,7 @@ export function Cartelera() {
       };
     }
     if (kind === "evento") return { ...base, photo_url: photoUrl ?? "", author: "", cast: "", description: synopsis.trim(), video_url: videoUrl };
-    return { ...base, photo_url: photoUrl ?? "", author: author.trim(), cast: cast.trim(), video_url: videoUrl };
+    return { ...base, photo_url: photoUrl ?? "", author: author.trim(), cast: cast.trim(), video_url: videoUrl, ticker: tickerKind || null };
   }
 
   async function save(e: React.FormEvent) {
@@ -434,9 +434,22 @@ export function Cartelera() {
                 {uploadingVideo && <div style={{ fontSize: 12, color: "#6b7688", marginTop: 4 }}><Loader2 size={13} className="spin" /> subiendo…</div>}
               </div>
 
-              <div className="field">
-                <label>Duración (segundos)</label>
-                <input type="number" min={2} value={dur} onChange={(e) => setDur(Math.max(2, Number(e.target.value) || 10))} />
+              <div className={kind === "teatro" ? "cfm-two" : undefined}>
+                {kind === "teatro" && (
+                  <div className="field">
+                    <label>Newsticker <i>(encima del título)</i></label>
+                    <select value={tickerKind} onChange={(e) => setTickerKind(e.target.value as "" | "recomendada" | "estreno" | "clasico")}>
+                      <option value="">Nada</option>
+                      <option value="recomendada">Recomendada</option>
+                      <option value="estreno">Estreno</option>
+                      <option value="clasico">Clásico</option>
+                    </select>
+                  </div>
+                )}
+                <div className="field">
+                  <label>Duración (segundos)</label>
+                  <input type="number" min={2} value={dur} onChange={(e) => setDur(Math.max(2, Number(e.target.value) || 10))} />
+                </div>
               </div>
             </>
           )}
