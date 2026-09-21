@@ -1,4 +1,4 @@
-import { NavLink, useNavigate } from "react-router-dom";
+import { Link, NavLink, useNavigate } from "react-router-dom";
 import { type ReactNode } from "react";
 import {
   ListVideo,
@@ -13,6 +13,8 @@ import {
 import { ROLE_LABEL, type Perm } from "@newsroller/shared";
 import { useAuth } from "../auth/AuthProvider";
 import { IdleGuard } from "./IdleGuard";
+import { Avatar } from "./Avatar";
+import { PresenceStrip } from "./PresenceStrip";
 import ciclicoBlack from "../assets/ciclico-black.png";
 
 interface NavDef {
@@ -39,8 +41,6 @@ export function Layout({ children }: { children: ReactNode }) {
     await signOut();
     navigate("/login");
   }
-
-  const initial = (me?.email ?? "?").charAt(0).toUpperCase();
 
   return (
     <div className="app">
@@ -80,7 +80,10 @@ export function Layout({ children }: { children: ReactNode }) {
 
         <div className="topbar-right">
           <span className={"role-pill " + (me?.role ?? "generador")}>{me ? ROLE_LABEL[me.role] : ""}</span>
-          <div className="avatar" title={me?.email ?? ""}>{initial}</div>
+          <PresenceStrip />
+          <Link to="/perfil" className="avatar-link" title="Mi perfil">
+            <Avatar url={me?.avatar_url} name={me?.full_name} email={me?.email} size={32} />
+          </Link>
           <button className="logout" onClick={handleLogout} title="Cerrar sesión">
             <LogOut size={16} />
           </button>

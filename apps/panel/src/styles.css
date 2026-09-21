@@ -278,3 +278,13 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 6px
 .pm-head h1 { color: var(--accent); }
 .pm-head p { margin: 0; font-size: 13px; }
 .pm-head ~ .alert { width: min(100%, 924px); margin-left: auto; margin-right: auto; box-sizing: border-box; }
+
+/* Tira de conectados (arriba a la derecha) */
+.presence{display:flex;align-items:center;margin-right:6px}
+.presence-faces{display:flex;align-items:center}
+.presence-face{position:relative;margin-left:-8px;display:inline-flex}
+.presence-face:first-child{margin-left:0}
+.presence-dot{position:absolute;right:-1px;bottom:-1px;width:9px;height:9px;border-radius:50%;background:#22c55e;box-shadow:0 0 0 2px #fff}
+.presence-more{margin-left:6px;font-size:12px;font-weight:700;color:var(--muted)}
+.avatar-link{display:inline-flex;border-radius:50%;transition:box-shadow .12s}
+.avatar-link:hover{box-shadow:0 0 0 3px var(--accent-weak)}

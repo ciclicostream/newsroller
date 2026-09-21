@@ -11,6 +11,10 @@ export interface AuthUser {
   email: string | null;
   role: Role;
   full_name: string | null;
+  first_name: string | null;
+  last_name: string | null;
+  phone: string | null;
+  avatar_url: string | null;
 }
 
 // Amplía Request con el usuario autenticado.
@@ -32,6 +36,10 @@ async function loadUser(sb: SupabaseClient, token: string): Promise<(AuthUser & 
     email: profile?.email ?? data.user.email ?? null,
     role: normalizeRole(profile?.role),
     full_name: profile?.full_name ?? null,
+    first_name: profile?.first_name ?? null,
+    last_name: profile?.last_name ?? null,
+    phone: profile?.phone ?? null,
+    avatar_url: profile?.avatar_url ?? null,
     active: profile?.active !== false, // sin la columna (migración pendiente) = activo
   };
 }
@@ -64,7 +72,7 @@ export function authenticate(opts: { idle: boolean }) {
       res.status(401).json({ error: "sesión cerrada por inactividad", code: "idle" });
       return;
     }
-    req.user = { id: user.id, email: user.email, role: user.role, full_name: user.full_name };
+    req.user = { id: user.id, email: user.email, role: user.role, full_name: user.full_name, first_name: user.first_name, last_name: user.last_name, phone: user.phone, avatar_url: user.avatar_url };
     next();
   };
 }

@@ -5,6 +5,7 @@ import { ProtectedRoute } from "./components/ProtectedRoute";
 import { Login } from "./pages/Login";
 import { AjustesClima } from "./pages/AjustesClima";
 import { AjustesPlataformas } from "./pages/AjustesPlataformas";
+import { Perfil } from "./pages/Perfil";
 import { Programacion } from "./pages/Programacion";
 import { NuevoContenido } from "./pages/NuevoContenido";
 import { Plantillas } from "./pages/Plantillas";
@@ -44,6 +45,7 @@ export function App() {
       <Route path="/ajustes" element={<Protected perm="ajustes"><Ajustes /></Protected>} />
       <Route path="/ajustes/clima" element={<Protected perm="ajustes"><AjustesClima /></Protected>} />
       <Route path="/ajustes/plataformas" element={<Protected perm="ajustes"><AjustesPlataformas /></Protected>} />
+      <Route path="/perfil" element={<Protected><Perfil /></Protected>} />
       <Route path="/usuarios" element={<Protected perm="perfiles"><Users /></Protected>} />
     </Routes>
   );

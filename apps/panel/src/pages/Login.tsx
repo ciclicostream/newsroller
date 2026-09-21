@@ -14,12 +14,13 @@ export function Login() {
   const [info, setInfo] = useState<string | null>(() => { try { return sessionStorage.getItem(LOGOUT_MSG_KEY); } catch { return null; } });
   // Se llega con #type=recovery desde el mail de "olvidé mi contraseña": ahí
   // Supabase ya abrió una sesión de recuperación y toca elegir una nueva.
-  const [recovery] = useState(() => window.location.hash.includes("type=recovery"));
+  const [invited] = useState(() => window.location.hash.includes("type=invite"));
+  const [recovery] = useState(() => window.location.hash.includes("type=recovery") || window.location.hash.includes("type=invite"));
   const [newPass, setNewPass] = useState("");
   const [done, setDone] = useState(false);
 
   if (!loading && me && !recovery) return <Navigate to="/" replace />;
-  if (!loading && me && recovery && done) return <Navigate to="/" replace />;
+  if (!loading && me && recovery && done) return <Navigate to={invited ? "/perfil?bienvenida=1" : "/"} replace />;
 
   async function onForgot(e: React.FormEvent) {
     e.preventDefault();
@@ -73,9 +74,10 @@ export function Login() {
       <div className="login-wrap">
         <form className="login-card" onSubmit={onNewPass}>
           {brand}
+          {invited && <p style={{ fontSize: 13, color: "#6b7688", margin: "0 0 14px" }}>Bienvenido/a. Elegí tu contraseña para entrar; después completás tu perfil.</p>}
           {error && <div className="alert error">{error}</div>}
           <div className="field">
-            <label>Nueva contraseña</label>
+            <label>{invited ? "Elegí tu contraseña" : "Nueva contraseña"}</label>
             <input type="password" value={newPass} onChange={(e) => setNewPass(e.target.value)} required autoFocus minLength={6} />
           </div>
           <button className="btn primary" type="submit" disabled={busy || !me} style={{ width: "100%", justifyContent: "center" }}>

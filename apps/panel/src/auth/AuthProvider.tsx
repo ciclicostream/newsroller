@@ -9,6 +9,10 @@ export interface Me {
   email: string | null;
   role: Role;
   full_name: string | null;
+  first_name: string | null;
+  last_name: string | null;
+  phone: string | null;
+  avatar_url: string | null;
   perms: Perm[];
   idleMinutes: number;
 }
@@ -17,6 +21,7 @@ interface AuthState {
   me: Me | null;
   loading: boolean;
   can: (perm: Perm) => boolean;
+  reload: () => Promise<void>; // vuelve a leer el perfil (después de editarlo)
   signIn: (email: string, password: string) => Promise<void>;
   signOut: (reason?: "idle" | "disabled") => Promise<void>;
 }
@@ -79,7 +84,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const can = useCallback((perm: Perm) => canRole(me?.role, perm), [me]);
 
-  return <Ctx.Provider value={{ me, loading, can, signIn, signOut }}>{children}</Ctx.Provider>;
+  return <Ctx.Provider value={{ me, loading, can, reload: loadMe, signIn, signOut }}>{children}</Ctx.Provider>;
 }
 
 export function useAuth(): AuthState {
