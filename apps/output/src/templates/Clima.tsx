@@ -70,11 +70,14 @@ export function Clima({ data, live, durationSec }: { data: ClimaData; live?: Cli
     return (
       <div style={{ position: "absolute", inset: 0 }}>
         <img src={fondo} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
-        <Chrome />
+        <Chrome hideLogo />
       </div>
     );
   }
 
+  const condText = city.desc.toUpperCase();
+  const unitPx = condText.length * 19 + 110; // ancho aproximado de una repetición (texto + separador)
+  const copies = Math.max(2, Math.ceil(1000 / unitPx)); // mitad del carrusel ≥ ancho de la franja (900px)
   const bigKey = climaSlotKey(city.code, city.isDay);
   const days = city.days.slice(0, 3);
 
@@ -82,7 +85,7 @@ export function Clima({ data, live, durationSec }: { data: ClimaData; live?: Cli
     <div className={"cw" + (play ? " play" : "") + (exiting ? " exit" : "")} style={{ position: "absolute", inset: 0 }}>
       <style>{CSS}</style>
       <img className="cw-bg" src={fondo} alt="" />
-      <Chrome hideTemp />
+      <Chrome hideTemp hideLogo />
 
       <img className="cw-big" src={resolveBig(bigKey, custom)} alt="" />
 
@@ -97,7 +100,14 @@ export function Clima({ data, live, durationSec }: { data: ClimaData; live?: Cli
         </div>
       </div>
 
-      <div className="cw-cond cw-flip"><span>{city.desc.toUpperCase()}</span></div>
+      {/* Condición como newsticker lento: se repite el texto lo justo para cubrir el ancho y se desplaza a ~40 px/s. */}
+      <div className="cw-cond cw-flip">
+        <div className="cw-cond-in">
+          <div className="cw-cond-track" style={{ animationDuration: `${(copies * unitPx) / 40}s` }}>
+            {Array.from({ length: copies * 2 }).map((_, i) => <span key={i}>{condText}<i aria-hidden="true">•</i></span>)}
+          </div>
+        </div>
+      </div>
       <div className="cw-note cw-flip">Pronóstico actualizado en vivo.</div>
       <div className="cw-pill cw-flip">EL CLIMA</div>
 
@@ -120,7 +130,8 @@ const CSS = `
 .cw{font-family:Inter,system-ui,sans-serif}
 .cw-bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 
-.cw-big{position:absolute;left:-40px;top:20px;width:940px;z-index:6;
+/* El símbolo animado va por DELANTE de las tarjetas (z-index mayor que el de las cards, 14). */
+.cw-big{position:absolute;left:-40px;top:20px;width:940px;z-index:20;pointer-events:none;
   opacity:0;filter:drop-shadow(0 20px 40px rgba(0,0,0,.35))}
 .cw.play .cw-big{animation:cw-float-in 1s cubic-bezier(.2,.8,.2,1) .1s forwards, cw-float 4s ease-in-out 1.1s infinite}
 @keyframes cw-float-in{from{opacity:0}to{opacity:1}}
@@ -147,8 +158,13 @@ const CSS = `
 .cw-chip b{color:#2f80ed}
 
 .cw-cond{position:absolute;left:940px;top:566px;width:900px;height:60px;z-index:14;background:#0b1f52;
-  border-radius:12px;display:flex;align-items:center;justify-content:center}
-.cw-cond span{color:#fff;font-weight:800;font-size:28px;letter-spacing:.04em}
+  border-radius:12px;display:flex;align-items:center;overflow:hidden}
+.cw-cond-in{width:100%;overflow:hidden;
+  -webkit-mask-image:linear-gradient(90deg,transparent,#000 6%,#000 94%,transparent);mask-image:linear-gradient(90deg,transparent,#000 6%,#000 94%,transparent)}
+.cw-cond-track{display:flex;white-space:nowrap;will-change:transform;animation:cw-cond-scroll linear infinite}
+.cw-cond-track span{color:#fff;font-weight:800;font-size:28px;letter-spacing:.04em;padding:0 22px;display:inline-flex;align-items:center;gap:44px}
+.cw-cond-track i{font-style:normal;color:#5aa2f2}
+@keyframes cw-cond-scroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
 
 .cw-note{position:absolute;left:60px;top:648px;width:330px;height:196px;z-index:14;background:#fff;
   border-radius:24px;box-sizing:border-box;padding:26px;display:flex;align-items:center;justify-content:center;
