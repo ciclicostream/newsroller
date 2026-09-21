@@ -63,6 +63,13 @@ const CSS = `
 .pm-col>.card [style*="nowrap"]{white-space:normal!important;overflow:hidden!important;text-overflow:clip!important;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;word-break:break-word}
 .pm-col>.card>div[style*="flex: 1"]{flex:1 1 250px!important}
 .pm-col>.card>.toggle-pill{margin-left:auto}
+/* "En parrilla" como interruptor, en la misma fila que editar y borrar. */
+.pm-col .toggle-pill{width:38px;height:22px;padding:0;gap:0;border:0;border-radius:999px;background:#d5d9e2;position:relative;font-size:0;flex:none;transition:background .15s}
+.pm-col .toggle-pill svg{display:none}
+.pm-col .toggle-pill::after{content:"";position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:transform .15s}
+.pm-col .toggle-pill.on{background:var(--accent)}
+.pm-col .toggle-pill.on::after{transform:translateX(16px)}
+.pm-col .toggle-pill:hover{background:#c4c9d4;color:inherit}.pm-col .toggle-pill.on:hover{background:#255ce0}
 
 .pm{position:sticky;top:12px;z-index:5;width:min(100%,460px);background:#fff;border:1px solid #e3e7ef;border-radius:14px;padding:10px 10px 12px;box-shadow:0 6px 20px rgba(20,30,60,.08),inset 0 2px 12px rgba(20,30,60,.05)}
 .pm-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;font-size:11px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:#7c869b}

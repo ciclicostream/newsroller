@@ -4,7 +4,7 @@ import { Construction, Trash2 } from "lucide-react";
 import type { ContentItem } from "@newsroller/shared";
 import { TIPOS, TIPO_BY_KEY } from "../lib/tipos";
 import { contentItems } from "../lib/content-items";
-import { OUTPUT_BASE } from "../lib/parrilla";
+import { parrilla } from "../lib/parrilla";
 import { UltimaHora } from "./UltimaHora";
 import { Placas } from "./Placas";
 import { Dolar } from "./Dolar";
@@ -30,25 +30,29 @@ export function NuevoContenido() {
   const { type: param } = useParams();
   const type = param ?? DEFAULT_TYPE;
 
-  // Tipos de plantilla que tienen contenido AL AIRE ahora (playlist en vivo).
-  const [onAir, setOnAir] = useState<Set<string>>(new Set());
+  // Tipos de plantilla que tienen contenido en la PARRILLA (borrador que se edita en
+  // Programación). Se refresca cada tanto y al volver a la pestaña.
+  const [inGrid, setInGrid] = useState<Set<string>>(new Set());
   useEffect(() => {
     let on = true;
     const load = () =>
-      fetch(`${OUTPUT_BASE}/api/output/scene`)
-        .then((r) => r.json())
-        .then((s) => {
+      Promise.all([parrilla.list(), contentItems.list()])
+        .then(([rows, items]) => {
           if (!on) return;
+          // Sólo cuentan los contenidos que siguen disponibles (interruptor "En parrilla" activo).
+          const typeOf = new Map(items.filter((c) => c.in_parrilla !== false).map((c) => [c.id, c.type]));
           const set = new Set<string>();
-          for (const it of s?.items ?? []) {
-            if (it.content_type === "content_item" && it.item?.type) set.add(it.item.type);
+          for (const r of rows) {
+            const t = r.content_type === "content_item" && r.content_id ? typeOf.get(r.content_id) : null;
+            if (t) set.add(t);
           }
-          setOnAir(set);
+          setInGrid(set);
         })
         .catch(() => {});
     load();
-    const iv = setInterval(load, 20_000);
-    return () => { on = false; clearInterval(iv); };
+    const iv = setInterval(load, 10_000);
+    window.addEventListener("focus", load);
+    return () => { on = false; clearInterval(iv); window.removeEventListener("focus", load); };
   }, []);
 
   return (
@@ -56,7 +60,7 @@ export function NuevoContenido() {
       {/* Submenú horizontal: todas las plantillas para generar contenido. */}
       <nav className="tpl-subnav" aria-label="Plantillas">
         {TIPOS.map((t) => {
-          const air = onAir.has(t.type);
+          const air = inGrid.has(t.type);
           return (
             <Link
               key={t.type}
