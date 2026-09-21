@@ -12,6 +12,7 @@ export function VideoFullPlaca() {
   const [msg, setMsg] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
 
+  const [title, setTitle] = useState("");
   const [source, setSource] = useState<"file" | "youtube">("file");
   const [mediaUrl, setMediaUrl] = useState<string | null>(null);
   const [mediaKind, setMediaKind] = useState<"image" | "video">("video");
@@ -45,15 +46,19 @@ export function VideoFullPlaca() {
   async function save(e: React.FormEvent) {
     e.preventDefault();
     setErr(null); setMsg(null);
+    if (!title.trim() && source === "file") return setErr("El título es obligatorio: sirve para identificar el video en la parrilla.");
     const yt = source === "youtube" ? youtubeId(ytInput) : null;
     if (source === "file" && !mediaUrl) return setErr("El video o imagen es obligatorio.");
     if (source === "youtube" && !yt) return setErr("Pegá el link o ID del video de YouTube.");
     setSaving(true);
     try {
-      const ytTitle = yt ? await youtubeTitle(yt) : null;
+      // En YouTube, si no se escribe título se usa el del video (oEmbed).
+      const ytTitle = yt && !title.trim() ? await youtubeTitle(yt) : null;
+      const finalTitle = (title.trim() || ytTitle || "").slice(0, 60);
+      if (!finalTitle) { setSaving(false); return setErr("Escribí un título para identificar el video."); }
       const data: VideoFullData = source === "youtube"
-        ? { media_url: yt!, media_kind: "youtube", ...(ytTitle ? { title: ytTitle } : {}) }
-        : { media_url: mediaUrl!, media_kind: mediaKind };
+        ? { media_url: yt!, media_kind: "youtube", title: finalTitle }
+        : { media_url: mediaUrl!, media_kind: mediaKind, title: finalTitle };
       if (editingId) {
         await contentItems.patch(editingId, { data, duration_sec: dur });
         setMsg("Cambios guardados.");
@@ -73,6 +78,7 @@ export function VideoFullPlaca() {
   function startEdit(it: ContentItem) {
     const d = it.data as VideoFullData;
     setEditingId(it.id);
+    setTitle(d.title ?? "");
     if (d.media_kind === "youtube") {
       setSource("youtube");
       setYtInput(d.media_url);
@@ -88,6 +94,7 @@ export function VideoFullPlaca() {
   }
   function cancelEdit() {
     setEditingId(null);
+    setTitle("");
     clearMedia();
     setYtInput("");
     setDur(15);
@@ -121,6 +128,11 @@ export function VideoFullPlaca() {
           <div style={{ fontWeight: 500, marginBottom: 14, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             {editingId ? "Editar video full" : "Nuevo video full"}
             {editingId && <button type="button" className="btn" onClick={cancelEdit}>Cancelar</button>}
+          </div>
+
+          <div className="field">
+            <label>{source === "youtube" ? "Título (opcional: por defecto, el del video)" : "Título (para identificar el video)"}</label>
+            <input value={title} onChange={(e) => setTitle(e.target.value.slice(0, 60))} placeholder="Ej.: Spot institucional 2026" maxLength={60} />
           </div>
 
           <div className="field">
@@ -180,9 +192,9 @@ export function VideoFullPlaca() {
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontWeight: 600, display: "flex", alignItems: "center", gap: 8 }}>
                     {d.media_kind === "youtube" ? <Youtube size={15} /> : <MonitorPlay size={15} />}
-                    {d.media_kind === "video" ? "Video" : d.media_kind === "youtube" ? "YouTube" : "Imagen"}
+                    {d.title || (d.media_kind === "video" ? "Video" : d.media_kind === "youtube" ? "YouTube" : "Imagen")}
                   </div>
-                  <div style={{ fontSize: 12, color: "#6b7688", marginTop: 4 }}>{it.duration_sec}s</div>
+                  <div style={{ fontSize: 12, color: "#6b7688", marginTop: 4 }}>{d.media_kind === "video" ? "Video" : d.media_kind === "youtube" ? "YouTube" : "Imagen"} · {it.duration_sec}s</div>
                 </div>
                 <button className={"toggle-pill" + (it.in_parrilla !== false ? " on" : "")} onClick={() => toggleDisponible(it)}>
                   {it.in_parrilla !== false && <Check size={14} />} {it.in_parrilla !== false ? "En parrilla" : "Disponible: no"}

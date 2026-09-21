@@ -52,7 +52,7 @@ export function Actividad() {
           <option value="">Todas las personas</option>
           {people.map((p) => <option key={p.id} value={p.id}>{p.full_name || p.email}</option>)}
         </select>
-        <div className="tabs" style={{ marginBottom: 0 }}>
+        <div className="tabs tabs-dark" style={{ marginBottom: 0 }}>
           {GROUPS.map(([k, l]) => <button key={k} className={"tab" + (group === k ? " active" : "")} onClick={() => setGroup(k)}>{l}</button>)}
         </div>
       </div>

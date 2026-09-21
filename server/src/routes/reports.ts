@@ -259,7 +259,7 @@ export async function buildReport(range: Range, viewerIsMaster: boolean) {
     avisos: top([...pub].map(([id, count]) => {
       const d = (titleById.get(id)?.data ?? {}) as Row;
       const file = typeof d.media_url === "string" ? prettyName(decodeURIComponent(d.media_url.split("/").pop() ?? "")) : "";
-      return { id, count, label: `${d.format === "vertical" ? "Vertical" : "Full"}${file ? ` · ${file}` : ""}`, media_url: d.media_url ?? null, kind: d.media_kind ?? null };
+      return { id, count, label: d.title ? String(d.title) : `${d.format === "vertical" ? "Vertical" : "Full"}${file ? ` · ${file}` : ""}`, media_url: d.media_url ?? null, kind: d.media_kind ?? null };
     }), 50),
   };
 

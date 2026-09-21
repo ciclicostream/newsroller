@@ -4,7 +4,7 @@ import {
   MonitorPlay, Zap, ArrowRight, ChevronDown, PauseCircle,
 } from "lucide-react";
 import type { ContentItem, PlaylistItem, Camera } from "@newsroller/shared";
-import { contentHasAudio } from "@newsroller/shared";
+import { contentHasAudio, DOLAR_CASAS } from "@newsroller/shared";
 import { parrilla, OUTPUT_FRAME_BASE } from "../lib/parrilla";
 import { contentItems as contentItemsApi } from "../lib/content-items";
 import { settingsApi } from "../lib/settings";
@@ -28,7 +28,7 @@ const CAT: Record<string, { label: string; color: string; Icon: any }> = {
   media: { label: "Media", color: "#8b5cf6", Icon: Megaphone },
   camaras: { label: "Cámaras", color: "#e08a1e", Icon: Video },
 };
-const FILTERS = [["all", "Todos"], ["ultima", "Última Hora"], ["datos", "Datos"], ["editorial", "Editorial"], ["media", "Media"], ["camaras", "Cámaras"]];
+const FILTERS = [["all", "Todos"], ["sin", "Sin asignar"], ["ultima", "Última Hora"], ["datos", "Datos"], ["editorial", "Editorial"], ["media", "Media"], ["camaras", "Cámaras"]];
 
 interface TextCtx { cams: Map<string, Camera>; yt: Record<string, string> }
 const fileName = (u: string) => { try { return decodeURIComponent(u.split("?")[0].split("/").pop() || ""); } catch { return u; } };
@@ -45,13 +45,14 @@ function itemText(ci: ContentItem, ctx: TextCtx): string {
       return d.location ? `${name} · ${d.location}` : name;
     }
     case "video_full": {
+      if (d.title) return String(d.title);
       if (d.media_kind === "youtube") return d.title || ctx.yt[d.media_url] || `YouTube · ${d.media_url}`;
       return d.media_url ? fileName(d.media_url) : fallback;
     }
-    case "publicidad": return d.media_url ? fileName(d.media_url) : fallback;
+    case "publicidad": return d.title ? String(d.title) : d.media_url ? fileName(d.media_url) : fallback;
     case "cifras": return (d.subtitle || d.value || fallback).toString();
     case "declaraciones": return (d.name ? `${d.name}${d.headline ? " · " + d.headline : ""}` : fallback).toString();
-    case "dolar": return fallback;
+    case "dolar": return Array.isArray(d.casas) ? `Dólar · ${d.casas.map((c: string) => DOLAR_CASAS[c] ?? c).join(", ")}` : fallback;
   }
   return (d.text || d.title || d.subt || d.name || fallback).toString();
 }
@@ -169,8 +170,8 @@ export function Programacion() {
   useEffect(() => { void load(); }, []);
   useEffect(() => { const t = setInterval(() => setTick((s) => s + 1), 1000); return () => clearInterval(t); }, []);
 
-  const disponibles = items.filter((c) => c.in_parrilla !== false && (filter === "all" || catOf(c.type) === filter));
   const countIn = (id: string) => draft.filter((r) => r.content_id === id).length;
+  const disponibles = items.filter((c) => c.in_parrilla !== false && (filter === "all" || (filter === "sin" ? countIn(c.id) === 0 : catOf(c.type) === filter)));
 
   async function addItem(ci: ContentItem, atIdx?: number) {
     try {
@@ -275,10 +276,11 @@ export function Programacion() {
 
   // cantidad en parrilla por categoría (se muestra en los filtros de Disponibles)
   const catCount = useMemo(() => {
-    const by: Record<string, number> = { all: draft.length };
+    const inDraft = new Set(draft.map((r) => r.content_id));
+    const by: Record<string, number> = { all: draft.length, sin: items.filter((c) => c.in_parrilla !== false && !inDraft.has(c.id)).length };
     draft.forEach((r) => { const ci = r.content_id ? itemById.get(r.content_id) : null; if (ci) { const c = catOf(ci.type); by[c] = (by[c] || 0) + 1; } });
     return by;
-  }, [draft, itemById]);
+  }, [draft, items, itemById]);
   const cicloSec = draft.filter((r) => r.enabled).reduce((a, r) => a + r.duration_sec, 0);
 
   const fmt = (s: number) => [Math.floor(s / 3600), Math.floor((s % 3600) / 60), s % 60].map((n) => String(n).padStart(2, "0")).join(":");

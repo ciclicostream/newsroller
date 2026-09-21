@@ -428,7 +428,7 @@ export interface CamarasData {
 export interface VideoFullData {
   media_url: string; // URL de archivo (image/video) o id de video de YouTube (kind="youtube")
   media_kind: "image" | "video" | "youtube";
-  title?: string; // título del video de YouTube (oEmbed al guardar), para referencia en el panel
+  title?: string; // nombre para identificarlo en la parrilla y el banco (en YouTube, por defecto el título del video)
 }
 
 // Datos del tipo "informe": carrusel de hasta 10 slides (imágenes 4:5) con un
@@ -442,6 +442,7 @@ export interface InformeData {
 // Datos del tipo "publicidad": Full (16:9 sin overlay) o Vertical (9:16 +
 // marco estándar + logo/QR de marca opcionales). Única familia que genera reporte.
 export interface PublicidadData {
+  title?: string; // nombre del aviso/anunciante, para identificarlo en la parrilla y los reportes
   format: "full" | "vertical";
   media_url: string;
   media_kind: "image" | "video";

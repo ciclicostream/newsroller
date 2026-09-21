@@ -384,10 +384,10 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 6px
 .brand-logo { filter: brightness(0) invert(1); }
 .page-head h1 { color: #fff; }
 .page-head p { color: rgba(255,255,255,.8); }
-.tabs { border-bottom-color: rgba(255,255,255,.28); }
-.tab { color: rgba(255,255,255,.72); }
-.tab:hover { color: #fff; }
-.tab.active { color: #fff; border-bottom-color: #fff; }
+.main > .tabs, .tabs.tabs-dark { border-bottom-color: rgba(255,255,255,.28); }
+.main > .tabs .tab, .tabs-dark .tab { color: rgba(255,255,255,.72); }
+.main > .tabs .tab:hover, .tabs-dark .tab:hover { color: #fff; }
+.main > .tabs .tab.active, .tabs-dark .tab.active { color: #fff; border-bottom-color: #fff; }
 .main > .uploading, .main > .muted-note, .rp-controls .rp-label { color: #fff; }
 @media print { body { background-image: none !important; } .page-head h1 { color: #000; } }
 .bn-ghead { background: #fff; border: 1px solid var(--border); border-radius: 10px; padding: 6px 12px; width: fit-content; }
@@ -399,3 +399,20 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 6px
 .main:has(.tpl-subnav) .page-head { background: #0b1f4d; border: 1px solid rgba(255,255,255,.1); border-radius: 14px; padding: 14px 20px; box-shadow: 0 6px 18px rgba(5,15,42,.28); }
 .main:has(.tpl-subnav) .page-head h1 { color: #fff; }
 .main:has(.tpl-subnav) .page-head p { color: rgba(255,255,255,.78); }
+
+/* Contenido: tarjetas con toques de gris (fondo gris suave, campos blancos, pestañas tipo segmento) */
+.main:has(.tpl-subnav) .card { background: #eceef2; border-color: #d3d8e1; }
+.main:has(.tpl-subnav) .card > div:first-child { color: #2b3446; }
+.main:has(.tpl-subnav) .field label { color: #4a5468; font-weight: 500; }
+.main:has(.tpl-subnav) .field input, .main:has(.tpl-subnav) .field select, .main:has(.tpl-subnav) .field textarea { background: #fff; border-color: #cfd5df; }
+.main:has(.tpl-subnav) .field input[type="file"] { background: #f7f8fa; border: 1.5px dashed #b4bccb; padding: 10px 12px; color: #5b6678; }
+.main:has(.tpl-subnav) input[type="file"]::file-selector-button { background: #dfe3ea; color: #2b3446; border: 1px solid #c5ccd8; border-radius: 8px; padding: 6px 12px; margin-right: 10px; font: inherit; font-weight: 500; cursor: pointer; }
+.main:has(.tpl-subnav) input[type="file"]::file-selector-button:hover { background: #d3d8e1; }
+.main:has(.tpl-subnav) .card .tabs { display: inline-flex; gap: 2px; background: #dde1e8; border: 0; border-radius: 10px; padding: 3px; margin-bottom: 14px; max-width: 100%; flex-wrap: wrap; }
+.main:has(.tpl-subnav) .card .tab { margin: 0; border: 0; border-radius: 8px; padding: 7px 14px; font-size: 13px; font-weight: 500; color: #5b6678; }
+.main:has(.tpl-subnav) .card .tab:hover { color: #1a2235; background: rgba(255,255,255,.55); }
+.main:has(.tpl-subnav) .card .tab.active { background: #fff; color: #10151f; box-shadow: 0 1px 3px rgba(20,30,60,.14); }
+.main:has(.tpl-subnav) .card .muted-note { color: #66708a; }
+.main:has(.tpl-subnav) .card .btn:not(.primary) { background: #fff; border-color: #cfd5df; }
+.main:has(.tpl-subnav) .card table th { background: #e1e4ea; color: #4a5468; }
+.main:has(.tpl-subnav) .card table td { border-bottom-color: #d3d8e1; }

@@ -13,6 +13,7 @@ export function PublicidadPlaca() {
   const [report, setReport] = useState<Record<string, number>>({});
   const [editingId, setEditingId] = useState<string | null>(null);
 
+  const [title, setTitle] = useState("");
   const [format, setFormat] = useState<"full" | "vertical">("vertical");
   const [mediaUrl, setMediaUrl] = useState<string | null>(null);
   const [mediaKind, setMediaKind] = useState<"image" | "video">("video");
@@ -62,10 +63,12 @@ export function PublicidadPlaca() {
   async function save(e: React.FormEvent) {
     e.preventDefault();
     setErr(null); setMsg(null);
+    if (!title.trim()) return setErr("El título es obligatorio: sirve para identificar el aviso en la parrilla.");
     if (!mediaUrl) return setErr("El video o imagen del aviso es obligatorio.");
     setSaving(true);
     try {
       const data: PublicidadData = {
+        title: title.trim().slice(0, 60),
         format, media_url: mediaUrl, media_kind: mediaKind,
         logo_url: format === "vertical" ? logoUrl ?? undefined : undefined,
         brand_qr_url: format === "vertical" ? qrUrl ?? undefined : undefined,
@@ -89,6 +92,7 @@ export function PublicidadPlaca() {
   function startEdit(it: ContentItem) {
     const d = it.data as PublicidadData;
     setEditingId(it.id);
+    setTitle(d.title ?? "");
     setFormat(d.format);
     setMediaUrl(d.media_url ?? null);
     setMediaKind(d.media_kind);
@@ -99,6 +103,7 @@ export function PublicidadPlaca() {
   }
   function cancelEdit() {
     setEditingId(null);
+    setTitle("");
     setMediaUrl(null); setLogoUrl(null); setQrUrl(null);
     if (mediaRef.current) mediaRef.current.value = "";
     if (logoRef.current) logoRef.current.value = "";
@@ -134,6 +139,11 @@ export function PublicidadPlaca() {
           <div style={{ fontWeight: 500, marginBottom: 14, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             {editingId ? "Editar aviso" : "Nuevo aviso"}
             {editingId && <button type="button" className="btn" onClick={cancelEdit}>Cancelar</button>}
+          </div>
+
+          <div className="field">
+            <label>Título (para identificar el aviso)</label>
+            <input value={title} onChange={(e) => setTitle(e.target.value.slice(0, 60))} placeholder="Ej.: Avon — Promo septiembre" maxLength={60} required />
           </div>
 
           <div className="field">
@@ -206,8 +216,9 @@ export function PublicidadPlaca() {
                   <Megaphone size={20} color="#fff" />
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontWeight: 600 }}>{d.format === "full" ? "Full" : "Vertical"} — {d.media_kind === "video" ? "video" : "imagen"}</div>
+                  <div style={{ fontWeight: 600 }}>{d.title || `${d.format === "full" ? "Full" : "Vertical"} — ${d.media_kind === "video" ? "video" : "imagen"}`}</div>
                   <div style={{ fontSize: 12, color: "#6b7688", marginTop: 4, display: "flex", gap: 12 }}>
+                    <span>{d.format === "full" ? "Full" : "Vertical"} · {d.media_kind === "video" ? "video" : "imagen"}</span>
                     <span>{it.duration_sec}s</span>
                     <span>{salidas} salida{salidas === 1 ? "" : "s"} (últimos 30 días)</span>
                   </div>
