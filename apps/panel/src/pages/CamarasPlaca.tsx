@@ -169,7 +169,7 @@ export function CamarasPlaca() {
             const d = it.data as CamarasData;
             const cam = cameras.find((c) => c.id === d.camera_id);
             return (
-              <div key={it.id} className="card" style={{ padding: 16, display: "flex", gap: 16, alignItems: "center" }}>
+              <div key={it.id} data-item={it.id} className="card" style={{ padding: 16, display: "flex", gap: 16, alignItems: "center" }}>
                 <div style={{ width: 44, height: 44, borderRadius: 8, background: "#0d2168", flex: "0 0 auto", display: "flex", alignItems: "center", justifyContent: "center" }}>
                   <Video size={20} color="#fff" />
                 </div>

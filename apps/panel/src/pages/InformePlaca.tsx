@@ -152,7 +152,7 @@ export function InformePlaca() {
           {items.map((it) => {
             const d = it.data as InformeData;
             return (
-              <div key={it.id} className="card" style={{ padding: 16, display: "flex", gap: 16, alignItems: "center" }}>
+              <div key={it.id} data-item={it.id} className="card" style={{ padding: 16, display: "flex", gap: 16, alignItems: "center" }}>
                 <div style={{ width: 44, height: 44, borderRadius: 8, background: "#0d2168", flex: "0 0 auto", display: "flex", alignItems: "center", justifyContent: "center" }}>
                   <ListOrdered size={20} color="#fff" />
                 </div>

@@ -201,7 +201,7 @@ export function UltimaHora() {
           {items.map((it) => {
             const d = it.data as UltimaHoraData;
             return (
-              <div key={it.id} className="card" style={{ padding: 16, display: "flex", gap: 16, alignItems: "center" }}>
+              <div key={it.id} data-item={it.id} className="card" style={{ padding: 16, display: "flex", gap: 16, alignItems: "center" }}>
                 <div style={{ width: 90, height: 64, borderRadius: 8, background: "#EE220C", flex: "0 0 auto", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontWeight: 800, fontSize: 12, fontFamily: "Zilla Slab, serif" }}>
                   ÚLTIMA
                 </div>

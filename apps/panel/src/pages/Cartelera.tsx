@@ -202,7 +202,7 @@ export function Cartelera() {
           {items.map((it) => {
             const d = it.data as CarteleraData;
             return (
-              <div key={it.id} className="card" style={{ padding: 16, display: "flex", gap: 16, alignItems: "center" }}>
+              <div key={it.id} data-item={it.id} className="card" style={{ padding: 16, display: "flex", gap: 16, alignItems: "center" }}>
                 <div style={{ width: 90, height: 56, borderRadius: 8, background: "#0d2168", flex: "0 0 auto", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
                   {d.photo_url ? <img src={d.photo_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <Clapperboard size={20} color="#fff" />}
                 </div>

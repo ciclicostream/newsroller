@@ -240,7 +240,7 @@ export function Placas() {
           {items.map((it) => {
             const d = it.data as PlacasData;
             return (
-              <div key={it.id} className="card" style={{ padding: 16, display: "flex", gap: 16, alignItems: "center" }}>
+              <div key={it.id} data-item={it.id} className="card" style={{ padding: 16, display: "flex", gap: 16, alignItems: "center" }}>
                 <div style={{ width: 90, height: 64, borderRadius: 8, background: "#0d2168", flex: "0 0 auto", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
                   {d.media_url ? <img src={d.media_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <Newspaper size={22} color="#fff" />}
                 </div>
