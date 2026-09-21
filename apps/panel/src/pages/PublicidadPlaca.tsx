@@ -5,6 +5,7 @@ import type { ContentItem, PublicidadData } from "@newsroller/shared";
 import { contentItems } from "../lib/content-items";
 import { uploadMedia } from "../lib/content";
 import { api } from "../lib/api";
+import { VerticalVersion, type VerticalValue } from "../components/VerticalVersion";
 
 export function PublicidadPlaca() {
   const [items, setItems] = useState<ContentItem[]>([]);
@@ -14,6 +15,7 @@ export function PublicidadPlaca() {
   const [editingId, setEditingId] = useState<string | null>(null);
 
   const [title, setTitle] = useState("");
+  const [vert, setVert] = useState<VerticalValue>({}); // formato Full: versión para el output vertical (9:16)
   const [format, setFormat] = useState<"full" | "vertical">("vertical");
   const [mediaUrl, setMediaUrl] = useState<string | null>(null);
   const [mediaKind, setMediaKind] = useState<"image" | "video">("video");
@@ -72,6 +74,7 @@ export function PublicidadPlaca() {
         format, media_url: mediaUrl, media_kind: mediaKind,
         logo_url: format === "vertical" ? logoUrl ?? undefined : undefined,
         brand_qr_url: format === "vertical" ? qrUrl ?? undefined : undefined,
+        ...(format === "full" && vert.url ? { vertical_url: vert.url, vertical_kind: vert.kind ?? "video" } : {}),
       };
       if (editingId) {
         await contentItems.patch(editingId, { data, duration_sec: dur });
@@ -93,6 +96,7 @@ export function PublicidadPlaca() {
     const d = it.data as PublicidadData;
     setEditingId(it.id);
     setTitle(d.title ?? "");
+    setVert({ url: d.vertical_url ?? null, kind: d.vertical_kind ?? null });
     setFormat(d.format);
     setMediaUrl(d.media_url ?? null);
     setMediaKind(d.media_kind);
@@ -104,6 +108,7 @@ export function PublicidadPlaca() {
   function cancelEdit() {
     setEditingId(null);
     setTitle("");
+    setVert({});
     setMediaUrl(null); setLogoUrl(null); setQrUrl(null);
     if (mediaRef.current) mediaRef.current.value = "";
     if (logoRef.current) logoRef.current.value = "";
@@ -194,6 +199,8 @@ export function PublicidadPlaca() {
             </>
           )}
 
+          {format === "full" && <VerticalVersion value={vert} onChange={setVert} />}
+
           <div className="field">
             <label>Duración (segundos)</label>
             <input type="number" min={2} value={dur} onChange={(e) => setDur(Math.max(2, Number(e.target.value) || 15))} />
@@ -205,7 +212,7 @@ export function PublicidadPlaca() {
         </form>
 
         <div className="pm-col">
-          <PreviewMonitor type="publicidad" data={{ format, media_url: mediaUrl, media_kind: mediaKind, logo_url: format === "vertical" ? logoUrl ?? undefined : undefined, brand_qr_url: format === "vertical" ? qrUrl ?? undefined : undefined }} dur={dur} ready={!!mediaUrl} />
+          <PreviewMonitor type="publicidad" data={{ format, media_url: mediaUrl, media_kind: mediaKind, logo_url: format === "vertical" ? logoUrl ?? undefined : undefined, brand_qr_url: format === "vertical" ? qrUrl ?? undefined : undefined, ...(format === "full" && vert.url ? { vertical_url: vert.url, vertical_kind: vert.kind ?? "video" } : {}) }} dur={dur} ready={!!mediaUrl} />
           {items.length === 0 && <div className="card" style={{ padding: 18, color: "#6b7688" }}>Todavía no hay avisos.</div>}
           {items.map((it) => {
             const d = it.data as PublicidadData;

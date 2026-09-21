@@ -1,7 +1,16 @@
 import { Component, useEffect, useState, type ReactNode } from "react";
 import { API_BASE, fetchScene, type Scene } from "./lib/scene";
 import { ItemView } from "./templates/items";
-import { fitScale, stageStyle } from "./lib/orientation";
+import { IS_VERTICAL, fitScale, stageStyle, supportsVertical } from "./lib/orientation";
+
+// En la vista previa vertical, avisa cuando el contenido no tiene versión vertical (no saldría en el output vertical).
+function NoVertical() {
+  return (
+    <div style={{ position: "absolute", inset: 0, zIndex: 999, display: "flex", alignItems: "center", justifyContent: "center", padding: 90, textAlign: "center", background: "rgba(5,10,30,.88)", color: "#fff", font: "700 54px Inter,system-ui,sans-serif", lineHeight: 1.25 }}>
+      Este contenido no tiene versión vertical: no sale en el output vertical.
+    </div>
+  );
+}
 
 // El panel pide sonido con ?audio=1 (botón del parlante); sin eso la vista previa va muda.
 const WANT_SOUND = typeof window !== "undefined" && new URLSearchParams(window.location.search).has("audio");
@@ -50,6 +59,7 @@ export function Preview({ id }: { id: string }) {
     <div className="viewport">
       <div className="stage" style={stageStyle(scale)}>
         {item ? <ItemView key={loop} type={item.type} data={item.data} durationSec={dur} liveData={scene?.data} cameras={scene?.cameras ?? []} /> : null}
+        {IS_VERTICAL && item && !supportsVertical(item.type, item.data) && <NoVertical />}
       </div>
     </div>
   );
@@ -118,6 +128,9 @@ export function DraftPreview() {
           <Boundary key={draft.v + ":" + loop}>
             <ItemView type={draft.type} data={draft.data} durationSec={dur} liveData={scene?.data} cameras={scene?.cameras ?? []} />
           </Boundary>
+        ) : null}
+        {IS_VERTICAL && draft && !supportsVertical(draft.type, draft.data) ? (
+          <NoVertical />
         ) : null}
       </div>
     </div>

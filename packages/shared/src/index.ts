@@ -429,6 +429,8 @@ export interface VideoFullData {
   media_url: string; // URL de archivo (image/video) o id de video de YouTube (kind="youtube")
   media_kind: "image" | "video" | "youtube";
   title?: string; // nombre para identificarlo en la parrilla y el banco (en YouTube, por defecto el título del video)
+  // Versión para el output vertical (9:16): archivo o short de YouTube. Sin ella no sale en el vertical.
+  vertical_url?: string; vertical_kind?: "image" | "video"; vertical_yt?: string;
 }
 
 // Datos del tipo "informe": carrusel de hasta 10 slides (imágenes 4:5) con un
@@ -443,6 +445,8 @@ export interface InformeData {
 // marco estándar + logo/QR de marca opcionales). Única familia que genera reporte.
 export interface PublicidadData {
   title?: string; // nombre del aviso/anunciante, para identificarlo en la parrilla y los reportes
+  // Formato Full: versión para el output vertical (9:16). Sin ella el aviso Full no sale en el vertical.
+  vertical_url?: string; vertical_kind?: "image" | "video";
   format: "full" | "vertical";
   media_url: string;
   media_kind: "image" | "video";

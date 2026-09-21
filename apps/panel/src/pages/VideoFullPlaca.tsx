@@ -5,6 +5,7 @@ import type { ContentItem, VideoFullData } from "@newsroller/shared";
 import { contentItems } from "../lib/content-items";
 import { uploadMedia } from "../lib/content";
 import { youtubeId, youtubeTitle } from "../lib/cameras";
+import { VerticalVersion, type VerticalValue } from "../components/VerticalVersion";
 
 export function VideoFullPlaca() {
   const [items, setItems] = useState<ContentItem[]>([]);
@@ -13,6 +14,7 @@ export function VideoFullPlaca() {
   const [editingId, setEditingId] = useState<string | null>(null);
 
   const [title, setTitle] = useState("");
+  const [vert, setVert] = useState<VerticalValue>({}); // versión para el output vertical (9:16)
   const [source, setSource] = useState<"file" | "youtube">("file");
   const [mediaUrl, setMediaUrl] = useState<string | null>(null);
   const [mediaKind, setMediaKind] = useState<"image" | "video">("video");
@@ -56,9 +58,10 @@ export function VideoFullPlaca() {
       const ytTitle = yt && !title.trim() ? await youtubeTitle(yt) : null;
       const finalTitle = (title.trim() || ytTitle || "").slice(0, 60);
       if (!finalTitle) { setSaving(false); return setErr("Escribí un título para identificar el video."); }
+      const vertData = vert.yt ? { vertical_yt: vert.yt } : vert.url ? { vertical_url: vert.url, vertical_kind: vert.kind ?? "video" } : {};
       const data: VideoFullData = source === "youtube"
-        ? { media_url: yt!, media_kind: "youtube", title: finalTitle }
-        : { media_url: mediaUrl!, media_kind: mediaKind, title: finalTitle };
+        ? { media_url: yt!, media_kind: "youtube", title: finalTitle, ...vertData }
+        : { media_url: mediaUrl!, media_kind: mediaKind, title: finalTitle, ...vertData };
       if (editingId) {
         await contentItems.patch(editingId, { data, duration_sec: dur });
         setMsg("Cambios guardados.");
@@ -79,6 +82,7 @@ export function VideoFullPlaca() {
     const d = it.data as VideoFullData;
     setEditingId(it.id);
     setTitle(d.title ?? "");
+    setVert({ url: d.vertical_url ?? null, kind: d.vertical_kind ?? null, yt: d.vertical_yt ?? null });
     if (d.media_kind === "youtube") {
       setSource("youtube");
       setYtInput(d.media_url);
@@ -95,6 +99,7 @@ export function VideoFullPlaca() {
   function cancelEdit() {
     setEditingId(null);
     setTitle("");
+    setVert({});
     clearMedia();
     setYtInput("");
     setDur(15);
@@ -163,6 +168,8 @@ export function VideoFullPlaca() {
             </div>
           )}
 
+          <VerticalVersion value={vert} onChange={setVert} allowYoutube />
+
           <div className="field">
             <label>Duración (segundos)</label>
             <input type="number" min={2} value={dur} onChange={(e) => setDur(Math.max(2, Number(e.target.value) || 15))} />
@@ -174,7 +181,7 @@ export function VideoFullPlaca() {
         </form>
 
         <div className="pm-col">
-          <PreviewMonitor type="video_full" data={source === "youtube" ? { media_url: youtubeId(ytInput), media_kind: "youtube" } : { media_url: mediaUrl, media_kind: mediaKind }} dur={dur} ready={source === "youtube" ? !!youtubeId(ytInput) : !!mediaUrl} />
+          <PreviewMonitor type="video_full" data={{ ...(source === "youtube" ? { media_url: youtubeId(ytInput), media_kind: "youtube" } : { media_url: mediaUrl, media_kind: mediaKind }), ...(vert.yt ? { vertical_yt: vert.yt } : vert.url ? { vertical_url: vert.url, vertical_kind: vert.kind ?? "video" } : {}) }} dur={dur} ready={source === "youtube" ? !!youtubeId(ytInput) : !!mediaUrl} />
           {items.length === 0 && <div className="card" style={{ padding: 18, color: "#6b7688" }}>Todavía no hay videos full.</div>}
           {items.map((it) => {
             const d = it.data as VideoFullData;
