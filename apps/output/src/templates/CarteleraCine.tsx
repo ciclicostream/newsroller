@@ -101,11 +101,12 @@ export function CarteleraCine({ data, durationSec }: { data: CarteleraData; dura
           {data.cast && <div className="cc-row"><b>Actores:</b> {data.cast}</div>}
           {data.duration_text && <div className="cc-row"><b>Duración:</b> {data.duration_text}</div>}
           {data.genre && <div className="cc-row"><b>Género:</b> {data.genre}</div>}
-          {data.is_series && (
+          {data.is_series && serieInfo && <div className="cc-row">{serieInfo}</div>}
+          {data.is_series && (plat?.logo || platName) && (
+            // Plataforma siempre es el último dato de la ficha.
             <div className="cc-row cc-serie">
               <b>Plataforma:</b>
-              {plat?.logo ? <img className="cc-logo" src={plat.logo} alt={platName} /> : platName ? <span className="cc-platname">{platName}</span> : null}
-              {serieInfo && <span className="cc-eps">{serieInfo}</span>}
+              {plat?.logo ? <img className="cc-logo" src={plat.logo} alt={platName} /> : <span className="cc-platname">{platName}</span>}
             </div>
           )}
         </div>
@@ -159,7 +160,6 @@ const CSS = `
 .cc-serie{display:flex;align-items:center;flex-wrap:wrap;gap:4px 12px}
 .cc-logo{height:1.3em;max-width:130px;object-fit:contain}
 .cc-platname{font-weight:800;color:#2f6bff}
-.cc-eps{font-weight:600;width:100%}
 
 /* Póster o short: alineado con el borde superior del trailer (y=128) */
 .cc-media{position:absolute;left:1395px;top:128px;width:281px;height:420px;z-index:15;border-radius:20px;overflow:hidden;background:#c9ccd2;

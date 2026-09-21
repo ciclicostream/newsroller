@@ -7,11 +7,13 @@ import { contentItems } from "../lib/content-items";
 import { uploadMedia, content } from "../lib/content";
 import { settingsApi } from "../lib/settings";
 import { youtubeId } from "../lib/cameras";
+import { youtubeDuration } from "../lib/youtube";
 
 const T_MAX = 90;
 const KINDS: { key: CarteleraKind; label: string }[] = [{ key: "teatro", label: "Teatro" }, { key: "cine", label: "Cine" }, { key: "evento", label: "Eventos" }];
 const kindOf = (d: CarteleraData): CarteleraKind => d.kind ?? "teatro"; // las ya guardadas son de teatro
 const isYtId = (s: string) => /^[\w-]{11}$/.test(s);
+const fmtMin = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 
 export function Cartelera() {
   const [items, setItems] = useState<ContentItem[]>([]);
@@ -33,6 +35,8 @@ export function Cartelera() {
   const [shortId, setShortId] = useState("");
   const [plataformas, setPlataformas] = useState<Plataforma[]>(PLATAFORMAS_DEFAULT);
   const [shorts, setShorts] = useState<Short[]>([]);
+  const [trailerInfo, setTrailerInfo] = useState<{ id: string; sec: number | null } | null>(null); // duración leída del trailer
+  const [durTouched, setDurTouched] = useState(false); // el editor cambió la duración a mano
   const [trailer, setTrailer] = useState(""); // cine: link o id de YouTube
   const [posterUrl, setPosterUrl] = useState<string | null>(null);
   const [uploadingPoster, setUploadingPoster] = useState(false);
@@ -58,6 +62,22 @@ export function Cartelera() {
     settingsApi.get().then((s) => { if (s.plataformas?.length) setPlataformas(s.plataformas); }).catch(() => {});
     content.listShorts().then((sh) => setShorts(sh.filter((x) => x.active))).catch(() => {});
   }, []);
+
+  // Duración sugerida (sólo Cine): sin short = lo que dura el trailer; con short = lo que más dure entre ambos.
+  const trailerId = youtubeId(trailer);
+  useEffect(() => {
+    if (kind !== "cine" || !isYtId(trailerId)) return;
+    let on = true;
+    const t = setTimeout(() => { void youtubeDuration(trailerId).then((sec) => { if (on) setTrailerInfo({ id: trailerId, sec }); }); }, 400);
+    return () => { on = false; clearTimeout(t); };
+  }, [trailerId, kind]);
+  const trailerLoading = kind === "cine" && isYtId(trailerId) && trailerInfo?.id !== trailerId;
+  const trailerSec = trailerInfo?.id === trailerId ? trailerInfo.sec : null;
+  const shortSec = side === "short" ? shorts.find((x) => x.id === shortId)?.duration_sec ?? null : null;
+  const suggested = kind !== "cine" ? null : (side === "short" && shortSec ? Math.max(trailerSec ?? 0, shortSec) : trailerSec ?? null) || null;
+  useEffect(() => {
+    if (suggested && !durTouched) setDur(Math.max(2, suggested));
+  }, [suggested, durTouched]);
 
   const load = () => contentItems.list("cartelera").then(setItems).catch((e) => setErr(e.message));
   useEffect(() => { void load(); }, []);
@@ -159,6 +179,7 @@ export function Cartelera() {
     setTickerKind(d.ticker ?? "");
     setShortId(d.short_id ?? "");
     setSide(d.short_id ? "short" : d.poster_url ? "poster" : "none");
+    setDurTouched(true); // se respeta la duración ya guardada
     setPhotoUrl(d.photo_url ? d.photo_url : null);
     setTitle(d.title ?? "");
     setAuthor(d.author ?? "");
@@ -175,6 +196,7 @@ export function Cartelera() {
   function cancelEdit() {
     setEditingId(null);
     setTrailer(""); setPosterUrl(null); if (posterRef.current) posterRef.current.value = "";
+    setDurTouched(false);
     setSynopsis(""); setDurText(""); setGenre(""); setIsSeries(false); setPlatformId(""); setSeasons(""); setEpisodes(""); setTickerKind(""); setSide("poster"); setShortId("");
     setPhotoUrl(null); setTitle(""); setAuthor(""); setCast(""); setVenue(""); setAddress(""); setCity(""); setDays(""); setTime(""); setVideoUrl(null);
     if (photoRef.current) photoRef.current.value = "";
@@ -307,12 +329,7 @@ export function Cartelera() {
                   <div className="cfm-sub">
                     <div className="field">
                       <label>Short del columnista <i>(de la ingesta de Shorts)</i></label>
-                      <select value={shortId} onChange={(e) => {
-                        setShortId(e.target.value);
-                        const sh = shorts.find((x) => x.id === e.target.value);
-                        // Que el bloque dure el short + un rato de trailer con sonido.
-                        if (sh?.duration_sec) setDur((d) => Math.max(d, sh.duration_sec! + 15));
-                      }} required>
+                      <select value={shortId} onChange={(e) => setShortId(e.target.value)} required>
                         <option value="">Elegí un short…</option>
                         {shorts.map((x) => <option key={x.id} value={x.id}>{(x.custom_title ?? x.title).slice(0, 60)}{x.duration_sec ? ` · ${x.duration_sec}s` : ""}</option>)}
                       </select>
@@ -320,7 +337,7 @@ export function Cartelera() {
                         <div style={{ display: "flex", gap: 10, alignItems: "center", marginTop: 8 }}>
                           {sh.thumbnail_url && <img src={sh.thumbnail_url} alt="" style={{ width: 60, height: 34, objectFit: "cover", borderRadius: 6 }} />}
                           <div className="muted-note" style={{ fontSize: 12 }}>
-                            Habla el columnista {sh.duration_sec ? `${sh.duration_sec}s` : ""} y el trailer se repite mudo; después el trailer activa la voz. Poné una duración mayor a la del short.
+                            Habla el columnista {sh.duration_sec ? `${sh.duration_sec}s` : ""} y el trailer se repite mudo; después el trailer activa la voz.
                           </div>
                         </div>
                       ) : null; })()}
@@ -343,8 +360,18 @@ export function Cartelera() {
                   </div>
                   <div className="field">
                     <label>Duración (segundos)</label>
-                    <input type="number" min={2} value={dur} onChange={(e) => setDur(Math.max(2, Number(e.target.value) || 10))} />
+                    <input type="number" min={2} value={dur} onChange={(e) => { setDurTouched(true); setDur(Math.max(2, Number(e.target.value) || 10)); }} />
                   </div>
+                </div>
+                <div className="muted-note" style={{ margin: "-4px 0 12px" }}>
+                  {trailerLoading ? (
+                    <><Loader2 size={12} className="spin" /> Calculando la duración del trailer…</>
+                  ) : suggested ? (
+                    <>
+                      Sugerida: <b>{fmtMin(suggested)}</b> ({side === "short" && shortSec ? "lo que más dura entre el short y el trailer" : "lo que dura el trailer"}).
+                      {dur !== suggested && <> <button type="button" className="cfm-link" onClick={() => { setDurTouched(false); setDur(Math.max(2, suggested)); }}>Usar la sugerida</button></>}
+                    </>
+                  ) : isYtId(youtubeId(trailer)) ? "No se pudo leer la duración del trailer: poné la duración a mano." : "Pegá el trailer para calcular la duración sugerida."}
                 </div>
               </section>
             </>
@@ -457,6 +484,7 @@ const FORM_CSS = `
 .cfm-sec .field{margin-bottom:12px}
 .cfm-sec input,.cfm-sec select,.cfm-sec textarea{background:#fff}
 .cfm-sec label i{font-style:normal;font-weight:500;color:#9aa3b8;text-transform:none}
+.cfm-link{border:0;background:none;padding:0;font:inherit;color:#2f6bff;font-weight:700;cursor:pointer;text-decoration:underline}
 .cfm-two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .cfm-count{font-size:12px;color:#8a93a6;text-align:right;margin-top:4px}
 .cfm-seg{display:flex;gap:4px;background:#e9ecf3;border-radius:11px;padding:3px;margin-bottom:12px}
