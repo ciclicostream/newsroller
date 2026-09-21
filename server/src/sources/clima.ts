@@ -9,6 +9,7 @@ interface OpenMeteoResp {
     apparent_temperature?: number;
     relative_humidity_2m?: number;
     wind_speed_10m?: number;
+    is_day?: number;
   };
   daily?: {
     time?: string[];
@@ -71,7 +72,7 @@ export const climaSource: DataSource<ClimaPayload> = {
     const lons = CAPITALES.map((c) => c.lon).join(",");
     const url =
       `https://api.open-meteo.com/v1/forecast?latitude=${lats}&longitude=${lons}` +
-      `&current=temperature_2m,weather_code,apparent_temperature,relative_humidity_2m,wind_speed_10m` +
+      `&current=temperature_2m,weather_code,apparent_temperature,relative_humidity_2m,wind_speed_10m,is_day` +
       `&daily=weather_code,temperature_2m_max,temperature_2m_min` +
       `&forecast_days=3&timezone=America/Argentina/Buenos_Aires`;
 
@@ -97,6 +98,7 @@ export const climaSource: DataSource<ClimaPayload> = {
         feelsLike: r(resp.current?.apparent_temperature),
         humidity: r(resp.current?.relative_humidity_2m),
         windKmh: r(resp.current?.wind_speed_10m),
+        isDay: resp.current?.is_day == null ? null : resp.current.is_day === 1,
         days,
       };
     });

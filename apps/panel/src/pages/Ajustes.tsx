@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Users as UsersIcon, Youtube, Tv, Images, Rss } from "lucide-react";
+import { Users as UsersIcon, Youtube, Tv, Images, Rss, CloudSun } from "lucide-react";
 import { useAuth } from "../auth/AuthProvider";
 import { settingsApi } from "../lib/settings";
 
@@ -68,6 +68,13 @@ export function Ajustes() {
           <span className="tipo-main">
             <span className="tipo-name">Shorts</span>
             <span className="tipo-desc">Sincronizar shorts de YouTube</span>
+          </span>
+        </Link>
+        <Link to="/ajustes/clima" className="tipo-card">
+          <span className="tipo-ic"><CloudSun size={22} /></span>
+          <span className="tipo-main">
+            <span className="tipo-name">Íconos del clima</span>
+            <span className="tipo-desc">Imágenes grandes según el cielo</span>
           </span>
         </Link>
         <Link to="/programas" className="tipo-card">

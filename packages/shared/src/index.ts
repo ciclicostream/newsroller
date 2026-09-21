@@ -78,6 +78,7 @@ export interface ClimaCiudad {
   feelsLike: number | null;
   humidity: number | null; // %
   windKmh: number | null;
+  isDay?: boolean | null; // true de día, false de noche (Open-Meteo `is_day`); elige el ícono BIG
   days: ClimaDia[]; // hoy + próximos 2 días
 }
 export interface ClimaPayload {
@@ -102,6 +103,47 @@ export function weatherIconKey(code: number | null): ClimaIconKey {
   if ([95, 96, 99].includes(code)) return "tormenta";
   return "nublado";
 }
+
+// ---- Íconos BIG del clima (configurables en Ajustes) ----
+// Cada "slot" es una situación del cielo que el sistema distingue a partir de lo que manda la API
+// (weather_code WMO + is_day). El editor carga la imagen de cada slot en Ajustes; si un slot no
+// tiene imagen propia se usa la predeterminada (o la del slot de reserva).
+export type ClimaSlotKey =
+  | "soleado" | "despejado_noche" | "parcial" | "parcial_noche"
+  | "nublado" | "nublado_noche" | "niebla" | "llovizna" | "lluvia" | "nieve" | "tormenta";
+
+export const CLIMA_SLOTS: { key: ClimaSlotKey; label: string; when: string; fallback: ClimaSlotKey | null; hasDefault: boolean }[] = [
+  { key: "soleado", label: "Soleado", when: "Cielo despejado de día (códigos 0-1)", fallback: null, hasDefault: true },
+  { key: "despejado_noche", label: "Despejado de noche", when: "Cielo despejado de noche (códigos 0-1)", fallback: "soleado", hasDefault: true },
+  { key: "parcial", label: "Parcialmente nublado", when: "Algo de nubes de día (código 2)", fallback: "nublado", hasDefault: true },
+  { key: "parcial_noche", label: "Parcialmente nublado de noche", when: "Algo de nubes de noche (código 2)", fallback: "nublado_noche", hasDefault: true },
+  { key: "nublado", label: "Nublado", when: "Cubierto de día (código 3)", fallback: null, hasDefault: true },
+  { key: "nublado_noche", label: "Nublado de noche", when: "Cubierto de noche (código 3)", fallback: "nublado", hasDefault: true },
+  { key: "niebla", label: "Niebla", when: "Niebla o niebla escarchada (códigos 45, 48)", fallback: "nublado", hasDefault: false },
+  { key: "llovizna", label: "Llovizna", when: "Llovizna y llovizna helada (códigos 51-57)", fallback: null, hasDefault: true },
+  { key: "lluvia", label: "Lluvia", when: "Lluvia, lluvia helada y chaparrones (códigos 61-67, 80-82)", fallback: null, hasDefault: true },
+  { key: "nieve", label: "Nieve", when: "Nevadas y chaparrones de nieve (códigos 71-77, 85-86)", fallback: null, hasDefault: true },
+  { key: "tormenta", label: "Tormenta", when: "Tormenta eléctrica, con o sin granizo (códigos 95-99)", fallback: null, hasDefault: true },
+];
+export const CLIMA_SLOT_KEYS = CLIMA_SLOTS.map((s) => s.key);
+
+// weather_code (WMO) + día/noche → slot del ícono BIG.
+export function climaSlotKey(code: number | null, isDay: boolean | null | undefined): ClimaSlotKey {
+  const day = isDay !== false; // sin dato = de día
+  if (code == null) return "nublado";
+  if (code <= 1) return day ? "soleado" : "despejado_noche";
+  if (code === 2) return day ? "parcial" : "parcial_noche";
+  if (code === 3) return day ? "nublado" : "nublado_noche";
+  if (code === 45 || code === 48) return "niebla";
+  if ([51, 53, 55, 56, 57].includes(code)) return "llovizna";
+  if ([61, 63, 65, 66, 67, 80, 81, 82].includes(code)) return "lluvia";
+  if ([71, 73, 75, 77, 85, 86].includes(code)) return "nieve";
+  if ([95, 96, 99].includes(code)) return "tormenta";
+  return "nublado";
+}
+
+// Imágenes elegidas en Ajustes: slot → URL (los slots sin entrada usan la predeterminada).
+export type ClimaIconsConfig = Partial<Record<ClimaSlotKey, string>>;
 
 // Datos del tipo "clima": qué ciudad (de las capitales de la fuente `clima`)
 // muestra la placa. El resto (temperatura, pronóstico) sale en vivo de la API.

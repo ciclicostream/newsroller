@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { getSupabase } from "../db/supabase.js";
 import { requireAuth } from "../auth/middleware.js";
+import { CLIMA_SLOT_KEYS } from "@newsroller/shared";
 import type { IO } from "../realtime/socket.js";
 
 // Preferencias del sistema (key/value). Defaults + validación por clave.
@@ -15,10 +16,12 @@ const DEFAULTS = {
   airSince: "" as string,
   // Momento en que se cortó la emisión (vacío = al aire). Congela el reloj "al aire".
   airPausedAt: "" as string,
+  // Íconos BIG del clima cargados por el editor: { [slot]: url }. Vacío = predeterminados.
+  climaIcons: {} as Record<string, string>,
 };
 
 type SettingsKey = keyof typeof DEFAULTS;
-type SettingsValue = number | boolean | string;
+type SettingsValue = number | boolean | string | Record<string, string>;
 
 // Fallback en memoria cuando no hay Supabase (dev local sin credenciales).
 const memory: Record<string, unknown> = {};
@@ -40,6 +43,17 @@ function coerce(key: SettingsKey, raw: unknown): SettingsValue | null {
     if (key === "airPausedAt" && raw === "") return "";
     if (typeof raw !== "string" || Number.isNaN(Date.parse(raw))) return null;
     return raw;
+  }
+  if (key === "climaIcons") {
+    if (typeof raw !== "object" || raw === null || Array.isArray(raw)) return null;
+    const out: Record<string, string> = {};
+    for (const [k, v] of Object.entries(raw as Record<string, unknown>)) {
+      if (!CLIMA_SLOT_KEYS.includes(k as never)) return null;
+      if (v == null || v === "") continue; // sin valor = volver al predeterminado
+      if (typeof v !== "string" || !/^https?:\/\//.test(v)) return null;
+      out[k] = v;
+    }
+    return out;
   }
   return null;
 }

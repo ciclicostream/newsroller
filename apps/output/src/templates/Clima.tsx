@@ -1,15 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
-import type { ClimaData, ClimaPayload, ClimaCiudad, ClimaIconKey } from "@newsroller/shared";
-import { weatherIconKey } from "@newsroller/shared";
+import type { ClimaData, ClimaPayload, ClimaCiudad, ClimaIconKey, ClimaIconsConfig, ClimaSlotKey } from "@newsroller/shared";
+import { weatherIconKey, climaSlotKey, CLIMA_SLOTS } from "@newsroller/shared";
+import { API_BASE } from "../lib/scene";
 import fondo from "../assets/fondo2.jpg";
 import { Chrome } from "./Chrome";
 
-import bigSoleado from "../assets/clima/big-soleado.png";
-import bigNublado from "../assets/clima/big-nublado.png";
-import bigLluvia from "../assets/clima/big-lluvia.png";
-import bigLlovizna from "../assets/clima/big-llovizna.png";
-import bigNieve from "../assets/clima/big-nieve.png";
-import bigTormenta from "../assets/clima/big-tormenta.png";
 import icSoleado from "../assets/clima/ic-soleado.png";
 import icNublado from "../assets/clima/ic-nublado.png";
 import icLluvia from "../assets/clima/ic-lluvia.png";
@@ -17,10 +12,23 @@ import icLlovizna from "../assets/clima/ic-llovizna.png";
 import icNieve from "../assets/clima/ic-nieve.png";
 import icTormenta from "../assets/clima/ic-tormenta.png";
 
-const BIG: Record<ClimaIconKey, string> = {
-  soleado: bigSoleado, nublado: bigNublado, lluvia: bigLluvia,
-  llovizna: bigLlovizna, nieve: bigNieve, tormenta: bigTormenta,
-};
+// Íconos BIG: cada slot (situación del cielo) tiene una imagen predeterminada en /public/clima y el
+// editor puede reemplazarla desde Ajustes (settings.climaIcons). Si un slot no tiene ninguna, se usa
+// la del slot de reserva (ej. niebla → nublado).
+const DEFAULT_BIG = (k: ClimaSlotKey) => `${import.meta.env.BASE_URL}clima/big-${k}.png`;
+function resolveBig(key: ClimaSlotKey, custom: ClimaIconsConfig): string {
+  let k: ClimaSlotKey | null = key;
+  const seen = new Set<string>();
+  while (k && !seen.has(k)) {
+    seen.add(k);
+    const slot = CLIMA_SLOTS.find((x) => x.key === k)!;
+    if (custom[k]) return custom[k]!;
+    if (slot.hasDefault) return DEFAULT_BIG(k);
+    k = slot.fallback;
+  }
+  return DEFAULT_BIG("nublado");
+}
+
 const ICON: Record<ClimaIconKey, string> = {
   soleado: icSoleado, nublado: icNublado, lluvia: icLluvia,
   llovizna: icLlovizna, nieve: icNieve, tormenta: icTormenta,
@@ -41,6 +49,13 @@ export function Clima({ data, live, durationSec }: { data: ClimaData; live?: Cli
 
   const [play, setPlay] = useState(false);
   const [exiting, setExiting] = useState(false);
+  const [custom, setCustom] = useState<ClimaIconsConfig>({});
+  // Íconos cargados en Ajustes (si falla el fetch se usan los predeterminados).
+  useEffect(() => {
+    let on = true;
+    fetch(`${API_BASE}/api/settings`).then((r) => r.json()).then((s) => on && setCustom(s?.climaIcons ?? {})).catch(() => {});
+    return () => { on = false; };
+  }, []);
   useEffect(() => {
     const id = requestAnimationFrame(() => setPlay(true));
     return () => cancelAnimationFrame(id);
@@ -60,7 +75,7 @@ export function Clima({ data, live, durationSec }: { data: ClimaData; live?: Cli
     );
   }
 
-  const key = weatherIconKey(city.code);
+  const bigKey = climaSlotKey(city.code, city.isDay);
   const days = city.days.slice(0, 3);
 
   return (
@@ -69,7 +84,7 @@ export function Clima({ data, live, durationSec }: { data: ClimaData; live?: Cli
       <img className="cw-bg" src={fondo} alt="" />
       <Chrome hideTemp />
 
-      <img className="cw-big" src={BIG[key]} alt="" />
+      <img className="cw-big" src={resolveBig(bigKey, custom)} alt="" />
 
       <div className="cw-main cw-flip">
         <div className="cw-t">{city.tempC != null ? `${city.tempC}°` : "--"}</div>
