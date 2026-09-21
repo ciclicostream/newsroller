@@ -14,3 +14,7 @@ export const parrilla = {
 };
 
 export const OUTPUT_BASE = (import.meta.env.VITE_API_URL as string | undefined) ?? "";
+
+// Base de las páginas del output que se embeben en iframes (monitores). En dev el
+// output corre aparte (Vite :5174); en producción lo sirve el mismo server en /output.
+export const OUTPUT_FRAME_BASE: string = import.meta.env.DEV ? "http://localhost:5174" : OUTPUT_BASE;

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { PreviewMonitor } from "../components/PreviewMonitor";
 import { Plus, Trash2, Check, MonitorPlay, Youtube, X, Loader2, Pencil } from "lucide-react";
 import type { ContentItem, VideoFullData } from "@newsroller/shared";
 import { contentItems } from "../lib/content-items";
@@ -160,7 +161,8 @@ export function VideoFullPlaca() {
           </button>
         </form>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+        <div className="pm-col">
+          <PreviewMonitor type="video_full" data={source === "youtube" ? { media_url: youtubeId(ytInput), media_kind: "youtube" } : { media_url: mediaUrl, media_kind: mediaKind }} dur={dur} ready={source === "youtube" ? !!youtubeId(ytInput) : !!mediaUrl} />
           {items.length === 0 && <div className="card" style={{ padding: 18, color: "#6b7688" }}>Todavía no hay videos full.</div>}
           {items.map((it) => {
             const d = it.data as VideoFullData;

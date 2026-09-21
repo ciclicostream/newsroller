@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { PreviewMonitor } from "../components/PreviewMonitor";
 import { Plus, Trash2, Check, DollarSign, Pencil } from "lucide-react";
 import type { ContentItem, DolarData, DolarPayload } from "@newsroller/shared";
 import { DOLAR_CASAS } from "@newsroller/shared";
@@ -143,7 +144,8 @@ export function Dolar() {
           </button>
         </form>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+        <div className="pm-col">
+          <PreviewMonitor type="dolar" data={{ casas: [izq, centro, der], overrides: Object.fromEntries(Object.entries(overrides).filter(([, v]) => v != null && v.trim() !== "").map(([k, v]) => [k, Number(v)])) }} dur={dur} ready={new Set([izq, centro, der]).size === 3} />
           {items.length === 0 && <div className="card" style={{ padding: 18, color: "#6b7688" }}>Todavía no hay placas de Dólar.</div>}
           {items.map((it) => {
             const d = it.data as DolarData;

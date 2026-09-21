@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { PreviewMonitor } from "../components/PreviewMonitor";
 import { Plus, Trash2, Check, BarChart3, Sparkles, Pencil } from "lucide-react";
 import * as Icons from "lucide-react";
 import type { ContentItem, CifrasData, CifrasIcon, DatosGobPayload, CammesaPayload, DolarPayload } from "@newsroller/shared";
@@ -243,7 +244,8 @@ export function Cifras() {
           </button>
         </form>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+        <div className="pm-col">
+          <PreviewMonitor type="cifras" data={{ mode, metric: mode === "api" ? metric : undefined, value, valueNum: Number(valueNum), suffix: suffix || undefined, subtitle, source, sourceAuto: mode === "api" && sourceAuto, explanation, icon: icon || null }} dur={dur} ready={!!value.trim() && !!subtitle.trim()} />
           {items.length === 0 && <div className="card" style={{ padding: 18, color: "#6b7688" }}>Todavía no hay cifras.</div>}
           {items.map((it) => {
             const d = it.data as CifrasData;

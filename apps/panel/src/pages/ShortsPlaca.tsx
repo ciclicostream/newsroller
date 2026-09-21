@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { PreviewMonitor } from "../components/PreviewMonitor";
 import { Plus, Trash2, Check, Youtube, Pencil } from "lucide-react";
 import type { ContentItem, ShortsData, Short } from "@newsroller/shared";
 import { contentItems } from "../lib/content-items";
@@ -163,7 +164,8 @@ export function ShortsPlaca() {
           </button>
         </form>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+        <div className="pm-col">
+          <PreviewMonitor type="shorts" data={{ count, video1, video2: count === 2 ? video2 : undefined, title }} dur={dur} ready={!!video1} />
           {items.length === 0 && <div className="card" style={{ padding: 18, color: "#6b7688" }}>Todavía no hay placas de shorts.</div>}
           {items.map((it) => {
             const d = it.data as ShortsData;

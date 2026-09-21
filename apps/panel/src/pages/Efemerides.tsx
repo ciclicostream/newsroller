@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { PreviewMonitor } from "../components/PreviewMonitor";
 import { Plus, Trash2, Check, X, Loader2, CalendarDays, Pencil } from "lucide-react";
 import type { ContentItem, EfemeridesData } from "@newsroller/shared";
 import { formatEfemeridesDate } from "@newsroller/shared";
@@ -191,7 +192,8 @@ export function Efemerides() {
           </button>
         </form>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+        <div className="pm-col">
+          <PreviewMonitor type="efemerides" data={{ dateKind, year, month: dateKind !== "year" ? month : undefined, day: dateKind === "full" ? day : undefined, title, body, media_url: mediaUrl, media_kind: mediaKind }} dur={dur} ready={!!title.trim() && !!mediaUrl} />
           {items.length === 0 && <div className="card" style={{ padding: 18, color: "#6b7688" }}>Todavía no hay efemérides.</div>}
           {items.map((it) => {
             const d = it.data as EfemeridesData;

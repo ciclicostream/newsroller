@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { Component, useEffect, useState, type ReactNode } from "react";
 import { API_BASE, fetchScene, type Scene } from "./lib/scene";
 import { ItemView } from "./templates/items";
 
@@ -46,6 +46,74 @@ export function Preview({ id }: { id: string }) {
     <div className="viewport">
       <div className="stage" style={{ transform: `scale(${scale})` }}>
         {item ? <ItemView key={loop} type={item.type} data={item.data} durationSec={dur} liveData={scene?.data} cameras={scene?.cameras ?? []} /> : null}
+      </div>
+    </div>
+  );
+}
+
+// Si una plantilla revienta con datos a medio cargar, el monitor muestra un aviso
+// en vez de quedar en blanco.
+class Boundary extends Component<{ children: ReactNode }, { failed: boolean }> {
+  state = { failed: false };
+  static getDerivedStateFromError() { return { failed: true }; }
+  render() {
+    return this.state.failed ? (
+      <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", color: "#9aa3b8", font: "600 40px Inter,system-ui,sans-serif" }}>
+        Faltan datos para la vista previa
+      </div>
+    ) : this.props.children;
+  }
+}
+
+// Vista previa EN VIVO de lo que se está cargando en un formulario del panel.
+// El panel (iframe padre) manda por postMessage {type, data, durationSec}; acá se
+// renderiza la placa con esos datos y se repite la animación en loop. Va muda:
+// sin audio_url y con los <video> silenciados (es un monitor de edición).
+export function DraftPreview() {
+  const [draft, setDraft] = useState<{ type: string; data: Record<string, any>; dur: number; v: number } | null>(null);
+  const [scene, setScene] = useState<Scene | null>(null);
+  const [scale, setScale] = useState(1);
+  const [loop, setLoop] = useState(0);
+
+  useEffect(() => {
+    fetchScene().then(setScene).catch(() => {});
+    function onMsg(e: MessageEvent) {
+      if (e.source !== window.parent || e.data?.source !== "ciclico-panel-draft") return;
+      const { type, data, durationSec, replay } = e.data;
+      if (replay) { setLoop((n) => n + 1); return; }
+      setDraft((d) => ({ type, data: { ...(data ?? {}), audio_url: null }, dur: Math.max(4, durationSec ?? 8), v: (d?.v ?? 0) + 1 }));
+    }
+    window.addEventListener("message", onMsg);
+    window.parent.postMessage({ source: "ciclico-draft-ready" }, "*");
+    return () => window.removeEventListener("message", onMsg);
+  }, []);
+
+  useEffect(() => {
+    const fit = () => setScale(Math.min(window.innerWidth / 1920, window.innerHeight / 1080));
+    fit();
+    window.addEventListener("resize", fit);
+    return () => window.removeEventListener("resize", fit);
+  }, []);
+
+  const dur = draft?.dur ?? 8;
+  useEffect(() => {
+    const t = setInterval(() => setLoop((n) => n + 1), (dur + 1) * 1000);
+    return () => clearInterval(t);
+  }, [dur]);
+
+  useEffect(() => {
+    const t = setInterval(() => document.querySelectorAll("video").forEach((v) => { v.muted = true; }), 400);
+    return () => clearInterval(t);
+  }, []);
+
+  return (
+    <div className="viewport">
+      <div className="stage" style={{ transform: `scale(${scale})` }}>
+        {draft ? (
+          <Boundary key={draft.v + ":" + loop}>
+            <ItemView type={draft.type} data={draft.data} durationSec={dur} liveData={scene?.data} cameras={scene?.cameras ?? []} />
+          </Boundary>
+        ) : null}
       </div>
     </div>
   );

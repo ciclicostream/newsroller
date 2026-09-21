@@ -4,7 +4,7 @@ import { ArrowLeft, Plus, Trash2 } from "lucide-react";
 import type { ContentItem, PlaylistItem } from "@newsroller/shared";
 import { contentItems } from "../lib/content-items";
 import { playlist } from "../lib/playlist";
-import { OUTPUT_BASE } from "../lib/parrilla";
+import { OUTPUT_FRAME_BASE } from "../lib/parrilla";
 import { TIPO_BY_KEY } from "../lib/tipos";
 
 function titleOf(it: ContentItem): string {
@@ -64,7 +64,7 @@ export function PlantillaContenidos() {
               <div className={"prev-card" + (onAir ? " on-air" : "")} key={it.id}>
                 <div className="prev-frame">
                   <iframe
-                    src={`${OUTPUT_BASE}/output?preview=${it.id}`}
+                    src={`${OUTPUT_FRAME_BASE}/output/?preview=${it.id}`}
                     title={titleOf(it)}
                     scrolling="no"
                     tabIndex={-1}

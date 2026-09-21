@@ -5,7 +5,7 @@ import {
 } from "lucide-react";
 import type { ContentItem, PlaylistItem, Camera } from "@newsroller/shared";
 import { contentHasAudio } from "@newsroller/shared";
-import { parrilla, OUTPUT_BASE } from "../lib/parrilla";
+import { parrilla, OUTPUT_FRAME_BASE } from "../lib/parrilla";
 import { contentItems as contentItemsApi } from "../lib/content-items";
 import { settingsApi } from "../lib/settings";
 import { camerasApi, youtubeTitle } from "../lib/cameras";
@@ -265,9 +265,9 @@ export function Programacion() {
   // AIRE siempre carga el output real (aunque esté cortado, el propio output
   // muestra la placa de "fuera del aire" — no hace falta un placeholder local).
   const monUrl = (() => {
-    if (mode === "aire") return `${OUTPUT_BASE}/output`;
+    if (mode === "aire") return `${OUTPUT_FRAME_BASE}/output/`;
     const ci = previewCi();
-    return ci ? `${OUTPUT_BASE}/output?preview=${ci.id}` : null;
+    return ci ? `${OUTPUT_FRAME_BASE}/output/?preview=${ci.id}` : null;
   })();
   const monHasAudio = mode === "aire"
     ? !!liveStatus?.current?.hasAudio

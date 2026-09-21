@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { PreviewMonitor } from "../components/PreviewMonitor";
 import { Plus, Trash2, Check, X, Loader2, ListOrdered, Pencil } from "lucide-react";
 import type { ContentItem, InformeData } from "@newsroller/shared";
 import { contentItems } from "../lib/content-items";
@@ -145,7 +146,8 @@ export function InformePlaca() {
           </button>
         </form>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+        <div className="pm-col">
+          <PreviewMonitor type="informe" data={{ title, slides, sec_per_slide: secPerSlide }} dur={dur} ready={slides.length > 0} />
           {items.length === 0 && <div className="card" style={{ padding: 18, color: "#6b7688" }}>Todavía no hay informes.</div>}
           {items.map((it) => {
             const d = it.data as InformeData;

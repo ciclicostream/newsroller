@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { PreviewMonitor } from "../components/PreviewMonitor";
 import { Plus, Trash2, Check, CloudSun, Pencil } from "lucide-react";
 import type { ContentItem, ClimaData, ClimaPayload } from "@newsroller/shared";
 import { contentItems } from "../lib/content-items";
@@ -109,7 +110,8 @@ export function Clima() {
           </button>
         </form>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+        <div className="pm-col">
+          <PreviewMonitor type="clima" data={{ city }} dur={dur} ready={!!city} />
           {items.length === 0 && <div className="card" style={{ padding: 18, color: "#6b7688" }}>Todavía no hay placas de clima.</div>}
           {items.map((it) => {
             const d = it.data as ClimaData;

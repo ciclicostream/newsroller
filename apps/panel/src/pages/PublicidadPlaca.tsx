@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { PreviewMonitor } from "../components/PreviewMonitor";
 import { Plus, Trash2, Check, X, Loader2, Megaphone, Pencil } from "lucide-react";
 import type { ContentItem, PublicidadData } from "@newsroller/shared";
 import { contentItems } from "../lib/content-items";
@@ -193,7 +194,8 @@ export function PublicidadPlaca() {
           </button>
         </form>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+        <div className="pm-col">
+          <PreviewMonitor type="publicidad" data={{ format, media_url: mediaUrl, media_kind: mediaKind, logo_url: format === "vertical" ? logoUrl ?? undefined : undefined, brand_qr_url: format === "vertical" ? qrUrl ?? undefined : undefined }} dur={dur} ready={!!mediaUrl} />
           {items.length === 0 && <div className="card" style={{ padding: 18, color: "#6b7688" }}>Todavía no hay avisos.</div>}
           {items.map((it) => {
             const d = it.data as PublicidadData;

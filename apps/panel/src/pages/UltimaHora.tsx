@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { PreviewMonitor } from "../components/PreviewMonitor";
 import { Plus, Trash2, Check, Loader2, Image as ImageIcon, Video, Music, X, Pencil } from "lucide-react";
 import type { ContentItem, UltimaHoraData } from "@newsroller/shared";
 import { contentItems } from "../lib/content-items";
@@ -194,7 +195,8 @@ export function UltimaHora() {
           </button>
         </form>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+        <div className="pm-col">
+          <PreviewMonitor type="ultima_hora" data={{ text, media_url: mediaUrl, media_kind: mediaKind, audio_url: null }} dur={dur} ready={!!text.trim()} />
           {items.length === 0 && <div className="card" style={{ padding: 18, color: "#6b7688" }}>Todavía no hay placas de Última Hora.</div>}
           {items.map((it) => {
             const d = it.data as UltimaHoraData;

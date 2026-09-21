@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { PreviewMonitor } from "../components/PreviewMonitor";
 import { Plus, Trash2, Check, Search, Sparkles, Pencil } from "lucide-react";
 import type { ContentItem, PromosData } from "@newsroller/shared";
 import { contentItems } from "../lib/content-items";
@@ -183,7 +184,8 @@ export function PromosPlaca() {
           </button>
         </form>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+        <div className="pm-col">
+          <PreviewMonitor type="promos" data={{ title, body, format, video_id: source === "manual" ? youtubeId(manualInput) : videoId.trim() }} dur={dur} ready={!!title.trim() && !!(source === "manual" ? youtubeId(manualInput) : videoId.trim())} />
           {items.length === 0 && <div className="card" style={{ padding: 18, color: "#6b7688" }}>Todavía no hay promos.</div>}
           {items.map((it) => {
             const d = it.data as PromosData;

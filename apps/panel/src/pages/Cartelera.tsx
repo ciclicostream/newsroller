@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { PreviewMonitor } from "../components/PreviewMonitor";
 import { Plus, Trash2, Check, X, Loader2, Clapperboard, Pencil } from "lucide-react";
 import type { ContentItem, CarteleraData } from "@newsroller/shared";
 import { contentItems } from "../lib/content-items";
@@ -195,7 +196,8 @@ export function Cartelera() {
           </button>
         </form>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+        <div className="pm-col">
+          <PreviewMonitor type="cartelera" data={{ photo_url: photoUrl, title, author, cast, venue, address, city, days, time, video_url: videoUrl }} dur={dur} ready={!!title.trim() && !!photoUrl} />
           {items.length === 0 && <div className="card" style={{ padding: 18, color: "#6b7688" }}>Todavía no hay carteleras.</div>}
           {items.map((it) => {
             const d = it.data as CarteleraData;

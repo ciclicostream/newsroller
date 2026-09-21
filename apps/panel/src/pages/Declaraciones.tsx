@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { PreviewMonitor } from "../components/PreviewMonitor";
 import { Plus, Trash2, Check, X, Loader2, Music, Quote, Pencil } from "lucide-react";
 import type { ContentItem, DeclaracionesData } from "@newsroller/shared";
 import { DECLARACIONES_PROGRAMAS } from "@newsroller/shared";
@@ -198,7 +199,8 @@ export function Declaraciones() {
           </button>
         </form>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+        <div className="pm-col">
+          <PreviewMonitor type="declaraciones" data={{ photo_url: photoUrl, name, role, place, quote, headline: headline || undefined, interview_program: program || undefined }} dur={dur} ready={!!name.trim() && !!quote.trim() && !!photoUrl} />
           {items.length === 0 && <div className="card" style={{ padding: 18, color: "#6b7688" }}>Todavía no hay declaraciones.</div>}
           {items.map((it) => {
             const d = it.data as DeclaracionesData;

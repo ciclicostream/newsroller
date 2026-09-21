@@ -251,13 +251,16 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 6px
 .xy { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 
 /* Submenú horizontal de plantillas (página Contenido) */
-.tpl-subnav { display: flex; gap: 8px; overflow-x: auto; padding: 4px 2px 14px; margin-bottom: 16px; border-bottom: 1px solid var(--border); }
-.tpl-chip { position: relative; flex: 0 0 auto; display: flex; flex-direction: column; align-items: center; gap: 5px; min-width: 76px; padding: 9px 8px; background: var(--surface); border: 1px solid var(--border); border-bottom: 3px solid var(--border); border-radius: 10px; box-shadow: var(--shadow); color: var(--muted); transition: transform .08s ease, border-color .12s ease; }
-.tpl-chip:hover { border-color: var(--accent); transform: translateY(-1px); }
-.tpl-chip .tpl-chip-ic { width: 30px; height: 30px; border-radius: 8px; background: var(--accent-weak); color: var(--accent); display: flex; align-items: center; justify-content: center; }
-.tpl-chip-lbl { font-size: 11px; font-weight: 600; color: var(--text); text-align: center; line-height: 1.15; }
+.tpl-subnav { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 0; padding: 2px 2px 8px; margin-bottom: 12px; border-bottom: 1px solid var(--border); }
+.tpl-chip { position: relative; flex: 0 0 auto; display: flex; flex-direction: column; align-items: center; gap: 3px; width: 66px; padding: 0; background: none; border: 0; box-shadow: none; color: var(--muted); }
+.tpl-chip .tpl-chip-ic { width: 44px; height: 40px; border-radius: 10px; background: var(--surface); border: 1px solid var(--border); border-bottom: 3px solid #cfd2d8; box-shadow: var(--shadow); color: #b3b8c2; display: flex; align-items: center; justify-content: center; transition: transform .08s ease, border-color .12s ease; }
+.tpl-chip:hover .tpl-chip-ic { border-color: var(--accent); transform: translateY(-1px); }
+.tpl-chip-lbl { font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 9px; font-weight: 500; letter-spacing: .03em; text-transform: uppercase; color: #9aa3b8; text-align: center; line-height: 1.15; }
+.tpl-chip-lbl span { display: block; }
 /* Seleccionada */
-.tpl-chip.active { border-color: var(--text); }
-.tpl-chip.active .tpl-chip-ic { background: var(--text); color: #fff; }
-/* Al aire ahora: sólo borde inferior rojo. */
-.tpl-chip.on-air { border-bottom-color: var(--danger); }
+.tpl-chip.active .tpl-chip-ic { background: var(--text); border-color: var(--text); color: #fff; }
+.tpl-chip.active .tpl-chip-lbl { color: var(--text); }
+/* Al aire ahora: sólo borde inferior rojo del botón. */
+.tpl-chip.on-air .tpl-chip-ic { border-bottom-color: #f3a5b9; color: var(--text); }
+.tpl-chip.active .tpl-chip-ic { color: #fff; }
+.tpl-chip.active.on-air .tpl-chip-ic { border-bottom-color: var(--danger); }

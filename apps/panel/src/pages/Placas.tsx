@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { PreviewMonitor } from "../components/PreviewMonitor";
 import { Plus, Trash2, Check, Loader2, Image as ImageIcon, Music, X, Download, Newspaper, Pencil } from "lucide-react";
 import type { ContentItem, PlacasData } from "@newsroller/shared";
 import { contentItems } from "../lib/content-items";
@@ -233,7 +234,8 @@ export function Placas() {
           </button>
         </form>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+        <div className="pm-col">
+          <PreviewMonitor type="placas" data={{ title, body: body || undefined, label: label || undefined, media_url: mediaUrl, media_kind: mediaUrl ? "image" : null }} dur={dur} ready={!!title.trim()} />
           {items.length === 0 && <div className="card" style={{ padding: 18, color: "#6b7688" }}>Todavía no hay placas.</div>}
           {items.map((it) => {
             const d = it.data as PlacasData;

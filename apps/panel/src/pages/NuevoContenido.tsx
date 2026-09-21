@@ -20,6 +20,9 @@ import { InformePlaca } from "./InformePlaca";
 import { PublicidadPlaca } from "./PublicidadPlaca";
 import { PromosPlaca } from "./PromosPlaca";
 
+// Nombres cortos para el submenú (el resto usa el label del catálogo).
+const MENU_LABEL: Record<string, string> = { declaraciones: "Textual", publicidad: "Publis" };
+
 // Plantilla mostrada por defecto al entrar a Contenido.
 const DEFAULT_TYPE = "placas";
 
@@ -62,7 +65,7 @@ export function NuevoContenido() {
               title={t.desc}
             >
               <span className="tpl-chip-ic"><t.Icon size={16} /></span>
-              <span className="tpl-chip-lbl">{t.label}</span>
+              <span className="tpl-chip-lbl">{(MENU_LABEL[t.type] ?? t.label).split(" ").filter((w) => w !== "/").map((w) => <span key={w}>{w}</span>)}</span>
             </Link>
           );
         })}
