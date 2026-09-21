@@ -1,6 +1,7 @@
 import { getSupabase } from "./db/supabase.js";
 import { isTrashReady } from "./db/contentItems.js";
 import { logActivity } from "./activity.js";
+import { purgeOldMedia } from "./media.js";
 
 export const TRASH_DAYS = 30;
 
@@ -16,7 +17,7 @@ export async function purgeOldTrash(): Promise<number> {
   return n;
 }
 export function startTrashPurger(): void {
-  const run = () => void purgeOldTrash().catch(() => {});
+  const run = () => { void purgeOldTrash().catch(() => {}); void purgeOldMedia().catch(() => {}); };
   setTimeout(run, 60_000);
   setInterval(run, 6 * 3_600_000);
 }

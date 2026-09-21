@@ -5,6 +5,7 @@ import { requireAuth, requirePerm } from "../auth/middleware.js";
 import { syncShorts, searchUploads } from "../content/youtube.js";
 import { efemeridesDeWikipedia } from "../content/wikipedia.js";
 import { logActivity } from "../activity.js";
+import { registerFile } from "../media.js";
 import { env } from "../config/env.js";
 
 const BUCKETS: Record<AssetKind, string> = {
@@ -44,6 +45,22 @@ export function contentRouter(): Router {
     const { data, error } = await sb().storage.from(bucket).createSignedUploadUrl(path);
     if (error || !data) return res.status(500).json({ error: error?.message ?? "no se pudo firmar" });
     res.json({ bucket, path: data.path, token: data.token, signedUrl: data.signedUrl });
+  });
+
+  // 1b) Registrar en el Banco toda subida (quién, cuándo, tamaño). Lo llama el panel tras subir a Storage.
+  // Si la migración del Banco no está corrida, no hace nada (204) y la subida sigue andando.
+  r.post("/uploads/register", requirePerm("contenidos"), async (req, res) => {
+    const { bucket, path, name, mime, size, source } = req.body ?? {};
+    if (typeof bucket !== "string" || !Object.values(UPLOAD_BUCKETS).includes(bucket) || typeof path !== "string" || !path)
+      return res.status(400).json({ error: "faltan datos de la subida" });
+    const { ok, row } = await registerFile(sb(), {
+      bucket, path, name: typeof name === "string" ? name : null, mime: typeof mime === "string" ? mime : null,
+      size: Number.isFinite(size) ? Number(size) : null, uploaded_by: req.user!.id, source: source === "banco" ? "banco" : "placa",
+    });
+    if (!ok) return res.status(204).end();
+    const label = typeof name === "string" && name ? name : path;
+    logActivity(req.user, { action: "banco.subir", entity: "media", entityId: row?.id ?? null, summary: `Subió "${label}"${source === "banco" ? " al Banco" : ""}`, meta: { bucket, size: Number.isFinite(size) ? Number(size) : null, mime: mime ?? null } });
+    res.status(201).json({ id: row?.id ?? null });
   });
 
   // 2) Registrar la metadata una vez subido el binario.

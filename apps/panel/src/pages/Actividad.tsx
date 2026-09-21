@@ -9,7 +9,7 @@ interface Person { id: string; email: string | null; full_name: string | null }
 
 const GROUPS: [string, string][] = [
   ["", "Todo"], ["contenido.", "Contenidos"], ["parrilla.", "Programación"], ["aire.", "Cortes del aire"],
-  ["usuario.", "Personas"], ["camara.", "Cámaras"], ["plantilla.", "Plantillas"], ["ajustes.", "Ajustes"],
+  ["usuario.", "Personas"], ["camara.", "Cámaras"], ["banco.", "Banco"], ["plantilla.", "Plantillas"], ["ajustes.", "Ajustes"],
 ];
 const fmt = (iso: string) => new Date(iso).toLocaleString("es-AR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
 
