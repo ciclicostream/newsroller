@@ -11,6 +11,7 @@ import icLluvia from "../assets/clima/ic-lluvia.png";
 import icLlovizna from "../assets/clima/ic-llovizna.png";
 import icNieve from "../assets/clima/ic-nieve.png";
 import icTormenta from "../assets/clima/ic-tormenta.png";
+import { IS_VERTICAL } from "../lib/orientation";
 
 // Íconos BIG: cada slot (situación del cielo) tiene una imagen predeterminada en /public/clima y el
 // editor puede reemplazarla desde Ajustes (settings.climaIcons). Si un slot no tiene ninguna, se usa
@@ -82,8 +83,8 @@ export function Clima({ data, live, durationSec }: { data: ClimaData; live?: Cli
   const days = city.days.slice(0, 3);
 
   return (
-    <div className={"cw" + (play ? " play" : "") + (exiting ? " exit" : "")} style={{ position: "absolute", inset: 0 }}>
-      <style>{CSS}</style>
+    <div className={"cw" + (play ? " play" : "") + (exiting ? " exit" : "") + (IS_VERTICAL ? " v" : "")} style={{ position: "absolute", inset: 0 }}>
+      <style>{CSS + (IS_VERTICAL ? CSS_V : "")}</style>
       <img className="cw-bg" src={fondo} alt="" />
       <Chrome hideTemp hideLogo />
 
@@ -125,6 +126,23 @@ export function Clima({ data, live, durationSec }: { data: ClimaData; live?: Cli
     </div>
   );
 }
+
+// Vertical: el símbolo grande arriba (por delante de las cards), la card principal y la condición debajo, y los tres días en fila.
+const CSS_V = `
+.cw.v .cw-big{left:110px;top:110px;width:860px}
+.cw.v .cw-main{left:60px;top:660px;width:960px;height:440px;padding:30px 44px}
+.cw.v .cw-t{font-size:170px}
+.cw.v .cw-city{font-size:42px}
+.cw.v .cw-chip{font-size:24px;padding:8px 16px}
+.cw.v .cw-cond{left:60px;top:1120px;width:960px}
+.cw.v .cw-day{top:1210px;width:300px;height:290px}
+.cw.v .cw-day-d1{left:60px}
+.cw.v .cw-day-d2{left:390px}
+.cw.v .cw-day-d3{left:720px}
+.cw.v .cw-day-name{font-size:40px}
+.cw.v .cw-note{left:60px;top:1530px;width:960px;height:140px}
+.cw.v .cw-pill{left:60px;top:1690px;width:960px}
+`;
 
 const CSS = `
 .cw{font-family:Inter,system-ui,sans-serif}

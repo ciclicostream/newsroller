@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import type { InformeData } from "@newsroller/shared";
 import fondo from "../assets/fondo2.jpg";
 import { Chrome } from "./Chrome";
+import { IS_VERTICAL } from "../lib/orientation";
 
 // Placa Informe Cíclico: carrusel de hasta 10 slides (imágenes 4:5) con
 // título fijo (pill + card azul) a la izquierda mientras rotan solas.
@@ -31,8 +32,8 @@ export function Informe({ data, durationSec }: { data: InformeData; durationSec?
   }, [n, secPerSlide]);
 
   return (
-    <div className={"in" + (play ? " play" : "") + (exiting ? " exit" : "")} style={{ position: "absolute", inset: 0 }}>
-      <style>{CSS}</style>
+    <div className={"in" + (play ? " play" : "") + (exiting ? " exit" : "") + (IS_VERTICAL ? " v" : "")} style={{ position: "absolute", inset: 0 }}>
+      <style>{CSS + (IS_VERTICAL ? CSS_V : "")}</style>
       <img className="in-bg" src={fondo} alt="" />
       <Chrome />
 
@@ -41,7 +42,7 @@ export function Informe({ data, durationSec }: { data: InformeData; durationSec?
 
       <div className="in-carousel in-el">
         <div className="in-viewport">
-          <div className="in-track" style={{ transform: `translateX(-${idx * 620}px)` }}>
+          <div className="in-track" style={{ transform: `translateX(-${idx * SLIDE_W}px)` }}>
             {data.slides.map((s, i) => (
               <div className="in-slide" key={i}>
                 <img src={s} alt="" />
@@ -63,6 +64,16 @@ export function Informe({ data, durationSec }: { data: InformeData; durationSec?
     </div>
   );
 }
+
+const SLIDE_W = IS_VERTICAL ? 860 : 620; // ancho de cada slide (4:5)
+
+// Vertical: el carrusel 4:5 grande arriba y el título debajo, a todo el ancho.
+const CSS_V = `
+.in.v .in-carousel{left:110px;top:160px;width:860px;height:1075px;transform:translateX(0)}
+.in.v .in-slide{flex:0 0 860px;height:1075px}
+.in.v .in-pill{left:60px;top:1330px}
+.in.v .in-titlecard{left:60px;top:1402px;width:960px;min-height:260px;font-size:58px}
+`;
 
 const CSS = `
 .in{font-family:Inter,system-ui,sans-serif}

@@ -3,6 +3,7 @@ import * as Icons from "lucide-react";
 import type { CifrasData } from "@newsroller/shared";
 import fondo from "../assets/fondo2.jpg";
 import { Chrome } from "./Chrome";
+import { IS_VERTICAL } from "../lib/orientation";
 
 function useCountUp(target: number, start: boolean, ms = 900): number {
   const [val, setVal] = useState(0);
@@ -24,7 +25,7 @@ function useCountUp(target: number, start: boolean, ms = 900): number {
 
 // Ancho máximo de la cifra: centrada en la card y sin pisar las píldoras de hora/temperatura del marco
 // (esquina superior derecha, desde x≈1550 con la cifra centrada en x=960).
-const MAX_NUM_W = 1180;
+const MAX_NUM_W = IS_VERTICAL ? 860 : 1180;
 
 // Formatea el valor animado igual que la cifra final: punto de miles siempre (también en 4 cifras,
 // donde es-AR no agrupa) y tantos decimales (con coma) como tenga la cifra escrita ("5,25" → 2).
@@ -80,8 +81,8 @@ export function Cifras({ data, durationSec }: { data: CifrasData; durationSec?: 
   const Ic = data.icon ? (Icons as unknown as Record<string, Icons.LucideIcon>)[data.icon] : null;
 
   return (
-    <div className={"cf" + (exiting ? " exit" : "")} style={{ position: "absolute", inset: 0 }}>
-      <style>{CSS}</style>
+    <div className={"cf" + (exiting ? " exit" : "") + (IS_VERTICAL ? " v" : "")} style={{ position: "absolute", inset: 0 }}>
+      <style>{CSS + (IS_VERTICAL ? CSS_V : "")}</style>
       <img className="cf-bg" src={fondo} alt="" />
       <Chrome />
 
@@ -107,6 +108,16 @@ export function Cifras({ data, durationSec }: { data: CifrasData; durationSec?: 
     </div>
   );
 }
+
+// Vertical: la cifra arriba a todo el ancho; debajo la explicación, la fuente y el pill "LA CIFRA".
+const CSS_V = `
+.cf.v .cf-main{left:60px;top:180px;width:960px;height:700px}
+.cf.v .cf-subtitle{max-width:860px;font-size:52px}
+.cf.v .cf-explain{left:60px;top:920px;width:960px;height:500px;flex-direction:column;justify-content:center;text-align:center;padding:0 60px}
+.cf.v .cf-explain-text{font-size:50px}
+.cf.v .cf-source{left:60px;top:1460px;width:960px;height:200px;align-items:flex-start;padding:0 44px}
+.cf.v .cf-pill{left:60px;top:1690px}
+`;
 
 const CSS = `
 .cf{font-family:Inter,system-ui,sans-serif}

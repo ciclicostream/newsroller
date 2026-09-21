@@ -3,6 +3,7 @@ import type { DolarData, DolarPayload } from "@newsroller/shared";
 import { DOLAR_CASAS } from "@newsroller/shared";
 import fondo from "../assets/fondo-dolar.jpg";
 import { Chrome } from "./Chrome";
+import { IS_VERTICAL } from "../lib/orientation";
 
 const MESES = ["ENE", "FEB", "MAR", "ABR", "MAY", "JUN", "JUL", "AGO", "SEP", "OCT", "NOV", "DIC"];
 // Punto de miles siempre (1.403), también con 4 cifras (Intl en es-AR no agrupa los de 4 dígitos).
@@ -102,8 +103,8 @@ export function Dolar({ data, live, durationSec }: { data: DolarData; live?: Dol
   const vals = [vLeft, vMid, vRight];
 
   return (
-    <div className={"dl" + (exiting ? " exit" : "")} style={{ position: "absolute", inset: 0 }}>
-      <style>{CSS}</style>
+    <div className={"dl" + (exiting ? " exit" : "") + (IS_VERTICAL ? " v" : "")} style={{ position: "absolute", inset: 0 }}>
+      <style>{CSS + (IS_VERTICAL ? CSS_V : "")}</style>
       <img className="dl-bg" src={fondo} alt="" />
       <Chrome />
 
@@ -125,6 +126,17 @@ export function Dolar({ data, live, durationSec }: { data: DolarData; live?: Dol
     </div>
   );
 }
+
+// Vertical: las tres cotizaciones apiladas, a todo el ancho; las de arriba y abajo emergen desde detrás de la del medio.
+const CSS_V = `
+.dl.v .dl-card{left:60px;width:960px;height:480px}
+.dl.v .dl-card-0{top:190px;transform:translateY(530px)}
+.dl.v .dl-card-1{top:720px}
+.dl.v .dl-card-2{top:1250px;transform:translateY(-530px)}
+.dl.v .dl-card-0.in,.dl.v .dl-card-2.in{transform:translateY(0)}
+.dl.v .dl-val{font-size:150px}
+.dl.v .dl-foot{margin-top:34px}
+`;
 
 const CSS = `
 .dl{font-family:Inter,system-ui,sans-serif}

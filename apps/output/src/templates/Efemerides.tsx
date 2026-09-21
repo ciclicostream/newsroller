@@ -4,11 +4,13 @@ import { formatEfemeridesDate } from "@newsroller/shared";
 import fondo from "../assets/fondo2.jpg";
 import { Chrome } from "./Chrome";
 import { useAutoFit } from "../lib/autofit";
+import { IS_VERTICAL } from "../lib/orientation";
 
 const WANT_AUDIO = typeof window !== "undefined" && new URLSearchParams(window.location.search).has("audio");
 
 const CUBE_MS = 900; // duración del giro entre efemérides
 const FALL_MS = 850; // duración de la caída de salida
+const HALF = IS_VERTICAL ? 480 : 900; // mitad del ancho de la escena: profundidad del cubo
 
 // Texto que se escribe solo. El resto del texto se renderiza invisible para que el layout (y el auto-fit)
 // no salte mientras se escribe; `ms` es lo que tarda en escribirse completo.
@@ -38,8 +40,8 @@ function Typed({ text, start, ms }: { text: string; start: boolean; ms: number }
 function Face({ entry, i, idx, slotMs, play }: { entry: EfemeridesEntry; i: number; idx: number; slotMs: number; play: boolean }) {
   const titleRef = useRef<HTMLDivElement>(null);
   const bodyRef = useRef<HTMLDivElement>(null);
-  useAutoFit(titleRef, 118, 60, [entry.title]);
-  useAutoFit(bodyRef, 44, 26, [entry.body]);
+  useAutoFit(titleRef, IS_VERTICAL ? 100 : 118, 60, [entry.title]);
+  useAutoFit(bodyRef, IS_VERTICAL ? 48 : 44, 26, [entry.body]);
 
   // El texto empieza a escribirse cuando la cara ya está de frente (la 1ª, tras la cascada de entrada).
   const active = idx === i;
@@ -53,7 +55,7 @@ function Face({ entry, i, idx, slotMs, play }: { entry: EfemeridesEntry; i: numb
   const typeMs = Math.min(Math.max((entry.body?.length ?? 0) * 26, 900), slotMs * 0.5);
 
   return (
-    <div className={"ef-face" + (i === 0 ? " first" : "")} style={{ transform: `rotateY(${90 * i}deg) translateZ(900px)` }}>
+    <div className={"ef-face" + (i === 0 ? " first" : "")} style={{ transform: `rotateY(${90 * i}deg) translateZ(${HALF}px)` }}>
       <div className="ef-panel" />
       <div className="ef-media ef-el">
         {entry.media_kind === "video" ? (
@@ -100,14 +102,14 @@ export function Efemerides({ data, durationSec }: { data: EfemeridesData; durati
   }, [durationSec, n, slotMs]);
 
   return (
-    <div className={"ef" + (play ? " play" : "")} style={{ position: "absolute", inset: 0 }}>
-      <style>{CSS}</style>
+    <div className={"ef" + (play ? " play" : "") + (IS_VERTICAL ? " v" : "")} style={{ position: "absolute", inset: 0 }}>
+      <style>{CSS + (IS_VERTICAL ? CSS_V : "")}</style>
       <img className="ef-bg" src={fondo} alt="" />
       <Chrome />
 
       <div className={"ef-fall" + (exiting ? " exit" : "")}>
         <div className="ef-scene">
-          <div className="ef-cube" style={{ transform: `translateZ(-900px) rotateY(${-90 * idx}deg)` }}>
+          <div className="ef-cube" style={{ transform: `translateZ(-${HALF}px) rotateY(${-90 * idx}deg)` }}>
             {entries.map((e, i) => <Face key={i} entry={e} i={i} idx={idx} slotMs={slotMs} play={play} />)}
           </div>
         </div>
@@ -116,13 +118,23 @@ export function Efemerides({ data, durationSec }: { data: EfemeridesData; durati
   );
 }
 
+// Vertical: el cubo pasa a ser una escena angosta y alta; la foto arriba y el texto debajo.
+const CSS_V = `
+.ef.v .ef-scene{left:60px;top:150px;width:960px;height:1620px;perspective:2200px}
+.ef.v .ef-media{left:50px;top:50px;width:860px;height:640px}
+.ef.v .ef-pill{left:50px;top:720px}
+.ef.v .ef-date{left:56px;top:830px}
+.ef.v .ef-text{left:50px;right:50px;top:900px;bottom:50px}
+.ef.v .ef-title{max-height:300px}
+`;
+
 const CSS = `
 .ef{font-family:Inter,system-ui,sans-serif}
 .ef-bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 
 /* Todo el bloque (panel, foto, textos) va dentro de .ef-fall: al salir cae ENTERO, junto, por detrás del ticker. */
 .ef-fall{position:absolute;inset:0;z-index:13}
-.ef-fall.exit{transform:translateY(1150px);transition:transform ${FALL_MS}ms cubic-bezier(.5,0,.9,.3)}
+.ef-fall.exit{transform:translateY(${IS_VERTICAL ? 2000 : 1150}px);transition:transform ${FALL_MS}ms cubic-bezier(.5,0,.9,.3)}
 
 /* Cubo: cada efeméride es una cara; girar el cubo -90° trae la siguiente desde la derecha. */
 .ef-scene{position:absolute;left:60px;top:88px;width:1800px;height:820px;perspective:3200px}
