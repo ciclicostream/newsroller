@@ -34,8 +34,8 @@ export function UltimaHora({ data }: { data: UltimaHoraData }) {
   useLayoutEffect(() => {
     const el = bajadaRef.current;
     if (!el) return;
-    const base = hasMedia ? 60 : 78;
-    const top = hasMedia ? 556 : 560;
+    const base = hasMedia ? 52 : 78;
+    const top = hasMedia ? 452 : 560;
     const tickerTop = 1080 - 56 - 56; // bottom + alto del ticker
     const maxH = tickerTop - 28 - top;
     let px = base;
@@ -100,15 +100,15 @@ const CSS = `
 .uh-media{position:absolute;border-radius:28px;overflow:hidden;background:#c9ccd2;opacity:0;transform:translateX(-40px);clip-path:inset(0 100% 0 0);left:110px;top:120px;width:640px;height:640px}
 .uh-media img,.uh-media video{width:100%;height:100%;object-fit:cover;display:block}
 
-/* FULL (sin media) */
-.uh-logo{top:140px;left:96px;width:150px}
-.uh-titulo{top:335px;left:96px;font-size:170px}
-.uh-bajada{top:560px;left:100px;right:120px;font-size:78px}
+/* FULL (sin media): todo centrado */
+.uh-logo{top:140px;left:50%;margin-left:-75px;width:150px}
+.uh-titulo{top:335px;left:0;right:0;text-align:center;font-size:170px}
+.uh-bajada{top:560px;left:120px;right:120px;text-align:center;font-size:78px}
 
-/* Video/Foto (con media): columna de texto a la derecha */
-.uh.has-media .uh-logo{top:296px;left:830px;width:128px}
-.uh.has-media .uh-titulo{top:430px;left:830px;font-size:104px}
-.uh.has-media .uh-bajada{top:556px;left:832px;right:110px;font-size:60px}
+/* Video/Foto (con media): columna de texto a la derecha (logo -20%, bloque 100px más arriba, logo separado del título) */
+.uh.has-media .uh-logo{top:214px;left:832px;margin-left:0;width:80px}
+.uh.has-media .uh-titulo{top:326px;left:830px;right:auto;text-align:left;font-size:104px}
+.uh.has-media .uh-bajada{top:452px;left:832px;right:110px;text-align:left;font-size:52px}
 
 /* ticker */
 .uh-ticker{position:absolute;left:30px;right:30px;bottom:56px;height:56px;z-index:30;background:#fff;overflow:hidden;display:flex;align-items:center;box-shadow:inset 0 0 24px rgba(0,0,0,.28), inset 0 2px 6px rgba(0,0,0,.20);opacity:0}
