@@ -26,10 +26,8 @@ const MENU_LABEL: Record<string, string> = { declaraciones: "Textual", publicida
 // Plantilla mostrada por defecto al entrar a Contenido.
 const DEFAULT_TYPE = "placas";
 
-export function NuevoContenido() {
-  const { type: param } = useParams();
-  const type = param ?? DEFAULT_TYPE;
-
+// Submenú horizontal con todas las plantillas (y la papelera). Lo usan Contenido y la Papelera.
+export function ContenidoNav({ active }: { active: string }) {
   // Cantidad de contenidos en la papelera (para el chip).
   const [trashCount, setTrashCount] = useState(0);
   useEffect(() => { contentItems.trash().then((l) => setTrashCount(l.length)).catch(() => {}); }, []);
@@ -60,8 +58,6 @@ export function NuevoContenido() {
   }, []);
 
   return (
-    <>
-      {/* Submenú horizontal: todas las plantillas para generar contenido. */}
       <nav className="tpl-subnav" aria-label="Plantillas">
         {TIPOS.map((t) => {
           const air = inGrid.has(t.type);
@@ -69,7 +65,7 @@ export function NuevoContenido() {
             <Link
               key={t.type}
               to={`/contenido/${t.type}`}
-              className={"tpl-chip" + (t.type === type ? " active" : "") + (air ? " on-air" : "")}
+              className={"tpl-chip" + (t.type === active ? " active" : "") + (air ? " on-air" : "")}
               title={t.desc}
             >
               <span className="tpl-chip-ic"><t.Icon size={16} /></span>
@@ -78,11 +74,21 @@ export function NuevoContenido() {
           );
         })}
         {/* Papelera (30 días) */}
-        <Link to="/contenido/papelera" className="tpl-chip trash" title="Contenidos borrados: se conservan 30 días">
+        <Link to="/contenido/papelera" className={"tpl-chip trash" + (active === "papelera" ? " active" : "")} title="Contenidos borrados: se conservan 30 días">
           <span className="tpl-chip-ic"><Trash2 size={16} /></span>
           <span className="tpl-chip-lbl"><span>Papelera</span>{trashCount ? <span>({trashCount})</span> : null}</span>
         </Link>
       </nav>
+  );
+}
+
+export function NuevoContenido() {
+  const { type: param } = useParams();
+  const type = param ?? DEFAULT_TYPE;
+
+  return (
+    <>
+      <ContenidoNav active={type} />
 
       {/* Plantilla elegida (por defecto, Placas). */}
       <TemplateForm type={type} />

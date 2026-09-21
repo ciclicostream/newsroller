@@ -293,7 +293,9 @@ export function Programacion() {
       <style>{CSS}</style>
 
       <div className="pv-head">
-        <div><h1>Programación</h1><p>Arrastrá contenidos a la parrilla, ordená y deslizá el tirador del monitor para salir al aire.</p></div>
+        <h1>Programación</h1>
+        <div className="pv-hint">Arrastrá contenidos a la parrilla, ordená y deslizá el tirador del monitor para salir al aire.</div>
+        <span />
       </div>
       {err && <div className="pv-alert err">{err}</div>}
       {msg && <div className="pv-alert ok">{msg}</div>}
@@ -466,10 +468,13 @@ function Vu({ audio }: { audio: boolean }) {
 const CSS = `
 .pv{--ac:#2f6bff;--acs:#e8efff;--rd:#EE220C;--ln:#e3e7ef;--dim:#7c869b;--tx:#1a2235}
 .pv{color:var(--tx)}
-.pv-head h1{font-size:20px;margin:0}.pv-head p{margin:4px 0 14px;color:var(--dim);font-size:13px}
+.pv-head{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:12px;margin-bottom:14px}
+.pv-head h1{font-size:20px;margin:0;color:#fff}
+.pv-hint{background:#fff;color:var(--tx);border-radius:999px;padding:9px 22px;font-size:13px;text-align:center;box-shadow:0 4px 14px rgba(5,15,42,.18)}
+@media (max-width:1180px){.pv-head{grid-template-columns:1fr}.pv-head h1{text-align:center}.pv-head span{display:none}}
 .pv-alert{padding:9px 14px;border-radius:9px;font-size:13px;margin-bottom:12px}
 .pv-alert.err{background:#fdecea;color:#c0392b}.pv-alert.ok{background:#e9f8ef;color:#16a34a}
-.pv-grid{display:grid;grid-template-columns:290px minmax(0,1fr) 560px;gap:0;align-items:start;height:calc(100vh - 150px)}
+.pv-grid{display:grid;grid-template-columns:290px minmax(0,1fr) 560px;gap:0;align-items:stretch}
 .pv-rz{align-self:stretch;cursor:col-resize;display:flex;justify-content:center;touch-action:none}
 .pv-rz i{width:3px;margin:24px 0;border-radius:3px;background:transparent;transition:background .15s}
 .pv-rz:hover i{background:#c9d2e6}.pv-rz:active i{background:var(--ac)}
@@ -478,7 +483,7 @@ const CSS = `
 .pv-col{display:flex;flex-direction:column;gap:14px;min-height:0}
 .pv-empty{color:var(--dim);font-size:13px;padding:26px;text-align:center;border:1.5px dashed var(--ln);border-radius:12px;margin:6px 0}
 
-.pv-disp{display:flex;flex-direction:column;min-height:0;padding:14px 0 0;height:100%}
+.pv-disp{display:flex;flex-direction:column;min-height:0;padding:14px 0 0;height:0;min-height:100%}
 .pv-disp .pv-ct{padding:0 16px}
 .pv-cats{display:flex;flex-wrap:wrap;gap:6px;padding:12px 16px}
 .pv-cat{border:1px solid var(--ln);background:#fff;color:var(--dim);border-radius:8px;padding:6px 11px;font-size:11.5px;font-weight:700;cursor:pointer}
@@ -498,7 +503,7 @@ const CSS = `
 .pv-tag{font-size:10px;font-weight:800;color:#fff;background:var(--ac);border-radius:6px;padding:3px 9px}
 .pv-chev{color:var(--dim);display:inline-flex;flex:none;transition:transform .15s}.pv-chev.up{transform:rotate(180deg)}
 
-.pv-par{display:flex;flex-direction:column;min-height:0;padding:14px 0 0;height:100%}
+.pv-par{display:flex;flex-direction:column;min-height:0;padding:14px 0 0;height:0;min-height:100%}
 .pv-fader{padding:0}
 .pv-fadercard{padding:10px 12px}
 .pv-track{position:relative;height:46px;background:linear-gradient(90deg,#f2f4f9,#ffe9e6);border:1px solid var(--ln);border-radius:10px;overflow:hidden;touch-action:none}

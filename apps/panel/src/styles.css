@@ -16,9 +16,15 @@
 }
 * { box-sizing: border-box; }
 body { margin: 0; font-family: var(--font); color: var(--text);
-  background: var(--bg);
-  background-image: radial-gradient(1200px 520px at 12% -12%, #dfe8ff 0%, transparent 55%), radial-gradient(1000px 520px at 100% -4%, #e7fff4 0%, transparent 50%);
-  background-attachment: fixed;
+  background-color: #fff;
+  background-image:
+    radial-gradient(ellipse 58% 52% at 6% 8%, #050f2a 0%, rgba(5,15,42,0) 72%),
+    radial-gradient(ellipse 42% 48% at 96% 30%, #0a2a70 0%, rgba(10,42,112,0) 70%),
+    radial-gradient(ellipse 50% 40% at 38% 62%, #23468f 0%, rgba(35,70,143,0) 68%),
+    radial-gradient(ellipse 36% 30% at 78% 8%, #12358a 0%, rgba(18,53,138,0) 70%),
+    linear-gradient(172deg, #0a1d4a 0%, #0f2a66 22%, #4f78bf 44%, #d6e2f6 70%, #fff 100%);
+  background-size: 100% 760px;
+  background-repeat: repeat-x;
 }
 a { color: inherit; text-decoration: none; }
 button { font-family: inherit; cursor: pointer; }
@@ -141,7 +147,7 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 6px
 .alert.info { background: #eef4fb; color: #185fa5; border: 1px solid #cfe0f4; }
 
 /* Login */
-.login-wrap { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: var(--bg); }
+.login-wrap { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: transparent; }
 .login-card { width: 360px; max-width: 92vw; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 30px 28px; }
 .login-card .brand { padding: 0 0 20px; color: var(--text); }
 
@@ -253,7 +259,7 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 6px
 .xy { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 
 /* Submenú horizontal de plantillas (página Contenido) */
-.tpl-subnav { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 0; padding: 2px 2px 8px; margin-bottom: 12px; border-bottom: 1px solid var(--border); }
+.tpl-subnav { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 0; padding: 2px 2px 8px; margin-bottom: 14px; }
 .tpl-chip { position: relative; flex: 0 0 auto; display: flex; flex-direction: column; align-items: center; gap: 3px; width: 66px; padding: 0; background: none; border: 0; box-shadow: none; color: var(--muted); }
 .tpl-chip .tpl-chip-ic { width: 44px; height: 40px; border-radius: 10px; background: var(--surface); border: 1px solid var(--border); border-bottom: 3px solid #cfd2d8; box-shadow: var(--shadow); color: #b3b8c2; display: flex; align-items: center; justify-content: center; transition: transform .08s ease, border-color .12s ease; }
 .tpl-chip:hover .tpl-chip-ic { border-color: var(--accent); transform: translateY(-1px); }
@@ -372,3 +378,24 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 6px
   .rp-kpis { grid-template-columns: repeat(3, 1fr); }
   .main { padding: 0 !important; }
 }
+
+/* Fondo con degradado azul profundo: lo que queda suelto sobre la zona oscura va en blanco */
+.topbar .brand, .topbar .brand-txt small { color: #fff; }
+.brand-logo { filter: brightness(0) invert(1); }
+.page-head h1 { color: #fff; }
+.page-head p { color: rgba(255,255,255,.8); }
+.tabs { border-bottom-color: rgba(255,255,255,.28); }
+.tab { color: rgba(255,255,255,.72); }
+.tab:hover { color: #fff; }
+.tab.active { color: #fff; border-bottom-color: #fff; }
+.main > .uploading, .main > .muted-note, .rp-controls .rp-label { color: #fff; }
+@media print { body { background-image: none !important; } .page-head h1 { color: #000; } }
+.bn-ghead { background: #fff; border: 1px solid var(--border); border-radius: 10px; padding: 6px 12px; width: fit-content; }
+.bn-tools > .muted-note { background: #fff; border: 1px solid var(--border); border-radius: 10px; padding: 8px 12px; }
+
+/* Contenido: sin línea divisoria; título y descripción de cada plantilla en una card azul navy */
+.tpl-chip-lbl { color: rgba(255,255,255,.82); }
+.tpl-chip.active .tpl-chip-lbl { color: #fff; }
+.main:has(.tpl-subnav) .page-head { background: #0b1f4d; border: 1px solid rgba(255,255,255,.1); border-radius: 14px; padding: 14px 20px; box-shadow: 0 6px 18px rgba(5,15,42,.28); }
+.main:has(.tpl-subnav) .page-head h1 { color: #fff; }
+.main:has(.tpl-subnav) .page-head p { color: rgba(255,255,255,.78); }

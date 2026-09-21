@@ -5,6 +5,7 @@ import { TIPO_BY_KEY } from "../lib/tipos";
 import { contentItems, type TrashedItem } from "../lib/content-items";
 import { toast } from "../lib/toast";
 import { useAuth } from "../auth/AuthProvider";
+import { ContenidoNav } from "./NuevoContenido";
 
 const titleOf = (it: TrashedItem): string => {
   const d = (it.data ?? {}) as Record<string, unknown>;
@@ -40,6 +41,7 @@ export function Papelera() {
 
   return (
     <>
+      <ContenidoNav active="papelera" />
       <div className="page-head">
         <div>
           <h1>Papelera</h1>
