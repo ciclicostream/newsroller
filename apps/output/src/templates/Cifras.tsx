@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import * as Icons from "lucide-react";
 import type { CifrasData } from "@newsroller/shared";
 import fondo from "../assets/fondo2.jpg";
@@ -22,10 +22,19 @@ function useCountUp(target: number, start: boolean, ms = 900): number {
   return val;
 }
 
-// Formatea el valor animado igual que la cifra final (decimales con coma).
+// Ancho máximo de la cifra: centrada en la card y sin pisar las píldoras de hora/temperatura del marco
+// (esquina superior derecha, desde x≈1550 con la cifra centrada en x=960).
+const MAX_NUM_W = 1180;
+
+// Formatea el valor animado igual que la cifra final: punto de miles siempre (también en 4 cifras,
+// donde es-AR no agrupa) y tantos decimales (con coma) como tenga la cifra escrita ("5,25" → 2).
+// Ojo: "40.000.000" no tiene decimales (los puntos son de miles); sólo cuenta lo que va tras una coma.
 function fmt(n: number, like: string): string {
-  const hasDecimal = /[.,]\d/.test(like);
-  return hasDecimal ? n.toFixed(1).replace(".", ",") : Math.round(n).toLocaleString("es-AR");
+  const m = /,(\d+)/.exec(like);
+  const decimals = m ? Math.min(3, m[1]!.length) : 0;
+  const [int, frac] = n.toFixed(decimals).split(".");
+  const grouped = int!.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+  return frac ? `${grouped},${frac}` : grouped;
 }
 
 // Placa Cifras: dato destacado (API o manual) + fuente + explicación. Marco Chrome.
@@ -49,6 +58,25 @@ export function Cifras({ data, durationSec }: { data: CifrasData; durationSec?: 
   }, [durationSec]);
 
   const count = useCountUp(data.valueNum, stage >= 2, 900);
+
+  // Prefijo + número (+ sufijo corto pegado) en grande; una unidad larga ("toneladas de carne") va
+  // debajo, chica, para no quitarle lugar a la cifra. Si la cifra no entra en el ancho de la card se
+  // achica su tamaño de letra (medido sobre el valor final, ancho máx. MAX_NUM_W).
+  const suffix = data.suffix ?? "";
+  const shortSuffix = suffix.trim().length <= 3;
+  const prefix = data.prefix ? `${data.prefix} ` : "";
+  const finalNum = fmt(data.valueNum, data.value);
+  const measureRef = useRef<HTMLDivElement>(null);
+  const [k, setK] = useState(1);
+  useLayoutEffect(() => {
+    const fit = () => {
+      const el = measureRef.current;
+      if (el) setK(Math.min(1, MAX_NUM_W / Math.max(1, el.scrollWidth)));
+    };
+    fit();
+    void document.fonts?.ready.then(fit);
+  }, [data.value, data.valueNum, data.prefix, data.suffix]);
+  const numText = (n: string) => `${prefix}${n}${shortSuffix ? suffix : ""}`;
   const Ic = data.icon ? (Icons as unknown as Record<string, Icons.LucideIcon>)[data.icon] : null;
 
   return (
@@ -58,7 +86,11 @@ export function Cifras({ data, durationSec }: { data: CifrasData; durationSec?: 
       <Chrome />
 
       <div className={"cf-main cf-card" + (stage >= 1 ? " in" : "")}>
-        <div className="cf-num">{stage >= 2 ? fmt(count, data.value) : "0"}{data.suffix}</div>
+        <div className="cf-num cf-measure" ref={measureRef} aria-hidden="true">{numText(finalNum)}</div>
+        <div className="cf-figure">
+          <div className="cf-num" style={{ fontSize: 210 * k }}>{numText(stage >= 2 ? fmt(count, data.value) : "0")}</div>
+          {!shortSuffix && suffix.trim() && <div className="cf-unit">{suffix.trim()}</div>}
+        </div>
         <div className="cf-subtitle">{data.subtitle}</div>
       </div>
 
@@ -87,7 +119,10 @@ const CSS = `
   display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;
   transform:translateY(-120px)}
 .cf-main.in{transform:translateY(0)}
-.cf-num{color:#2f80ed;font-weight:800;font-size:210px;line-height:1;letter-spacing:-.01em}
+.cf-figure{display:flex;flex-direction:column;align-items:center;gap:4px}
+.cf-num{color:#2f80ed;font-weight:800;font-size:210px;line-height:1;letter-spacing:-.01em;white-space:nowrap}
+.cf-measure{position:absolute;visibility:hidden;pointer-events:none;left:0;top:0}
+.cf-unit{color:#2f80ed;font-size:68px;font-weight:700;line-height:1.1;text-align:center;white-space:nowrap}
 .cf-subtitle{color:#2f80ed;font-weight:700;font-size:50px;text-align:center;max-width:1500px}
 
 .cf-source{position:absolute;left:60px;top:578px;width:340px;height:250px;z-index:14;

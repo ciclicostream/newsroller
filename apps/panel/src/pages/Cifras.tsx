@@ -67,6 +67,7 @@ export function Cifras() {
   const [value, setValue] = useState("");
   const [valueNum, setValueNum] = useState<number | "">("");
   const [suffix, setSuffix] = useState("");
+  const [prefix, setPrefix] = useState("");
   const [subtitle, setSubtitle] = useState("");
   const [source, setSource] = useState("");
   const [sourceAuto, setSourceAuto] = useState(false);
@@ -77,6 +78,16 @@ export function Cifras() {
 
   const load = () => contentItems.list("cifras").then(setItems).catch((e) => setErr(e.message));
   useEffect(() => { void load(); }, []);
+
+  // En manual, el valor numérico se deduce de la cifra escrita (40.000.000 → 40000000; 5,2 → 5.2).
+  function onValueChange(v: string) {
+    setValue(v);
+    setSourceAuto(false);
+    if (mode === "manual") {
+      const n = Number(v.replace(/\./g, "").replace(",", ".").replace(/[^\d.\-]/g, ""));
+      setValueNum(v.trim() !== "" && Number.isFinite(n) ? n : "");
+    }
+  }
 
   async function pickMetric(m: string) {
     setMetric(m);
@@ -110,7 +121,7 @@ export function Cifras() {
     try {
       const data: CifrasData = {
         mode, metric: mode === "api" ? metric : undefined,
-        value: value.trim(), valueNum: Number(valueNum), suffix: suffix || undefined,
+        value: value.trim(), valueNum: Number(valueNum), prefix: prefix.trim() || undefined, suffix: suffix.trim() ? suffix : undefined,
         subtitle: subtitle.trim().slice(0, S_MAX), source: source.trim(), sourceAuto: mode === "api" && sourceAuto,
         explanation: explanation.trim().slice(0, E_MAX), icon: (icon || null) as CifrasIcon | null,
       };
@@ -139,6 +150,7 @@ export function Cifras() {
     setValue(d.value ?? "");
     setValueNum(d.valueNum ?? "");
     setSuffix(d.suffix ?? "");
+    setPrefix(d.prefix ?? "");
     setSubtitle(d.subtitle ?? "");
     setSource(d.source ?? "");
     setSourceAuto(!!d.sourceAuto);
@@ -149,7 +161,7 @@ export function Cifras() {
   }
   function cancelEdit() {
     setEditingId(null);
-    setValue(""); setValueNum(""); setSuffix(""); setSubtitle(""); setSource(""); setSourceAuto(false);
+    setValue(""); setValueNum(""); setSuffix(""); setPrefix(""); setSubtitle(""); setSource(""); setSourceAuto(false);
     setExplanation(""); setIcon(""); setDur(10);
   }
 
@@ -203,12 +215,25 @@ export function Cifras() {
 
           <div className="field">
             <label>Cifra (como se muestra)</label>
-            <input value={value} onChange={(e) => { setValue(e.target.value); setSourceAuto(false); }} placeholder="5,2%" required disabled={mode === "api" && resolving} />
+            <input value={value} onChange={(e) => onValueChange(e.target.value)} placeholder="40.000.000" required disabled={mode === "api" && resolving} />
+            <div className="muted-note" style={{ marginTop: 4 }}>Sólo el número: puntos para los miles y coma para los decimales (40.000.000 · 5,2).</div>
           </div>
           <div className="field">
             <label>Valor numérico (para el conteo)</label>
             <input type="number" step="any" value={valueNum} onChange={(e) => setValueNum(e.target.value === "" ? "" : Number(e.target.value))} required />
+            {mode === "manual" && <div className="muted-note" style={{ marginTop: 4 }}>Se completa solo al escribir la cifra.</div>}
           </div>
+          <div className="row" style={{ gap: 12 }}>
+            <div className="field" style={{ flex: "0 0 110px" }}>
+              <label>Prefijo</label>
+              <input value={prefix} onChange={(e) => setPrefix(e.target.value.slice(0, 6))} placeholder="US$" maxLength={6} />
+            </div>
+            <div className="field" style={{ flex: 1 }}>
+              <label>Unidad / sufijo</label>
+              <input value={suffix} onChange={(e) => setSuffix(e.target.value.slice(0, 30))} placeholder="millones de dólares" maxLength={30} />
+            </div>
+          </div>
+          <div className="muted-note" style={{ margin: "-6px 0 12px" }}>Un sufijo corto (%, MW) va pegado al número; una unidad larga va más chica al lado.</div>
 
           <div className="field">
             <label>Subtítulo (qué representa)</label>
@@ -245,7 +270,7 @@ export function Cifras() {
         </form>
 
         <div className="pm-col">
-          <PreviewMonitor type="cifras" data={{ mode, metric: mode === "api" ? metric : undefined, value, valueNum: Number(valueNum), suffix: suffix || undefined, subtitle, source, sourceAuto: mode === "api" && sourceAuto, explanation, icon: icon || null }} dur={dur} ready={!!value.trim() && !!subtitle.trim()} />
+          <PreviewMonitor type="cifras" data={{ mode, metric: mode === "api" ? metric : undefined, value, valueNum: Number(valueNum), prefix: prefix.trim() || undefined, suffix: suffix.trim() ? suffix : undefined, subtitle, source, sourceAuto: mode === "api" && sourceAuto, explanation, icon: icon || null }} dur={dur} ready={!!value.trim() && !!subtitle.trim()} />
           {items.length === 0 && <div className="card" style={{ padding: 18, color: "#6b7688" }}>Todavía no hay cifras.</div>}
           {items.map((it) => {
             const d = it.data as CifrasData;

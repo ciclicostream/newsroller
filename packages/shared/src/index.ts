@@ -295,7 +295,8 @@ export interface CifrasData {
   metric?: string;          // key de CIFRAS_METRICS si mode="api"
   value: string;             // cifra formateada para mostrar (ej. "5,2%", "1.245 GWh")
   valueNum: number;          // valor numérico puro, para el conteo 0→valor
-  suffix?: string;           // sufijo pegado al número animado (ej. "%")
+  prefix?: string;           // prefijo delante del número (ej. "US$", "$")
+  suffix?: string;           // sufijo: corto (%, MW) va pegado al número; una unidad larga ("millones de dólares") va chica al lado
   subtitle: string;          // qué representa (obligatorio)
   source: string;            // fuente técnica (obligatorio; auto si mode="api")
   sourceAuto?: boolean;      // true = se autoescribió de una API (pill "AUTO")
