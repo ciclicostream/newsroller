@@ -3,6 +3,7 @@ import ReactDOM from "react-dom/client";
 import { Output } from "./Output";
 import { Preview, DraftPreview } from "./Preview";
 import { ItemView } from "./templates/items";
+import { fitScale, stageStyle } from "./lib/orientation";
 import "./styles.css";
 
 const params = new URLSearchParams(window.location.search);
@@ -58,6 +59,22 @@ const DEMOS: Record<string, { type: string; data: Record<string, any>; dur?: num
       media_kind: "image",
     },
   },
+  declaraciones: {
+    type: "declaraciones", dur: 15,
+    data: { name: "Juan Pérez", role: "Ministro de Economía", place: "Casa Rosada", headline: "\"Vamos a bajar la inflación\"", quote: "Esta es una cita de prueba bastante larga para ver cómo queda la placa, con varias líneas de texto que ocupan bien la tarjeta azul y se escriben de a poco.", photo_url: "https://fffefldkgcylqfbvshet.supabase.co/storage/v1/object/public/media/1789625617327-6a1c6562-3dcf-4a08-a877-de6b667e2db0-piel-1---Avon.jpeg", interview_program: "EPA!" },
+  },
+  publicidad_vertical: {
+    type: "publicidad", dur: 15,
+    data: { format: "vertical", media_url: "https://fffefldkgcylqfbvshet.supabase.co/storage/v1/object/public/media/1789625617327-6a1c6562-3dcf-4a08-a877-de6b667e2db0-piel-1---Avon.jpeg", media_kind: "image", logo_url: "https://fffefldkgcylqfbvshet.supabase.co/storage/v1/object/public/media/1789625617327-6a1c6562-3dcf-4a08-a877-de6b667e2db0-piel-1---Avon.jpeg", brand_qr_url: "https://fffefldkgcylqfbvshet.supabase.co/storage/v1/object/public/media/1789625617327-6a1c6562-3dcf-4a08-a877-de6b667e2db0-piel-1---Avon.jpeg" },
+  },
+  promos: {
+    type: "promos", dur: 15,
+    data: { title: "AVANCE", body: "Texto de la promo de prueba: una bajada que explica de qué trata el avance.", format: "916", video_id: "zSWdZVtXT7E" },
+  },
+  shorts: {
+    type: "shorts", dur: 15,
+    data: { count: 1, video1: "bxskJgShC38", title: "Título del short de prueba que puede ser algo largo" },
+  },
   placas: {
     type: "placas",
     data: {
@@ -87,7 +104,7 @@ function DemoStage({ id }: { id: string }) {
   const [scale, setScale] = React.useState(1);
   const [loop, setLoop] = React.useState(0);
   React.useEffect(() => {
-    const fit = () => setScale(Math.min(window.innerWidth / 1920, window.innerHeight / 1080));
+    const fit = () => setScale(fitScale());
     fit();
     window.addEventListener("resize", fit);
     const t = setInterval(() => setLoop((n) => n + 1), (DUR + 1) * 1000);
@@ -95,7 +112,7 @@ function DemoStage({ id }: { id: string }) {
   }, []);
   return (
     <div className="viewport">
-      <div className="stage" style={{ transform: `scale(${scale})` }}>
+      <div className="stage" style={stageStyle(scale)}>
         <ItemView key={loop} type={d.type} data={d.data} durationSec={DUR} />
       </div>
     </div>

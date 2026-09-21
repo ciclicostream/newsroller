@@ -101,6 +101,7 @@ export function outputRouter(): Router {
 
   // Registra una salida al aire de un contenido (cualquier tipo) para los reportes.
   // Lo llama el output real (OBS/vMix) cuando un bloque empieza; el monitor del panel no cuenta.
+  let airingOrientationCol = true; // false si falta la migración 0019 (no se guarda la orientación)
   let airingExtraCols = true; // false si falta la migración 0018 (se registra sólo el id, como antes)
   r.post("/airing", async (req, res) => {
     const sb = getSupabase();
@@ -115,8 +116,16 @@ export function outputRouter(): Router {
     }
     const dur = Number(req.body?.duration_sec);
     const row: Record<string, unknown> = { content_item_id: contentItemId };
-    if (airingExtraCols) { row.content_type = type; row.duration_sec = Number.isFinite(dur) && dur > 0 ? Math.round(dur) : null; }
+    if (airingExtraCols) {
+      row.content_type = type; row.duration_sec = Number.isFinite(dur) && dur > 0 ? Math.round(dur) : null;
+      if (airingOrientationCol) row.orientation = req.body?.orientation === "vertical" ? "vertical" : "horizontal";
+    }
     let { error } = await sb.from("airings").insert(row);
+    if (error && airingOrientationCol && /orientation/.test(error.message)) {
+      airingOrientationCol = false;
+      delete row.orientation;
+      ({ error } = await sb.from("airings").insert(row));
+    }
     if (error && airingExtraCols && /content_type|duration_sec/.test(error.message)) {
       airingExtraCols = false;
       ({ error } = await sb.from("airings").insert({ content_item_id: contentItemId }));

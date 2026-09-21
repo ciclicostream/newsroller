@@ -7,6 +7,7 @@ import { TemplateView } from "./templates/render";
 import { ItemView } from "./templates/items";
 import offAir from "./assets/off-air.jpg";
 import { reportAiring, reportIncident, isLiveOutput } from "./lib/telemetry";
+import { IS_VERTICAL, ORIENTATION, fitScale, stageStyle, supportsVertical } from "./lib/orientation";
 
 // Horas de encendido tras las cuales el output se recarga solo al cerrar una vuelta de la parrilla.
 const MAX_UPTIME_H = 12;
@@ -63,7 +64,7 @@ export function Output() {
 
   // Escalar el lienzo 1920x1080 al viewport.
   useEffect(() => {
-    const fit = () => setScale(Math.min(window.innerWidth / 1920, window.innerHeight / 1080));
+    const fit = () => setScale(fitScale());
     fit();
     window.addEventListener("resize", fit);
     return () => window.removeEventListener("resize", fit);
@@ -75,7 +76,9 @@ export function Output() {
     return () => clearInterval(t);
   }, []);
 
-  const items = scene?.items ?? [];
+  // Output vertical: sólo salen los contenidos con versión 9:16 (las cámaras nunca); el resto se saltea en la rotación.
+  const allItems = scene?.items ?? [];
+  const items = IS_VERTICAL ? allItems.filter((b) => b.item && supportsVertical(b.item.type, b.item.data)) : allItems;
   const current = items.length ? items[index % items.length] : null;
 
   // Ref (no state/dep) para que `advance` tenga una identidad ESTABLE entre
@@ -131,7 +134,7 @@ export function Output() {
   useEffect(() => {
     if (!airKey || !onAir || !current?.item || airedRef.current === airKey) return;
     airedRef.current = airKey;
-    reportAiring(current.item.id, current.item.type, current.duration_sec);
+    reportAiring(current.item.id, current.item.type, current.duration_sec, ORIENTATION);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [airKey, onAir]);
 
@@ -209,7 +212,7 @@ export function Output() {
   if (!onAir) {
     return (
       <div className="viewport">
-        <div className="stage" style={{ transform: `scale(${scale})` }}>
+        <div className="stage" style={stageStyle(scale)}>
           <img src={offAir} alt="Fuera del aire" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
         </div>
       </div>
@@ -218,7 +221,7 @@ export function Output() {
 
   return (
     <div className="viewport">
-      <div className="stage" style={{ transform: `scale(${scale})` }}>
+      <div className="stage" style={stageStyle(scale)}>
         {/* Fondo (para bloques con chrome estándar; plantillas y contenidos tipados traen su propio fondo) */}
         {!isCustom && (
           <div className="layer">

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { API_BASE } from "../lib/scene";
 import qrCiclico from "../assets/qr-ciclico.png";
 import ciclicoWhite from "../assets/ciclico-white.png";
+import { IS_VERTICAL } from "../lib/orientation";
 
 const MESES = ["ENE", "FEB", "MAR", "ABR", "MAY", "JUN", "JUL", "AGO", "SEP", "OCT", "NOV", "DIC"];
 
@@ -90,7 +91,7 @@ export function Chrome({ tickerSpeed = 90, hideClock = false, hideTemp = false, 
 
   return (
     <>
-      <style>{CSS}</style>
+      <style>{CSS + (IS_VERTICAL ? CSS_V : "")}</style>
 
       {!hideClock && <div className="ck-clock">{clock} | {fecha}</div>}
       {/* Columna temperatura + logo: las dos cards comparten el ancho (la del logo se estira al de la temperatura). */}
@@ -128,6 +129,22 @@ export function Chrome({ tickerSpeed = 90, hideClock = false, hideTemp = false, 
     </>
   );
 }
+
+// Vertical (1080x1920): hora a la izquierda y temperatura + logo a la derecha, en una sola fila arriba; ticker abajo.
+const CSS_V = `
+.ck-clock{top:56px;left:60px;right:auto}
+.ck-tl{top:56px;right:60px;flex-direction:row;align-items:stretch;gap:12px}
+.ck-temp{flex-direction:row;align-items:center;padding:10px 20px;min-width:0}
+.ck-temp-in{flex-direction:row;align-items:center;gap:14px}
+.ck-temp-val{font-size:30px}
+.ck-temp-city{font-size:18px}
+.ck-logo{align-self:stretch;width:auto;min-width:0;padding:6px 14px}
+.ck-logo img{height:44px}
+.ck-clock{z-index:200}
+.ck-tl{z-index:200}
+.ck-ticker{z-index:190}
+.ck-qr{display:none}
+`;
 
 const CSS = `
 .ck-clock{position:absolute;top:78px;right:100px;z-index:30;background:linear-gradient(180deg,#3b82f6,#2f6bff);color:#fff;font-weight:800;font-size:30px;letter-spacing:.01em;padding:10px 20px;border-radius:12px;box-shadow:0 6px 16px rgba(0,0,0,.25)}

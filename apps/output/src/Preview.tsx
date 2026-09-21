@@ -1,6 +1,7 @@
 import { Component, useEffect, useState, type ReactNode } from "react";
 import { API_BASE, fetchScene, type Scene } from "./lib/scene";
 import { ItemView } from "./templates/items";
+import { fitScale, stageStyle } from "./lib/orientation";
 
 // El panel pide sonido con ?audio=1 (botón del parlante); sin eso la vista previa va muda.
 const WANT_SOUND = typeof window !== "undefined" && new URLSearchParams(window.location.search).has("audio");
@@ -33,7 +34,7 @@ export function Preview({ id }: { id: string }) {
   const dur = Math.max(4, item?.duration_sec ?? 8);
 
   useEffect(() => {
-    const fit = () => setScale(Math.min(window.innerWidth / 1920, window.innerHeight / 1080));
+    const fit = () => setScale(fitScale());
     fit();
     window.addEventListener("resize", fit);
     return () => window.removeEventListener("resize", fit);
@@ -47,7 +48,7 @@ export function Preview({ id }: { id: string }) {
 
   return (
     <div className="viewport">
-      <div className="stage" style={{ transform: `scale(${scale})` }}>
+      <div className="stage" style={stageStyle(scale)}>
         {item ? <ItemView key={loop} type={item.type} data={item.data} durationSec={dur} liveData={scene?.data} cameras={scene?.cameras ?? []} /> : null}
       </div>
     </div>
@@ -92,7 +93,7 @@ export function DraftPreview() {
   }, []);
 
   useEffect(() => {
-    const fit = () => setScale(Math.min(window.innerWidth / 1920, window.innerHeight / 1080));
+    const fit = () => setScale(fitScale());
     fit();
     window.addEventListener("resize", fit);
     return () => window.removeEventListener("resize", fit);
@@ -112,7 +113,7 @@ export function DraftPreview() {
 
   return (
     <div className="viewport">
-      <div className="stage" style={{ transform: `scale(${scale})` }}>
+      <div className="stage" style={stageStyle(scale)}>
         {draft ? (
           <Boundary key={draft.v + ":" + loop}>
             <ItemView type={draft.type} data={draft.data} durationSec={dur} liveData={scene?.data} cameras={scene?.cameras ?? []} />
