@@ -14,6 +14,10 @@ import { meRouter } from "./routes/me.js";
 import { usersRouter } from "./routes/users.js";
 import { contentRouter } from "./routes/content.js";
 import { activityRouter } from "./routes/activity.js";
+import { bancoRouter } from "./routes/banco.js";
+import { reportsRouter } from "./routes/reports.js";
+import { securityRouter } from "./routes/security.js";
+import { closeOrphanIncidents } from "./incidents.js";
 import { startTrashPurger } from "./trash.js";
 import { contentItemsRouter } from "./routes/content-items.js";
 import { playlistRouter } from "./routes/playlist.js";
@@ -57,6 +61,9 @@ app.use("/api/users", usersRouter());
 app.use("/api/content", contentRouter());
 app.use("/api/content-items", contentItemsRouter());
 app.use("/api/activity", activityRouter());
+app.use("/api/banco", bancoRouter());
+app.use("/api/reports", reportsRouter());
+app.use("/api/security", securityRouter());
 app.use("/api/playlist", playlistRouter());
 app.use("/api/parrilla", parrillaRouter(io));
 app.use("/api/templates", templatesRouter());
@@ -89,6 +96,7 @@ http.listen(env.port, () => {
   console.log(`[server] escuchando en http://localhost:${env.port}`);
   console.log(`[server] store: ${registry.storeKind()}`);
   void ensureAdmins();
+  void closeOrphanIncidents();
   registry.start();
   startTrashPurger();
 

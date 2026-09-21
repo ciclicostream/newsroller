@@ -6,6 +6,7 @@ import { API_BASE, fetchScene, dataView, tickerText, type Block, type Scene } fr
 import { TemplateView } from "./templates/render";
 import { ItemView } from "./templates/items";
 import offAir from "./assets/off-air.jpg";
+import { reportAiring, reportIncident, isLiveOutput } from "./lib/telemetry";
 
 export function Output() {
   const [scene, setScene] = useState<Scene | null>(null);
@@ -107,6 +108,35 @@ export function Output() {
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [current?.id, current?.duration_sec, advance]);
+
+  // Reportes: cada vez que un contenido tipado ARRANCA al aire se registra la salida (todos los tipos).
+  // Con el canal cortado no cuenta, y el monitor del panel (iframe) tampoco.
+  const airKey = current?.item ? `${current.id}:${index}` : null;
+  const airedRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!airKey || !onAir || !current?.item || airedRef.current === airKey) return;
+    airedRef.current = airKey;
+    reportAiring(current.item.id, current.item.type, current.duration_sec);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [airKey, onAir]);
+
+  // Reportes: foto/video/audio que no carga en lo que está al aire (los errores de recursos no burbujean:
+  // se escuchan en captura). Las cámaras avisan por su cuenta (data-nr-skip).
+  const currentRef = useRef(current);
+  currentRef.current = current;
+  useEffect(() => {
+    if (!isLiveOutput()) return;
+    const onErr = (e: Event) => {
+      const el = e.target as HTMLElement | null;
+      if (!el || !["IMG", "VIDEO", "AUDIO", "SOURCE"].includes(el.tagName) || el.hasAttribute("data-nr-skip")) return;
+      const src = (el as HTMLImageElement).currentSrc || (el as HTMLImageElement).src;
+      if (!src || src.startsWith("data:")) return;
+      const cur = currentRef.current;
+      reportIncident({ kind: "media", key: src.replace(/^https?:\/\/[^/]+/, ""), label: cur?.item?.type ?? cur?.content_type, detail: `No cargó ${el.tagName.toLowerCase()}`, item_id: cur?.item?.id });
+    };
+    window.addEventListener("error", onErr, true);
+    return () => window.removeEventListener("error", onErr, true);
+  }, []);
 
   // FPS real de rendering (frames de pantalla por segundo) — diagnóstico técnico
   // para el Monitor del panel; no hay forma de leer el bitrate de OBS desde acá,

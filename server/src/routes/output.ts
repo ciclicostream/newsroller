@@ -2,6 +2,8 @@ import { Router } from "express";
 import { getSupabase } from "../db/supabase.js";
 import { getStore } from "../db/store.js";
 import { liveContentItems } from "../db/contentItems.js";
+import { rateLimited } from "../util/rateLimit.js";
+import { outputIncident } from "../incidents.js";
 
 // Escena pública para el output (vMix). Sin auth: sólo lectura de lo activo.
 export function outputRouter(): Router {
@@ -97,15 +99,41 @@ export function outputRouter(): Router {
     res.json({ type: data.type, data: data.data, duration_sec: data.duration_sec });
   });
 
-  // Registra una salida al aire de un aviso de Publicidad (para el reporte).
-  // Llamado por el output cuando un bloque "publicidad" empieza a reproducirse.
+  // Registra una salida al aire de un contenido (cualquier tipo) para los reportes.
+  // Lo llama el output real (OBS/vMix) cuando un bloque empieza; el monitor del panel no cuenta.
+  let airingExtraCols = true; // false si falta la migración 0018 (se registra sólo el id, como antes)
   r.post("/airing", async (req, res) => {
     const sb = getSupabase();
     if (!sb) return res.status(204).end();
+    if (rateLimited(`airing:${req.ip}`, 240, 60_000)) return res.status(429).end();
     const contentItemId = req.body?.content_item_id;
     if (typeof contentItemId !== "string" || !contentItemId) return res.status(400).json({ error: "content_item_id requerido" });
-    const { error } = await sb.from("airings").insert({ content_item_id: contentItemId });
-    if (error) return res.status(500).json({ error: error.message });
+    let type = typeof req.body?.content_type === "string" ? req.body.content_type.slice(0, 40) : null;
+    if (!type) {
+      const { data } = await sb.from("content_items").select("type").eq("id", contentItemId).maybeSingle();
+      type = data?.type ?? null;
+    }
+    const dur = Number(req.body?.duration_sec);
+    const row: Record<string, unknown> = { content_item_id: contentItemId };
+    if (airingExtraCols) { row.content_type = type; row.duration_sec = Number.isFinite(dur) && dur > 0 ? Math.round(dur) : null; }
+    let { error } = await sb.from("airings").insert(row);
+    if (error && airingExtraCols && /content_type|duration_sec/.test(error.message)) {
+      airingExtraCols = false;
+      ({ error } = await sb.from("airings").insert({ content_item_id: contentItemId }));
+    }
+    if (error) return res.status(204).end(); // p. ej. el contenido ya no existe: no es un error del output
+    res.status(204).end();
+  });
+
+  // Problemas que detecta el output al aire: cámara sin señal, foto/video que no carga.
+  r.post("/incident", async (req, res) => {
+    if (rateLimited(`incident:${req.ip}`, 60, 60_000)) return res.status(429).end();
+    const b = req.body ?? {};
+    if ((b.kind !== "camara" && b.kind !== "media") || typeof b.key !== "string" || !b.key) return res.status(400).json({ error: "datos inválidos" });
+    void outputIncident({
+      kind: b.kind, key: b.key.slice(0, 500), label: typeof b.label === "string" ? b.label : undefined,
+      detail: typeof b.detail === "string" ? b.detail : undefined, item_id: typeof b.item_id === "string" ? b.item_id : null,
+    });
     res.status(204).end();
   });
 

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import Hls from "hls.js";
 import { dataView, type Camera, type Logo, type TemplateElement } from "../lib/scene";
+import { reportIncident } from "../lib/telemetry";
 
 // Sonido: por defecto MUTEADO (así el autoplay nunca se bloquea en el navegador).
 // Para OBS/vMix, abrir el output con ?audio=1 → intenta activar el audio.
@@ -104,12 +105,15 @@ function ElementView({ el, data, logos, cameras, onEnded }: { el: TemplateElemen
 export function CameraView({ cam }: { cam: Camera }) {
   // Las cámaras nunca llevan audio.
   if (cam.type === "youtube") return <YouTubePlayer videoId={cam.url} onEnded={() => {}} allowAudio={false} />;
-  if (cam.type === "hls") return <HlsVideo url={cam.url} />;
+  if (cam.type === "hls") return <HlsVideo url={cam.url} onFail={() => failCam(cam)} />;
   if (cam.type === "iframe") return <iframe src={cam.url} style={{ width: "100%", height: "100%", border: 0 }} allow="autoplay; encrypted-media" title={cam.name} />;
-  return <RefreshingImage url={cam.url} />;
+  return <RefreshingImage url={cam.url} onFail={() => failCam(cam)} />;
 }
 
-function HlsVideo({ url }: { url: string }) {
+// Cámara sin señal: se avisa para el reporte de incidentes (YouTube/iframe no permiten detectarlo).
+const failCam = (cam: Camera) => reportIncident({ kind: "camara", key: cam.id, label: cam.city ? `${cam.name} (${cam.city})` : cam.name, detail: `Sin señal (${cam.type})` });
+
+function HlsVideo({ url, onFail }: { url: string; onFail: () => void }) {
   const ref = useRef<HTMLVideoElement>(null);
   useEffect(() => {
     const v = ref.current;
@@ -120,20 +124,21 @@ function HlsVideo({ url }: { url: string }) {
       const hls = new Hls();
       hls.loadSource(url);
       hls.attachMedia(v);
+      hls.on(Hls.Events.ERROR, (_e, d) => { if (d.fatal) onFail(); });
       return () => hls.destroy();
     }
   }, [url]);
-  return <video ref={ref} autoPlay muted playsInline style={{ width: "100%", height: "100%", objectFit: "cover" }} />;
+  return <video ref={ref} autoPlay muted playsInline data-nr-skip onError={onFail} style={{ width: "100%", height: "100%", objectFit: "cover" }} />;
 }
 
 // Imagen de cámara que se actualiza sola (cámaras de tránsito / Windy).
-function RefreshingImage({ url }: { url: string }) {
+function RefreshingImage({ url, onFail }: { url: string; onFail: () => void }) {
   const [src, setSrc] = useState(url);
   useEffect(() => {
     const iv = setInterval(() => setSrc(`${url}${url.includes("?") ? "&" : "?"}t=${Date.now()}`), 5000);
     return () => clearInterval(iv);
   }, [url]);
-  return <img src={src} style={{ width: "100%", height: "100%", objectFit: "cover" }} />;
+  return <img src={src} data-nr-skip onError={onFail} style={{ width: "100%", height: "100%", objectFit: "cover" }} />;
 }
 
 function VideoAsset({ src, fit, radius, onEnded }: { src: string; fit: string; radius: number; onEnded: () => void }) {

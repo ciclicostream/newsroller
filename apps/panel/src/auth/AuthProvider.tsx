@@ -56,7 +56,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   async function signIn(email: string, password: string) {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) throw new Error(error.message);
+    if (error) {
+      // Se avisa al server para el reporte de seguridad (ingresos fallidos). Nunca frena el mensaje de error.
+      void api.post("/api/security/login-attempt", { email }).catch(() => {});
+      throw new Error(error.message);
+    }
     try { sessionStorage.removeItem(LOGOUT_MSG_KEY); } catch { /* noop */ }
     // Abre la sesión registrada (inactividad y reportes). Si falla, se entra igual.
     try { await api.post("/api/session/start", {}); } catch { /* noop */ }

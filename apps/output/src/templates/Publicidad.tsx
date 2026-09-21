@@ -1,24 +1,13 @@
-import { useEffect } from "react";
 import type { PublicidadData } from "@newsroller/shared";
 import fondo from "../assets/fondo2.jpg";
 import { Chrome } from "./Chrome";
-import { API_BASE } from "../lib/scene";
 
 const WANT_AUDIO = typeof window !== "undefined" && new URLSearchParams(window.location.search).has("audio");
 
 // Placa Publicidad: Full (16:9, sin overlay) o Vertical (9:16 + marco estándar
 // + logo/QR de marca opcionales). Entrada y salida por CORTE. Única familia
-// que genera reporte: registra cada salida al aire en /api/output/airing.
-export function Publicidad({ id, data }: { id?: string; data: PublicidadData }) {
-  useEffect(() => {
-    if (!id) return;
-    fetch(`${API_BASE}/api/output/airing`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ content_item_id: id }),
-    }).catch(() => {});
-  }, [id]);
-
+// que genera reporte de avisos; la salida al aire se registra en Output.tsx (todos los tipos).
+export function Publicidad({ data }: { id?: string; data: PublicidadData }) {
   const media =
     data.media_kind === "video" ? (
       <video src={data.media_url} autoPlay loop muted={!WANT_AUDIO} playsInline style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
