@@ -1,7 +1,8 @@
 import { Router } from "express";
 import { getSupabase } from "../db/supabase.js";
-import { requireAuth } from "../auth/middleware.js";
-import { CLIMA_SLOT_KEYS, PLATAFORMAS_DEFAULT, type Plataforma } from "@newsroller/shared";
+import { requireAuth, requirePerm } from "../auth/middleware.js";
+import { clearLimitsCache } from "../auth/sessions.js";
+import { CLIMA_SLOT_KEYS, PLATAFORMAS_DEFAULT, IDLE_MINUTES_DEFAULT, ROLES, can, type Plataforma, type Role } from "@newsroller/shared";
 import type { IO } from "../realtime/socket.js";
 
 // Preferencias del sistema (key/value). Defaults + validación por clave.
@@ -20,10 +21,12 @@ const DEFAULTS = {
   climaIcons: {} as Record<string, string>,
   // Plataformas de streaming (Cartelera → series): { id, name, logo? }. Se administran en Ajustes → Plataformas.
   plataformas: PLATAFORMAS_DEFAULT as Plataforma[],
+  // Minutos de inactividad para cerrar la sesión, por rol (sólo lo cambia el Master).
+  idleMinutes: IDLE_MINUTES_DEFAULT as Record<Role, number>,
 };
 
 type SettingsKey = keyof typeof DEFAULTS;
-type SettingsValue = number | boolean | string | Record<string, string> | Plataforma[];
+type SettingsValue = number | boolean | string | Record<string, string> | Record<string, number> | Plataforma[];
 
 // Fallback en memoria cuando no hay Supabase (dev local sin credenciales).
 const memory: Record<string, unknown> = {};
@@ -54,6 +57,16 @@ function coerce(key: SettingsKey, raw: unknown): SettingsValue | null {
       if (v == null || v === "") continue; // sin valor = volver al predeterminado
       if (typeof v !== "string" || !/^https?:\/\//.test(v)) return null;
       out[k] = v;
+    }
+    return out;
+  }
+  if (key === "idleMinutes") {
+    if (typeof raw !== "object" || raw === null || Array.isArray(raw)) return null;
+    const out: Record<string, number> = { ...IDLE_MINUTES_DEFAULT };
+    for (const [k, v] of Object.entries(raw as Record<string, unknown>)) {
+      const n = Number(v);
+      if (!(ROLES as string[]).includes(k) || !Number.isFinite(n) || n < 1 || n > 480) return null;
+      out[k] = Math.round(n);
     }
     return out;
   }
@@ -109,11 +122,12 @@ export function settingsRouter(io: IO): Router {
   });
 
   // Guardar preferencias (sólo editores/admins). Valida y clampa cada clave conocida.
-  r.put("/settings", requireAuth, async (req, res) => {
+  r.put("/settings", requireAuth, requirePerm("ajustes"), async (req, res) => {
     const body = (req.body ?? {}) as Record<string, unknown>;
     const updates: Partial<Record<SettingsKey, SettingsValue>> = {};
     for (const key of Object.keys(DEFAULTS) as SettingsKey[]) {
       if (!(key in body)) continue;
+      if (key === "idleMinutes" && !can(req.user!.role, "config_sistema")) return res.status(403).json({ error: "sólo el Master cambia los tiempos de inactividad", code: "forbidden" });
       const val = coerce(key, body[key]);
       if (val == null) return res.status(400).json({ error: `valor inválido para ${key}` });
       updates[key] = val;
@@ -122,7 +136,9 @@ export function settingsRouter(io: IO): Router {
       return res.status(400).json({ error: "sin cambios válidos" });
     }
     try {
-      res.json(await writeSettings(io, updates));
+      const all = await writeSettings(io, updates);
+      if ("idleMinutes" in updates) clearLimitsCache();
+      res.json(all);
     } catch (e) {
       res.status(500).json({ error: e instanceof Error ? e.message : "error" });
     }

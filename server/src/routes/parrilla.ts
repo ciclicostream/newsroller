@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { LAYOUTS, type ContentType } from "@newsroller/shared";
 import { getSupabase } from "../db/supabase.js";
-import { requireAuth } from "../auth/middleware.js";
+import { requireAuth, requirePermByMethod } from "../auth/middleware.js";
 import type { IO } from "../realtime/socket.js";
 import { writeSettings, readAll } from "./settings.js";
 
@@ -12,7 +12,8 @@ const SELF_LAYOUT = new Set<ContentType>(["template", "content_item"]);
 // Parrilla en BORRADOR (parrilla_draft). Se publica a playlist_items (el aire) con /publish.
 export function parrillaRouter(io: IO): Router {
   const r = Router();
-  r.use(requireAuth);
+  // Ver: quien crea o programa. Modificar (armar la parrilla, publicar): sólo quien programa.
+  r.use(requireAuth, requirePermByMethod(["contenidos", "programar"], ["programar"]));
   const sb = () => getSupabase()!;
 
   // Lista el borrador. Si está vacío, lo siembra con lo que está al aire (playlist_items).

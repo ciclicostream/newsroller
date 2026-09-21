@@ -79,7 +79,9 @@ button.tipo-card.empty:hover { border-color: var(--border); transform: none; }
 .pill { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; color: var(--text); background: var(--accent-weak); border: 1px solid var(--border); border-radius: 999px; padding: 4px 10px; }
 .topbar-right { display: flex; align-items: center; gap: 10px; min-width: 190px; justify-content: flex-end; }
 .topbar-right .role-pill { margin: 0; }
-.topbar-right .role-pill.editor { background: #eef1f6; color: var(--muted); }
+.topbar-right .role-pill.programador, .topbar-right .role-pill.generador { background: #eef1f6; color: var(--muted); }
+.topbar-right .role-pill.master { background: #1a2235; color: #fff; }
+.topbar-right .role-pill.administrador { background: var(--accent-weak); color: var(--accent); }
 .avatar { width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, #2f6bff, #7aa2ff); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 13px; }
 .topbar-right .logout { width: auto; margin: 0; border: 1px solid var(--border); background: var(--surface); color: var(--muted); padding: 8px; border-radius: 9px; }
 .topbar-right .logout:hover { background: var(--bg); color: var(--text); }

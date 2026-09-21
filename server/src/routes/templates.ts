@@ -1,11 +1,12 @@
 import { Router } from "express";
 import { getSupabase } from "../db/supabase.js";
-import { requireAuth } from "../auth/middleware.js";
+import { requireAuth, requirePermByMethod } from "../auth/middleware.js";
 
-// CRUD de plantillas (editor visual). Cualquier usuario autenticado.
+// CRUD de plantillas (editor visual).
 export function templatesRouter(): Router {
   const r = Router();
-  r.use(requireAuth);
+  // Ver: Master y Administrador (de un vistazo). Modificar: sólo el Master.
+  r.use(requireAuth, requirePermByMethod(["plantillas_ver"], ["plantillas_editar"]));
   const sb = () => getSupabase()!;
 
   r.get("/", async (_req, res) => {

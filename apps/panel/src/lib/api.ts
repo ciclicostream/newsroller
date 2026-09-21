@@ -19,7 +19,14 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
   });
   if (res.status === 204) return undefined as T;
   const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error((data as { error?: string }).error ?? `HTTP ${res.status}`);
+  if (!res.ok) {
+    const code = (data as { code?: string }).code;
+    // Sesión cerrada por inactividad o usuario desactivado: el AuthProvider lo escucha y saca a la persona.
+    if ((res.status === 401 && code === "idle") || (res.status === 403 && code === "disabled")) {
+      window.dispatchEvent(new CustomEvent("ciclico:session-ended", { detail: code }));
+    }
+    throw new Error((data as { error?: string }).error ?? `HTTP ${res.status}`);
+  }
   return data as T;
 }
 

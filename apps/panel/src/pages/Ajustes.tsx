@@ -1,12 +1,26 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { ROLES, ROLE_LABEL, IDLE_MINUTES_DEFAULT, type Role } from "@newsroller/shared";
 import { Users as UsersIcon, Youtube, Tv, Images, Rss, CloudSun, Clapperboard } from "lucide-react";
 import { useAuth } from "../auth/AuthProvider";
 import { settingsApi } from "../lib/settings";
 
 export function Ajustes() {
-  const { me } = useAuth();
-  const isAdmin = me?.role === "admin";
+  const { can } = useAuth();
+
+  // Tiempos de inactividad por rol (sólo el Master los cambia).
+  const [idle, setIdle] = useState<Record<Role, number> | null>(null);
+  const [idleSaved, setIdleSaved] = useState<string>("");
+  useEffect(() => {
+    if (!can("config_sistema")) return;
+    settingsApi.get().then((s) => { const v = { ...IDLE_MINUTES_DEFAULT, ...(s.idleMinutes ?? {}) } as Record<Role, number>; setIdle(v); setIdleSaved(JSON.stringify(v)); }).catch(() => {});
+  }, [can]);
+  async function guardarIdle() {
+    if (!idle) return;
+    try { const s = await settingsApi.update({ idleMinutes: idle }); const v = { ...IDLE_MINUTES_DEFAULT, ...(s.idleMinutes ?? {}) } as Record<Role, number>; setIdle(v); setIdleSaved(JSON.stringify(v)); }
+    catch (e) { setErr((e as Error).message); }
+  }
+  const isAdmin = can("perfiles");
 
   // Velocidad del newsticker (segundos por vuelta; mayor = más lento).
   const [speed, setSpeed] = useState<number | null>(null);
@@ -132,6 +146,22 @@ export function Ajustes() {
           </>
         )}
       </div>
+
+      {idle && (
+        <div className="card" style={{ padding: 20, marginTop: 18, maxWidth: 560 }}>
+          <h2 style={{ fontSize: 16, margin: "0 0 4px" }}>Cierre de sesión por inactividad</h2>
+          <p className="muted-note" style={{ marginTop: 0 }}>Minutos sin actividad tras los cuales se cierra la sesión de cada rol. El aire no se ve afectado.</p>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+            {ROLES.map((r) => (
+              <div className="field" key={r} style={{ marginBottom: 0 }}>
+                <label>{ROLE_LABEL[r]}</label>
+                <input type="number" min={1} max={480} value={idle[r]} onChange={(e) => setIdle({ ...idle, [r]: Math.max(1, Math.min(480, Number(e.target.value) || 1)) })} />
+              </div>
+            ))}
+          </div>
+          <button className="btn primary" style={{ marginTop: 14 }} disabled={JSON.stringify(idle) === idleSaved} onClick={guardarIdle}>Guardar</button>
+        </div>
+      )}
     </>
   );
 }

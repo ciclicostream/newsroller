@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { getSupabase } from "../db/supabase.js";
-import { requireAuth } from "../auth/middleware.js";
+import { requireAuth, requirePerm } from "../auth/middleware.js";
 
 // Tipos válidos del banco de contenidos 2026. Se irán sumando a medida que se porten.
 const TYPES = new Set([
@@ -20,10 +20,18 @@ const TYPES = new Set([
   "placas",
 ]);
 
-// Banco de contenidos tipados (ultima_hora, etc.). Cualquiera autenticado.
+// Banco de contenidos tipados (ultima_hora, etc.). Todos los roles ven; ver ownerGuard para modificar.
 export function contentItemsRouter(): Router {
   const r = Router();
-  r.use(requireAuth);
+  r.use(requireAuth, requirePerm("contenidos"));
+
+  // El Generador ve todos los contenidos (para no repetir) pero sólo modifica o borra los suyos.
+  const ownerGuard = async (req: import("express").Request, res: import("express").Response, next: import("express").NextFunction) => {
+    if (req.user!.role !== "generador") return next();
+    const { data } = await getSupabase()!.from("content_items").select("created_by").eq("id", req.params.id).maybeSingle();
+    if (data && data.created_by !== req.user!.id) return res.status(403).json({ error: "sólo podés modificar los contenidos que creaste vos", code: "forbidden" });
+    next();
+  };
   const sb = () => getSupabase()!;
 
   r.get("/", async (req, res) => {
@@ -53,7 +61,7 @@ export function contentItemsRouter(): Router {
     res.status(201).json(row);
   });
 
-  r.patch("/:id", async (req, res) => {
+  r.patch("/:id", ownerGuard, async (req, res) => {
     const patch: Record<string, unknown> = {};
     for (const k of ["data", "duration_sec", "active", "in_parrilla", "sort"]) if (k in (req.body ?? {})) patch[k] = req.body[k];
     if (Object.keys(patch).length === 0) return res.status(400).json({ error: "nada para actualizar" });
@@ -63,7 +71,7 @@ export function contentItemsRouter(): Router {
     res.json(data);
   });
 
-  r.delete("/:id", async (req, res) => {
+  r.delete("/:id", ownerGuard, async (req, res) => {
     const { error } = await sb().from("content_items").delete().eq("id", req.params.id);
     if (error) return res.status(500).json({ error: error.message });
     res.status(204).end();

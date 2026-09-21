@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Navigate } from "react-router-dom";
 import { CircleDot, LogIn } from "lucide-react";
-import { useAuth } from "../auth/AuthProvider";
+import { useAuth, LOGOUT_MSG_KEY } from "../auth/AuthProvider";
 import { supabase, supabaseConfigured } from "../lib/supabase";
 
 export function Login() {
@@ -11,7 +11,7 @@ export function Login() {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [mode, setMode] = useState<"login" | "forgot">("login");
-  const [info, setInfo] = useState<string | null>(null);
+  const [info, setInfo] = useState<string | null>(() => { try { return sessionStorage.getItem(LOGOUT_MSG_KEY); } catch { return null; } });
   // Se llega con #type=recovery desde el mail de "olvidé mi contraseña": ahí
   // Supabase ya abrió una sesión de recuperación y toca elegir una nueva.
   const [recovery] = useState(() => window.location.hash.includes("type=recovery"));
@@ -124,6 +124,7 @@ export function Login() {
             Falta configurar Supabase (<code>VITE_SUPABASE_URL</code> y <code>VITE_SUPABASE_ANON_KEY</code>).
           </div>
         )}
+        {info && <div className="alert info">{info}</div>}
         {error && <div className="alert error">{error}</div>}
         <div className="field">
           <label>Email</label>

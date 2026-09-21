@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { UserPlus, Trash2, ShieldCheck, PenLine } from "lucide-react";
+import { UserPlus, Trash2, UserX, UserCheck, ShieldCheck } from "lucide-react";
+import { ROLE_LABEL, assignableRoles } from "@newsroller/shared";
 import { api } from "../lib/api";
 import { useAuth, type Role } from "../auth/AuthProvider";
 
@@ -8,11 +9,13 @@ interface UserRow {
   email: string | null;
   full_name: string | null;
   role: Role;
+  active: boolean;
   created_at: string;
 }
 
 export function Users() {
-  const { me } = useAuth();
+  const { me, can } = useAuth();
+  const roles = me ? assignableRoles(me.role) : [];
   const [rows, setRows] = useState<UserRow[]>([]);
   const [err, setErr] = useState<string | null>(null);
   const [showCreate, setShowCreate] = useState(false);
@@ -38,6 +41,16 @@ export function Users() {
     }
   }
 
+  async function setActive(u: UserRow, active: boolean) {
+    if (!active && !confirm(`¿Desactivar a ${u.email}? No podrá ingresar hasta que lo actives de nuevo (su historial se conserva).`)) return;
+    try {
+      await api.patch(`/api/users/${u.id}`, { active });
+      await load();
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "error");
+    }
+  }
+
   async function remove(u: UserRow) {
     if (!confirm(`¿Eliminar a ${u.email}? Esta acción no se puede deshacer.`)) return;
     try {
@@ -53,7 +66,7 @@ export function Users() {
       <div className="page-head">
         <div>
           <h1>Usuarios</h1>
-          <p>Administrá quién entra y con qué rol. Administrador: APIs y config. Gestor: contenidos.</p>
+          <p>Quién entra y con qué rol. Podés desactivar personas; borrarlas es solo del Master.</p>
         </div>
         <button className="btn primary" onClick={() => setShowCreate(true)}>
           <UserPlus size={16} /> Nuevo usuario
@@ -69,6 +82,7 @@ export function Users() {
               <th>Email</th>
               <th>Nombre</th>
               <th>Rol</th>
+              <th>Estado</th>
               <th>Creado</th>
               <th style={{ textAlign: "right" }}>Acciones</th>
             </tr>
@@ -85,26 +99,33 @@ export function Users() {
                   <td>
                     <select
                       value={u.role}
-                      disabled={self}
+                      disabled={self || !roles.includes(u.role)}
                       onChange={(e) => changeRole(u, e.target.value as Role)}
-                      style={{ width: 190 }}
+                      style={{ width: 210 }}
                     >
-                      <option value="admin">Administrador</option>
-                      <option value="editor">Gestor de contenidos</option>
+                      {(roles.includes(u.role) ? roles : [u.role, ...roles]).map((r) => <option key={r} value={r}>{ROLE_LABEL[r]}</option>)}
                     </select>
                   </td>
+                  <td>{u.active ? <span className="pill">Activo</span> : <span className="muted-note">Desactivado</span>}</td>
                   <td className="muted-note">{new Date(u.created_at).toLocaleDateString("es-AR")}</td>
                   <td style={{ textAlign: "right" }}>
-                    <button className="btn danger-ghost" disabled={self} onClick={() => remove(u)}>
-                      <Trash2 size={15} /> Eliminar
-                    </button>
+                    {u.active ? (
+                      <button className="btn" disabled={self} onClick={() => setActive(u, false)}><UserX size={15} /> Desactivar</button>
+                    ) : (
+                      <button className="btn" onClick={() => setActive(u, true)}><UserCheck size={15} /> Activar</button>
+                    )}
+                    {can("eliminar_personas") && (
+                      <button className="btn danger-ghost" disabled={self} onClick={() => remove(u)} style={{ marginLeft: 8 }}>
+                        <Trash2 size={15} /> Eliminar
+                      </button>
+                    )}
                   </td>
                 </tr>
               );
             })}
             {rows.length === 0 && !err && (
               <tr>
-                <td colSpan={5} className="muted-note">
+                <td colSpan={6} className="muted-note">
                   Sin usuarios todavía.
                 </td>
               </tr>
@@ -113,19 +134,18 @@ export function Users() {
         </table>
       </div>
 
-      <div className="card stat" style={{ marginTop: 18, display: "flex", gap: 22 }}>
-        <div style={{ display: "flex", gap: 10 }}>
-          <ShieldCheck size={18} color="var(--accent)" />
-          <div className="muted-note">
-            <b style={{ color: "var(--text)" }}>Administrador</b>: gestiona usuarios, APIs y configuración avanzada.
+      <div className="card stat" style={{ marginTop: 18, display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(230px,1fr))", gap: 16 }}>
+        {[
+          ["master", "Control total: APIs, plantillas, personas y configuración. Invisible para los demás."],
+          ["administrador", "Programa, contenidos, cámaras, reportes y ajustes; ve las plantillas; invita y desactiva personas (sin tocar al Master)."],
+          ["programador", "Programa, gestiona contenidos, agrega cámaras y usa los ajustes; ve el estado de las fuentes."],
+          ["generador", "Solo genera contenidos (ve los de todos, edita los suyos) y gestiona su propio perfil."],
+        ].map(([r, d]) => (
+          <div key={r} style={{ display: "flex", gap: 10 }}>
+            <ShieldCheck size={18} color="var(--accent)" style={{ flex: "none", marginTop: 2 }} />
+            <div className="muted-note"><b style={{ color: "var(--text)" }}>{ROLE_LABEL[r as Role]}</b>: {d}</div>
           </div>
-        </div>
-        <div style={{ display: "flex", gap: 10 }}>
-          <PenLine size={18} color="var(--muted)" />
-          <div className="muted-note">
-            <b style={{ color: "var(--text)" }}>Gestor de contenidos</b>: carga y edita el contenido al aire.
-          </div>
-        </div>
+        ))}
       </div>
 
       {showCreate && <CreateUserModal onClose={() => setShowCreate(false)} onCreated={load} />}
@@ -137,7 +157,9 @@ function CreateUserModal({ onClose, onCreated }: { onClose: () => void; onCreate
   const [email, setEmail] = useState("");
   const [fullName, setFullName] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState<Role>("editor");
+  const { me } = useAuth();
+  const allowed = me ? assignableRoles(me.role) : [];
+  const [role, setRole] = useState<Role>("generador");
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -176,8 +198,7 @@ function CreateUserModal({ onClose, onCreated }: { onClose: () => void; onCreate
         <div className="field">
           <label>Rol</label>
           <select value={role} onChange={(e) => setRole(e.target.value as Role)}>
-            <option value="editor">Gestor de contenidos</option>
-            <option value="admin">Administrador</option>
+            {allowed.map((r) => <option key={r} value={r}>{ROLE_LABEL[r]}</option>)}
           </select>
         </div>
         <div className="modal-actions">

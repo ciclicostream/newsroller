@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { LAYOUTS, type ContentType } from "@newsroller/shared";
 import { getSupabase } from "../db/supabase.js";
-import { requireAuth } from "../auth/middleware.js";
+import { requireAuth, requirePermByMethod } from "../auth/middleware.js";
 
 const TYPES: ContentType[] = ["short", "placa", "ad", "background", "data", "template", "content_item"];
 const TEMPLATE_IDS = new Set(LAYOUTS.map((t) => t.id));
@@ -10,7 +10,8 @@ const SELF_LAYOUT = new Set<ContentType>(["template", "content_item"]);
 
 export function playlistRouter(): Router {
   const r = Router();
-  r.use(requireAuth);
+  // Ver: quien crea o programa. Modificar (armar la parrilla, publicar): sólo quien programa.
+  r.use(requireAuth, requirePermByMethod(["contenidos", "programar"], ["programar"]));
   const sb = () => getSupabase()!;
 
   r.get("/", async (_req, res) => {

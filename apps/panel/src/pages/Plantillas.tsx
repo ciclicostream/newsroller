@@ -18,6 +18,7 @@ import { playlist } from "../lib/playlist";
 import { uploadMedia } from "../lib/content";
 import { TIPOS } from "../lib/tipos";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../auth/AuthProvider";
 
 const DISPLAY_W = 760;
 const SCALE = DISPLAY_W / CANVAS_W;
@@ -46,7 +47,21 @@ function newElement(type: ElementType, z: number): TemplateElement {
   }
 }
 
+// Master edita; el Administrador solo las ve (de un vistazo): todo el editor queda deshabilitado.
 export function Plantillas() {
+  const { can } = useAuth();
+  const readOnly = !can("plantillas_editar");
+  return (
+    <>
+      {readOnly && <div className="alert info" style={{ marginBottom: 14 }}>Vista de solo lectura: las plantillas las modifica el Master.</div>}
+      <fieldset disabled={readOnly} style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}>
+        <PlantillasEditor />
+      </fieldset>
+    </>
+  );
+}
+
+function PlantillasEditor() {
   const [editing, setEditing] = useState(false);
   const [items, setItems] = useState<ContentItem[]>([]);
   const [live, setLive] = useState<PlaylistItem[]>([]);

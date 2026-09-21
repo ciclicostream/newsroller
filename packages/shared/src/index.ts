@@ -560,3 +560,63 @@ export function contentHasAudio(type: string, data: Record<string, any> = {}): b
   const kind = data?.media_kind;
   return kind === "video" || kind === "youtube";
 }
+
+// ---- Roles y permisos ----
+// Cuatro perfiles con jerarquía. Los permisos se aplican en el SERVIDOR (requirePerm) y el panel sólo
+// los usa para mostrar/ocultar secciones.
+export type Role = "master" | "administrador" | "programador" | "generador";
+export const ROLES: Role[] = ["master", "administrador", "programador", "generador"];
+export const ROLE_LABEL: Record<Role, string> = {
+  master: "Master",
+  administrador: "Administrador",
+  programador: "Programador",
+  generador: "Generador de contenidos",
+};
+export const ROLE_RANK: Record<Role, number> = { master: 4, administrador: 3, programador: 2, generador: 1 };
+
+export type Perm =
+  | "programar" // Programación: armar la parrilla, enviar a vivo, cortar el aire
+  | "contenidos" // crear y ver contenidos (todos los roles)
+  | "plantillas_ver" // ver las plantillas (solo lectura)
+  | "plantillas_editar" // modificar plantillas
+  | "camaras" // agregar/editar cámaras
+  | "fuentes" // ver el estado de las fuentes de datos / APIs
+  | "reportes"
+  | "ajustes"
+  | "perfiles" // invitar/editar/desactivar personas (salvo Master)
+  | "eliminar_personas" // borrar personas
+  | "config_sistema"; // configuración sensible del sistema (ej. tiempos de inactividad)
+
+export const ROLE_PERMS: Record<Role, Perm[]> = {
+  master: ["programar", "contenidos", "plantillas_ver", "plantillas_editar", "camaras", "fuentes", "reportes", "ajustes", "perfiles", "eliminar_personas", "config_sistema"],
+  administrador: ["programar", "contenidos", "plantillas_ver", "camaras", "reportes", "ajustes", "perfiles"],
+  programador: ["programar", "contenidos", "camaras", "fuentes", "ajustes"],
+  generador: ["contenidos"],
+};
+export const can = (role: Role | null | undefined, perm: Perm): boolean => !!role && ROLE_PERMS[role].includes(perm);
+
+// Los roles viejos (admin/editor) se leen como administrador/programador hasta que se corra la migración;
+// cualquier otro valor cae en el rol de menor privilegio.
+export function normalizeRole(raw: unknown): Role {
+  if (typeof raw === "string" && (ROLES as string[]).includes(raw)) return raw as Role;
+  if (raw === "admin") return "administrador";
+  if (raw === "editor") return "programador";
+  return "generador";
+}
+
+// A quién puede invitar/asignar cada rol: el Master a cualquiera; el Administrador a administradores,
+// programadores y generadores (nunca a un Master).
+export function assignableRoles(actor: Role): Role[] {
+  if (actor === "master") return ROLES;
+  if (actor === "administrador") return ["administrador", "programador", "generador"];
+  return [];
+}
+
+// Minutos de inactividad tras los cuales se cierra la sesión (configurable por el Master en Ajustes).
+export const IDLE_MINUTES_DEFAULT: Record<Role, number> = { generador: 20, programador: 15, administrador: 10, master: 10 };
+
+// Adónde mandar a cada rol al entrar (primera sección a la que tiene acceso).
+export function homeFor(role: Role): string {
+  if (can(role, "programar")) return "/";
+  return "/contenido";
+}

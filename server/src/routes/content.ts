@@ -1,7 +1,7 @@
 import { Router } from "express";
 import type { AssetKind } from "@newsroller/shared";
 import { getSupabase } from "../db/supabase.js";
-import { requireAuth } from "../auth/middleware.js";
+import { requireAuth, requirePerm } from "../auth/middleware.js";
 import { syncShorts, searchUploads } from "../content/youtube.js";
 import { efemeridesDeWikipedia } from "../content/wikipedia.js";
 import { env } from "../config/env.js";
@@ -34,7 +34,7 @@ export function contentRouter(): Router {
     sb().storage.from(bucket).getPublicUrl(path).data.publicUrl;
 
   // 1) Pedir URL firmada para subir directo a Storage (sin pasar el archivo por el server).
-  r.post("/uploads/sign", async (req, res) => {
+  r.post("/uploads/sign", requirePerm("contenidos"), async (req, res) => {
     const { kind, filename } = req.body ?? {};
     if (!isUploadKind(kind)) return res.status(400).json({ error: "kind inválido" });
     if (typeof filename !== "string" || !filename) return res.status(400).json({ error: "filename requerido" });
@@ -46,7 +46,7 @@ export function contentRouter(): Router {
   });
 
   // 2) Registrar la metadata una vez subido el binario.
-  r.post("/assets", async (req, res) => {
+  r.post("/assets", requirePerm("contenidos"), async (req, res) => {
     const { kind, bucket, path, name, mime, size } = req.body ?? {};
     if (!isKind(kind) || !bucket || !path) return res.status(400).json({ error: "faltan datos del asset" });
     const { data, error } = await sb()
@@ -59,7 +59,7 @@ export function contentRouter(): Router {
   });
 
   // Listar assets (opcionalmente por kind).
-  r.get("/assets", async (req, res) => {
+  r.get("/assets", requirePerm("contenidos"), async (req, res) => {
     const kind = req.query.kind;
     let q = sb().from("assets").select("*").order("sort").order("created_at");
     if (typeof kind === "string" && isKind(kind)) q = q.eq("kind", kind);
@@ -69,7 +69,7 @@ export function contentRouter(): Router {
   });
 
   // Editar (activar, renombrar, reordenar).
-  r.patch("/assets/:id", async (req, res) => {
+  r.patch("/assets/:id", requirePerm("ajustes"), async (req, res) => {
     const patch: Record<string, unknown> = {};
     for (const k of ["active", "name", "sort", "meta"]) if (k in (req.body ?? {})) patch[k] = req.body[k];
     if (Object.keys(patch).length === 0) return res.status(400).json({ error: "nada para actualizar" });
@@ -80,7 +80,7 @@ export function contentRouter(): Router {
   });
 
   // Eliminar (borra el binario en Storage y la fila).
-  r.delete("/assets/:id", async (req, res) => {
+  r.delete("/assets/:id", requirePerm("ajustes"), async (req, res) => {
     const { data: row } = await sb().from("assets").select("bucket, path").eq("id", req.params.id).maybeSingle();
     if (row) await sb().storage.from(row.bucket).remove([row.path]);
     const { error } = await sb().from("assets").delete().eq("id", req.params.id);
@@ -89,13 +89,13 @@ export function contentRouter(): Router {
   });
 
   // ---- Placas (texto) ----
-  r.get("/placas", async (_req, res) => {
+  r.get("/placas", requirePerm("contenidos"), async (_req, res) => {
     const { data, error } = await sb().from("placas").select("*").order("sort").order("created_at");
     if (error) return res.status(500).json({ error: error.message });
     res.json(data);
   });
 
-  r.post("/placas", async (req, res) => {
+  r.post("/placas", requirePerm("contenidos"), async (req, res) => {
     const { title, body, accent, image_url, image_fit } = req.body ?? {};
     if (typeof title !== "string" || !title.trim()) return res.status(400).json({ error: "el título es obligatorio" });
     const { data, error } = await sb()
@@ -114,7 +114,7 @@ export function contentRouter(): Router {
     res.status(201).json(data);
   });
 
-  r.patch("/placas/:id", async (req, res) => {
+  r.patch("/placas/:id", requirePerm("contenidos"), async (req, res) => {
     const patch: Record<string, unknown> = {};
     for (const k of ["title", "body", "accent", "active", "sort", "image_url", "image_fit"]) if (k in (req.body ?? {})) patch[k] = req.body[k];
     if (Object.keys(patch).length === 0) return res.status(400).json({ error: "nada para actualizar" });
@@ -124,7 +124,7 @@ export function contentRouter(): Router {
     res.json(data);
   });
 
-  r.delete("/placas/:id", async (req, res) => {
+  r.delete("/placas/:id", requirePerm("contenidos"), async (req, res) => {
     const { error } = await sb().from("placas").delete().eq("id", req.params.id);
     if (error) return res.status(500).json({ error: error.message });
     res.status(204).end();
@@ -132,7 +132,7 @@ export function contentRouter(): Router {
 
   // ---- Shorts de YouTube ----
   // Sincronizar con el canal (trae/actualiza shorts, preserva títulos editados).
-  r.post("/shorts/sync", async (_req, res) => {
+  r.post("/shorts/sync", requirePerm("ajustes"), async (_req, res) => {
     try {
       const count = await syncShorts(sb());
       const { data } = await sb().from("shorts").select("*").order("published_at", { ascending: false });
@@ -142,13 +142,13 @@ export function contentRouter(): Router {
     }
   });
 
-  r.get("/shorts", async (_req, res) => {
+  r.get("/shorts", requirePerm("contenidos"), async (_req, res) => {
     const { data, error } = await sb().from("shorts").select("*").order("published_at", { ascending: false });
     if (error) return res.status(500).json({ error: error.message });
     res.json(data);
   });
 
-  r.patch("/shorts/:id", async (req, res) => {
+  r.patch("/shorts/:id", requirePerm("ajustes"), async (req, res) => {
     const patch: Record<string, unknown> = {};
     for (const k of ["custom_title", "active", "sort"]) if (k in (req.body ?? {})) patch[k] = req.body[k];
     if (Object.keys(patch).length === 0) return res.status(400).json({ error: "nada para actualizar" });
@@ -158,14 +158,14 @@ export function contentRouter(): Router {
     res.json(data);
   });
 
-  r.delete("/shorts/:id", async (req, res) => {
+  r.delete("/shorts/:id", requirePerm("ajustes"), async (req, res) => {
     const { error } = await sb().from("shorts").delete().eq("id", req.params.id);
     if (error) return res.status(500).json({ error: error.message });
     res.status(204).end();
   });
 
   // ---- Efemérides sugeridas desde Wikipedia (días conmemorativos + hechos históricos) ----
-  r.get("/efemerides-wikipedia", async (req, res) => {
+  r.get("/efemerides-wikipedia", requirePerm("contenidos"), async (req, res) => {
     const m = /^(\d{2})-(\d{2})$/.exec(typeof req.query.date === "string" ? req.query.date : "");
     const mm = m?.[1], dd = m?.[2];
     if (!mm || !dd || +mm < 1 || +mm > 12 || +dd < 1 || +dd > 31) return res.status(400).json({ error: "date inválida (MM-DD)" });
@@ -177,7 +177,7 @@ export function contentRouter(): Router {
   });
 
   // ---- Búsqueda en uploads del canal (Promos: autoseleccionar por hashtag) ----
-  r.get("/youtube-search", async (req, res) => {
+  r.get("/youtube-search", requirePerm("contenidos"), async (req, res) => {
     const q = typeof req.query.q === "string" ? req.query.q : "";
     try {
       const results = await searchUploads(q);
@@ -188,7 +188,7 @@ export function contentRouter(): Router {
   });
 
   // ---- Reporte de Publicidad: cuántas veces salió cada aviso al aire en un período ----
-  r.get("/report/publicidad", async (req, res) => {
+  r.get("/report/publicidad", requirePerm("reportes"), async (req, res) => {
     const from = typeof req.query.from === "string" ? req.query.from : new Date(Date.now() - 30 * 86400_000).toISOString();
     const to = typeof req.query.to === "string" ? req.query.to : new Date().toISOString();
     const { data, error } = await sb()
@@ -203,13 +203,13 @@ export function contentRouter(): Router {
   });
 
   // ---- Cámaras ----
-  r.get("/cameras", async (_req, res) => {
+  r.get("/cameras", requirePerm("contenidos"), async (_req, res) => {
     const { data, error } = await sb().from("cameras").select("*").order("sort").order("created_at");
     if (error) return res.status(500).json({ error: error.message });
     res.json(data);
   });
 
-  r.post("/cameras", async (req, res) => {
+  r.post("/cameras", requirePerm("camaras"), async (req, res) => {
     const { name, city, type, url } = req.body ?? {};
     if (!["youtube", "hls", "image", "iframe"].includes(type)) return res.status(400).json({ error: "type inválido" });
     if (typeof name !== "string" || !name.trim() || typeof url !== "string" || !url.trim())
@@ -223,7 +223,7 @@ export function contentRouter(): Router {
     res.status(201).json(data);
   });
 
-  r.patch("/cameras/:id", async (req, res) => {
+  r.patch("/cameras/:id", requirePerm("camaras"), async (req, res) => {
     const patch: Record<string, unknown> = {};
     for (const k of ["name", "city", "type", "url", "active", "sort"]) if (k in (req.body ?? {})) patch[k] = req.body[k];
     if (Object.keys(patch).length === 0) return res.status(400).json({ error: "nada para actualizar" });
@@ -233,14 +233,14 @@ export function contentRouter(): Router {
     res.json(data);
   });
 
-  r.delete("/cameras/:id", async (req, res) => {
+  r.delete("/cameras/:id", requirePerm("camaras"), async (req, res) => {
     const { error } = await sb().from("cameras").delete().eq("id", req.params.id);
     if (error) return res.status(500).json({ error: error.message });
     res.status(204).end();
   });
 
   // Buscar cámaras en Windy por ciudad (geocoding + nearby). Devuelve imágenes que se actualizan.
-  r.get("/windy", async (req, res) => {
+  r.get("/windy", requirePerm("camaras"), async (req, res) => {
     if (!env.windyApiKey) return res.status(400).json({ error: "falta WINDY_API_KEY" });
     const city = String(req.query.city ?? "").trim();
     if (!city) return res.status(400).json({ error: "indicá una ciudad" });
