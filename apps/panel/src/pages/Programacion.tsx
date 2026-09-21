@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   AlertTriangle, TrendingUp, Newspaper, Megaphone, Video, GripVertical, X,
-  MonitorPlay, Zap, ArrowRight, ChevronDown, PauseCircle,
+  MonitorPlay, Zap, ArrowRight, ChevronDown, PauseCircle, LayoutGrid, Check, Inbox,
 } from "lucide-react";
 import type { ContentItem, PlaylistItem, Camera } from "@newsroller/shared";
 import { contentHasAudio, DOLAR_CASAS } from "@newsroller/shared";
+import { TIPO_BY_KEY } from "../lib/tipos";
 import { parrilla, OUTPUT_FRAME_BASE } from "../lib/parrilla";
 import { contentItems as contentItemsApi } from "../lib/content-items";
 import { settingsApi } from "../lib/settings";
@@ -28,7 +29,7 @@ const CAT: Record<string, { label: string; color: string; Icon: any }> = {
   media: { label: "Media", color: "#8b5cf6", Icon: Megaphone },
   camaras: { label: "Cámaras", color: "#e08a1e", Icon: Video },
 };
-const FILTERS = [["all", "Todos"], ["sin", "Sin asignar"], ["ultima", "Última Hora"], ["datos", "Datos"], ["editorial", "Editorial"], ["media", "Media"], ["camaras", "Cámaras"]];
+const CAT_ORDER = ["ultima", "datos", "editorial", "media", "camaras"];
 
 interface TextCtx { cams: Map<string, Camera>; yt: Record<string, string> }
 const fileName = (u: string) => { try { return decodeURIComponent(u.split("?")[0].split("/").pop() || ""); } catch { return u; } };
@@ -57,6 +58,10 @@ function itemText(ci: ContentItem, ctx: TextCtx): string {
   return (d.text || d.title || d.subt || d.name || fallback).toString();
 }
 const catOf = (t: string) => TYPE_CAT[t] || "media";
+// Ícono de cada tipo: el mismo que tiene su botón en Contenido (si no, el de su categoría).
+const iconOf = (t: string): any => TIPO_BY_KEY[t]?.Icon ?? CAT[catOf(t)].Icon;
+// Ícono de cada categoría del filtro: el de su tipo principal en Contenido.
+const CAT_ICON: Record<string, any> = { ultima: TIPO_BY_KEY.ultima_hora.Icon, datos: TIPO_BY_KEY.dolar.Icon, editorial: TIPO_BY_KEY.placas.Icon, media: TIPO_BY_KEY.video_full.Icon, camaras: TIPO_BY_KEY.camaras.Icon };
 
 interface LiveStatus {
   updatedAt: string;
@@ -91,6 +96,15 @@ export function Programacion() {
   const [err, setErr] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
   const [filter, setFilter] = useState("all");
+  const [ddOpen, setDdOpen] = useState(false);
+  const ddRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!ddOpen) return;
+    const close = (e: MouseEvent) => { if (!ddRef.current?.contains(e.target as Node)) setDdOpen(false); };
+    const esc = (e: KeyboardEvent) => { if (e.key === "Escape") setDdOpen(false); };
+    document.addEventListener("mousedown", close); document.addEventListener("keydown", esc);
+    return () => { document.removeEventListener("mousedown", close); document.removeEventListener("keydown", esc); };
+  }, [ddOpen]);
   const [exp, setExp] = useState<string | null>(null);
   const [sel, setSel] = useState<string | null>(null);
   const [mode, setMode] = useState<"preview" | "aire" | "clip">("preview");
@@ -274,13 +288,17 @@ export function Programacion() {
     ? !!liveStatus?.current?.hasAudio
     : (() => { const ci = previewCi(); return !!ci && contentHasAudio(ci.type, ci.data); })();
 
-  // cantidad en parrilla por categoría (se muestra en los filtros de Disponibles)
+  // Cantidades de Contenidos disponibles: total, sin asignar (todavía no están en la parrilla) y por categoría.
   const catCount = useMemo(() => {
     const inDraft = new Set(draft.map((r) => r.content_id));
-    const by: Record<string, number> = { all: draft.length, sin: items.filter((c) => c.in_parrilla !== false && !inDraft.has(c.id)).length };
-    draft.forEach((r) => { const ci = r.content_id ? itemById.get(r.content_id) : null; if (ci) { const c = catOf(ci.type); by[c] = (by[c] || 0) + 1; } });
+    const by: Record<string, number> = { all: 0, sin: 0 };
+    for (const c of items) {
+      if (c.in_parrilla === false) continue;
+      const k = catOf(c.type); by[k] = (by[k] || 0) + 1; by.all++;
+      if (!inDraft.has(c.id)) by.sin++;
+    }
     return by;
-  }, [draft, items, itemById]);
+  }, [draft, items]);
   const cicloSec = draft.filter((r) => r.enabled).reduce((a, r) => a + r.duration_sec, 0);
 
   const fmt = (s: number) => [Math.floor(s / 3600), Math.floor((s % 3600) / 60), s % 60].map((n) => String(n).padStart(2, "0")).join(":");
@@ -306,15 +324,34 @@ export function Programacion() {
         {/* col1 disponibles */}
         <div className="pv-card pv-disp">
           <div className="pv-ct">Contenidos disponibles</div>
-          <div className="pv-cats">
-            {FILTERS.map(([id, lb]) => (
-              <button key={id} className={"pv-cat" + (filter === id ? " on" : "")} onClick={() => setFilter(id)}>{lb}{catCount[id] ? <span className="pv-cn">{catCount[id]}</span> : null}</button>
-            ))}
+          <div className="pv-filters">
+            <div className="pv-dd" ref={ddRef}>
+              <button className={"pv-ddb" + (filter !== "all" ? " on" : "")} onClick={() => setDdOpen((v) => !v)} aria-haspopup="listbox" aria-expanded={ddOpen}>
+                {(() => { const I = filter === "all" ? LayoutGrid : filter === "sin" ? Inbox : CAT_ICON[filter]; return <I size={14} color={filter === "all" || filter === "sin" ? undefined : CAT[filter].color} />; })()}
+                <span className="pv-ddl">{filter === "all" ? "Todos" : filter === "sin" ? "Sin asignar" : CAT[filter].label}</span>
+                <span className="pv-cn">{catCount[filter] ?? 0}</span>
+                <ChevronDown size={14} className={ddOpen ? "pv-up" : ""} />
+              </button>
+              {ddOpen && (
+                <div className="pv-ddm" role="listbox">
+                  {[["all", "Todos", LayoutGrid, "#5b6678"] as const, ["sin", "Sin asignar", Inbox, "#5b6678"] as const, ...CAT_ORDER.map((k) => [k, CAT[k].label, CAT_ICON[k], CAT[k].color] as const)].map(([id, lb, I, col], i) => (
+                    <div key={id} style={{ display: "contents" }}>
+                      {i === 2 && <div className="pv-dds" />}
+                      <button role="option" aria-selected={filter === id} className={"pv-ddi" + (filter === id ? " sel" : "")} onClick={() => { setFilter(id); setDdOpen(false); }}>
+                        <I size={14} color={col} /><span className="pv-ddl">{lb}</span>
+                        <span className="pv-cn">{catCount[id] ?? 0}</span>
+                        {filter === id && <Check size={14} />}
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
           <div className="pv-displist">
             {disponibles.length === 0 && <div className="pv-empty">Sin contenidos. Cargá desde "Nuevo contenido".</div>}
             {disponibles.map((ci) => {
-              const c = CAT[catOf(ci.type)]; const n = countIn(ci.id); const ex = exp === ci.id; const Ic = c.Icon;
+              const c = CAT[catOf(ci.type)]; const n = countIn(ci.id); const ex = exp === ci.id; const Ic = iconOf(ci.type);
               return (
                 <div key={ci.id} className={"pv-chip" + (n ? " inuse" : "") + (ex ? " exp" : "")}
                   draggable onDragStart={() => (dragRef.current = { type: "disp", id: ci.id })} onDragEnd={endDrag}
@@ -347,7 +384,7 @@ export function Programacion() {
               const ci = r.content_id ? itemById.get(r.content_id) : null;
               // Contenido borrado (o retirado de la parrilla): la fila se marca en rojo.
               const missing = r.content_type === "content_item" && (!ci || ci.in_parrilla === false);
-              const cat = ci ? catOf(ci.type) : "media"; const cc = CAT[cat]; const Ic = missing ? AlertTriangle : cc.Icon;
+              const cat = ci ? catOf(ci.type) : "media"; const cc = CAT[cat]; const Ic = missing ? AlertTriangle : ci ? iconOf(ci.type) : cc.Icon;
               const label = ci ? txt(ci) : (r.content_type === "content_item" ? "Contenido eliminado" : r.content_type);
               return (
                 <div key={r.id} style={{ display: "contents" }}>
@@ -487,11 +524,19 @@ const CSS = `
 
 .pv-disp{display:flex;flex-direction:column;min-height:0;padding:14px 0 0;height:0;min-height:100%}
 .pv-disp .pv-ct{padding:0 16px}
-.pv-cats{display:flex;flex-wrap:wrap;gap:6px;padding:12px 16px}
-.pv-cat{border:1px solid var(--ln);background:#fff;color:var(--dim);border-radius:8px;padding:6px 11px;font-size:11.5px;font-weight:700;cursor:pointer}
-.pv-cat.on{background:var(--tx);color:#fff;border-color:var(--tx)}
-.pv-cn{margin-left:6px;font-size:10px;font-weight:800;background:#e8efff;color:var(--ac);border-radius:6px;padding:1px 6px}
-.pv-cat.on .pv-cn{background:rgba(255,255,255,.22);color:#fff}
+.pv-filters{display:flex;flex-wrap:wrap;gap:8px;padding:12px 16px;align-items:center}
+.pv-ddb{border:1px solid var(--ln);background:#f4f5f8;color:var(--tx);border-radius:10px;padding:7px 11px;font:inherit;font-size:12px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:7px}
+.pv-ddb:hover{border-color:#c5cbd8;background:#eceef3}
+.pv-ddb.on{border-color:var(--ac);background:var(--acs)}
+.pv-ddb .pv-up{transform:rotate(180deg)}
+.pv-dd{position:relative;flex:1;min-width:150px}
+.pv-dds{height:1px;background:var(--ln);margin:3px 6px}.pv-dd .pv-ddb{width:100%}
+.pv-ddl{flex:1;text-align:left;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pv-ddm{position:absolute;left:0;right:0;top:calc(100% + 6px);z-index:30;background:#fff;border:1px solid var(--ln);border-radius:12px;box-shadow:0 12px 30px rgba(20,30,60,.18);padding:5px;display:flex;flex-direction:column;gap:2px;min-width:200px}
+.pv-ddi{border:0;background:transparent;font:inherit;font-size:12.5px;color:var(--tx);border-radius:8px;padding:8px 10px;display:flex;align-items:center;gap:9px;cursor:pointer;text-align:left}
+.pv-ddi:hover{background:#f1f3f8}.pv-ddi.sel{background:var(--acs);font-weight:700}
+.pv-cn{margin-left:2px;font-size:10px;font-weight:800;background:#e3e7ee;color:#4a5468;border-radius:6px;padding:1px 6px}
+.pv-ddi.sel .pv-cn{background:#fff;color:var(--ac)}
 .pv-displist{flex:1;min-height:0;overflow:auto;display:flex;flex-direction:column;gap:8px;padding:0 14px 14px}
 .pv-chip{display:flex;align-items:center;gap:10px;background:#fff;border:1px solid var(--ln);border-left:4px solid var(--ln);border-radius:8px;padding:8px 10px;cursor:grab;font-size:12px}
 .pv-chip:hover{border-color:var(--ac)}
