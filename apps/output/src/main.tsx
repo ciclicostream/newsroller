@@ -12,6 +12,26 @@ const demo = params.get("demo"); // vista local SIN Supabase (para revisar placa
 
 // Datos de ejemplo para el modo demo.
 const DEMOS: Record<string, { type: string; data: Record<string, any>; dur?: number }> = {
+  cartelera_cine: {
+    type: "cartelera", dur: 15,
+    data: { kind: "cine", photo_url: "", title: "Interestelar", synopsis: "Un grupo de astronautas viaja a través de un agujero de gusano en busca de un nuevo hogar para la humanidad, mientras la Tierra se queda sin tiempo.", author: "Christopher Nolan", cast: "Matthew McConaughey, Anne Hathaway, Jessica Chastain, Michael Caine", duration_text: "169 min", genre: "Ciencia ficción", ticker: "recomendada", trailer_id: "zSWdZVtXT7E", poster_url: "https://picsum.photos/seed/poster/600/900" },
+  },
+  cartelera_serie: {
+    type: "cartelera", dur: 15,
+    data: { kind: "cine", photo_url: "", title: "Cien años de soledad", synopsis: "La saga de la familia Buendía en Macondo, adaptada por primera vez a la pantalla.", author: "Alex García López, Laura Mora", cast: "Claudio Cataño, Marco González, Susana Morales", duration_text: "60 min por capítulo", genre: "Drama", is_series: true, platform: "netflix", platform_name: "Netflix", seasons: 2, episodes: 8, ticker: "estreno", trailer_id: "zSWdZVtXT7E", short_id: "bxskJgShC38", short_thumb: "https://i.ytimg.com/vi/bxskJgShC38/mqdefault.jpg" },
+  },
+  cartelera_cine_min: {
+    type: "cartelera", dur: 12,
+    data: { kind: "cine", photo_url: "", title: "Una película con un título bastante largo para ver cómo se acomoda", synopsis: "Sin póster, sin short y sin newsticker.", author: "Director de prueba", cast: "Actriz Uno, Actor Dos", duration_text: "95 min", genre: "Comedia", trailer_id: "zSWdZVtXT7E" },
+  },
+  cartelera_evento: {
+    type: "cartelera", dur: 12,
+    data: { kind: "evento", photo_url: "https://picsum.photos/seed/evento/1600/900", title: "Festival de Jazz en el Parque Centenario", author: "", cast: "", description: "Una tarde con bandas de jazz locales, feria de discos y food trucks. Entrada libre y gratuita para toda la familia.", venue: "Parque Centenario", address: "Av. Díaz Vélez 4821", city: "Caballito - CABA", days: "Sábado 27", time: "16:00 hs" },
+  },
+  cartelera_teatro: {
+    type: "cartelera", dur: 12,
+    data: { kind: "teatro", photo_url: "https://picsum.photos/seed/teatro/1600/900", title: "¡Oh cabezas locas de las religiosas!", author: "Mía Micelli", cast: "Ana Luz Camps, Melina Del Valle Villar, Miranda Di Lorenzo, Agustín Gagliardi, Mía Miceli", venue: "Espacio Callejón", address: "Humahuaca 3759", city: "Almagro - CABA", days: "Sábados", time: "16:00 hs" },
+  },
   efemerides_multi: {
     type: "efemerides",
     dur: 24,

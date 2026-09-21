@@ -3,6 +3,7 @@ import { Layout } from "./components/Layout";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { Login } from "./pages/Login";
 import { AjustesClima } from "./pages/AjustesClima";
+import { AjustesPlataformas } from "./pages/AjustesPlataformas";
 import { Programacion } from "./pages/Programacion";
 import { NuevoContenido } from "./pages/NuevoContenido";
 import { Plantillas } from "./pages/Plantillas";
@@ -41,6 +42,7 @@ export function App() {
       <Route path="/reportes" element={<Protected><Reportes /></Protected>} />
       <Route path="/ajustes" element={<Protected><Ajustes /></Protected>} />
       <Route path="/ajustes/clima" element={<Protected><AjustesClima /></Protected>} />
+      <Route path="/ajustes/plataformas" element={<Protected><AjustesPlataformas /></Protected>} />
       <Route path="/usuarios" element={<Protected adminOnly><Users /></Protected>} />
     </Routes>
   );

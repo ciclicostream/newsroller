@@ -150,8 +150,13 @@ function VideoAsset({ src, fit, radius, onEnded }: { src: string; fit: string; r
 }
 
 // Reproductor de YouTube con IFrame API. allowAudio=false → siempre muteado (cámaras).
-export function YouTubePlayer({ videoId, onEnded, allowAudio = true }: { videoId: string; onEnded: () => void; allowAudio?: boolean }) {
+// `loop` repite el video al terminar (no llama a onEnded). `holdAudio` no activa el sonido al arrancar:
+// queda mudo hasta que `unmuted` pasa a true (ej. el trailer espera a que termine el short del columnista).
+export function YouTubePlayer({ videoId, onEnded, allowAudio = true, loop = false, holdAudio = false, unmuted = false }: { videoId: string; onEnded: () => void; allowAudio?: boolean; loop?: boolean; holdAudio?: boolean; unmuted?: boolean }) {
   const ref = useRef<HTMLDivElement>(null);
+  const playerRef = useRef<any>(null);
+  const loopRef = useRef(loop);
+  loopRef.current = loop;
   const endedRef = useRef(onEnded);
   endedRef.current = onEnded;
 
@@ -166,7 +171,7 @@ export function YouTubePlayer({ videoId, onEnded, allowAudio = true }: { videoId
     let cancelled = false;
     function create() {
       if (cancelled || !ref.current) return;
-      player = new window.YT.Player(ref.current, {
+      player = playerRef.current = new window.YT.Player(ref.current, {
         videoId,
         width: "100%",
         height: "100%",
@@ -177,7 +182,7 @@ export function YouTubePlayer({ videoId, onEnded, allowAudio = true }: { videoId
             try { e.target.playVideo(); } catch { /* noop */ }
             // Solo intentar sonido si se pidió (OBS/vMix con ?audio=1). En el navegador normal
             // NO se toca: así el autoplay muteado nunca se bloquea.
-            if (allowAudio && WANT_AUDIO) {
+            if (allowAudio && WANT_AUDIO && !holdAudio) {
               setTimeout(() => {
                 unmuteAttemptedAtRef.current = Date.now();
                 try { e.target.unMute(); e.target.setVolume(100); } catch { /* noop */ }
@@ -186,7 +191,10 @@ export function YouTubePlayer({ videoId, onEnded, allowAudio = true }: { videoId
           },
           onStateChange: (e: any) => {
             const S = window.YT?.PlayerState;
-            if (e.data === S?.ENDED) { endedRef.current(); return; }
+            if (e.data === S?.ENDED) {
+              if (loopRef.current) { try { e.target.seekTo(0, true); e.target.playVideo(); } catch { /* noop */ } return; }
+              endedRef.current(); return;
+            }
             // Si el navegador lo pausó por el intento de sonido sin gesto (ventana de 2s
             // tras el unMute), seguí reproduciendo muteado. Fuera de esa ventana, dejalo:
             // puede ser el video llegando a su fin natural.
@@ -210,6 +218,13 @@ export function YouTubePlayer({ videoId, onEnded, allowAudio = true }: { videoId
     }
     return () => { cancelled = true; try { player?.destroy(); } catch { /* noop */ } };
   }, [videoId]);
+
+  // Sonido a demanda (sólo con ?audio=1, igual que el resto): cuando `unmuted` pasa a true.
+  useEffect(() => {
+    if (!holdAudio || !unmuted || !allowAudio || !WANT_AUDIO) return;
+    unmuteAttemptedAtRef.current = Date.now();
+    try { playerRef.current?.unMute(); playerRef.current?.setVolume(100); } catch { /* noop */ }
+  }, [unmuted, holdAudio, allowAudio]);
 
   // La capa transparente encima intercepta el mouse → YouTube no muestra sus controles al pasar por encima.
   return (

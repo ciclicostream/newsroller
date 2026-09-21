@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import type { CarteleraData } from "@newsroller/shared";
 import fondo from "../assets/fondo-cartelera.jpg";
 import { Chrome } from "./Chrome";
+import { CarteleraCine } from "./CarteleraCine";
 import { useAutoFit } from "../lib/autofit";
 
 const WANT_AUDIO = typeof window !== "undefined" && new URLSearchParams(window.location.search).has("audio");
@@ -12,11 +13,22 @@ const WANT_AUDIO = typeof window !== "undefined" && new URLSearchParams(window.l
 // izquierda se corre, la derecha crece hacia arriba y se angosta, el video se
 // apoya encima de la pill, y el Chrome oculta hora Y temp (queda liberada esa
 // esquina). Salida estándar: todo baja detrás del ticker. No genera reporte.
+// Variantes (data.kind): teatro (la de siempre), evento (como teatro pero sin director ni elenco) y cine
+// (película o serie: otra placa, ver CarteleraCine).
 export function Cartelera({ data, durationSec }: { data: CarteleraData; durationSec?: number }) {
+  if (data.kind === "cine") return <CarteleraCine data={data} durationSec={durationSec} />;
+  return <CarteleraClasica data={data} durationSec={durationSec} />;
+}
+
+function CarteleraClasica({ data, durationSec }: { data: CarteleraData; durationSec?: number }) {
+  const kind = data.kind ?? "teatro";
+  const isEvento = kind === "evento";
   const hasVideo = !!data.video_url;
   const [play, setPlay] = useState(false);
   const [exiting, setExiting] = useState(false);
   const titleRef = useRef<HTMLSpanElement>(null);
+  const evTitleRef = useRef<HTMLDivElement>(null);
+  const evDescRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const id = requestAnimationFrame(() => setPlay(true));
@@ -29,18 +41,30 @@ export function Cartelera({ data, durationSec }: { data: CarteleraData; duration
   }, [durationSec]);
 
   useAutoFit(titleRef, 64, 34, [data.title]);
+  useAutoFit(evTitleRef, 64, 34, [data.title]);
+  useAutoFit(evDescRef, 28, 18, [data.description]);
 
   return (
-    <div className={"cl" + (play ? " play" : "") + (exiting ? " exit" : "") + (hasVideo ? " has-video" : "")} style={{ position: "absolute", inset: 0 }}>
+    <div className={"cl" + (play ? " play" : "") + (exiting ? " exit" : "") + (hasVideo ? " has-video" : "") + " k-" + kind} style={{ position: "absolute", inset: 0 }}>
       <style>{CSS}</style>
       <img className="cl-bg" src={fondo} alt="" />
       <Chrome hideClock={hasVideo} hideTemp={hasVideo} />
 
       <div className="cl-left cl-el">
         <img className="cl-photo" src={data.photo_url} alt="" />
-        <div className="cl-obra"><span ref={titleRef}>{data.title}</span></div>
-        <div className="cl-autor">De {data.author}</div>
-        <div className="cl-elenco">Con: {data.cast}</div>
+        {isEvento ? (
+          // Título + descripción en una columna: la descripción va pegada al título, sea de 1 o 2 líneas.
+          <div className="cl-etext">
+            <div className="cl-eobra" ref={evTitleRef}><span>{data.title}</span></div>
+            <div className="cl-edesc" ref={evDescRef}>{data.description}</div>
+          </div>
+        ) : (
+          <>
+            <div className="cl-obra"><span ref={titleRef}>{data.title}</span></div>
+            <div className="cl-autor">De {data.author}</div>
+            <div className="cl-elenco">Con: {data.cast}</div>
+          </>
+        )}
       </div>
 
       {hasVideo && (
@@ -83,6 +107,13 @@ const CSS = `
 .cl-video{position:absolute;left:1444px;top:108px;width:281px;height:500px;z-index:15;border-radius:20px;
   overflow:hidden;background:#c9ccd2;box-shadow:0 12px 30px rgba(0,0,0,.35);transform:translateX(70px)}
 .cl-video video{width:100%;height:100%;object-fit:cover;display:block}
+
+/* Evento: sin autor ni elenco; título y descripción en una columna bajo la foto */
+.cl-etext{position:absolute;left:48px;right:48px;top:452px;bottom:26px;z-index:2;display:flex;flex-direction:column;gap:22px;min-height:0}
+.cl-eobra{flex:0 0 auto;max-height:200px;overflow:hidden;font-size:64px}
+.cl-eobra span{background:#4ea0f5;color:#fff;box-decoration-break:clone;-webkit-box-decoration-break:clone;
+  padding:8px 18px;font-weight:800;line-height:1.5;text-transform:uppercase;letter-spacing:.01em}
+.cl-edesc{flex:1 1 auto;min-height:0;overflow:hidden;margin-left:4px;color:#0b2b6b;font-weight:600;font-size:28px;line-height:1.28}
 
 .cl-venue{position:absolute;left:1400px;top:548px;width:460px;height:360px;z-index:14;background:#fff;
   border-radius:30px;box-sizing:border-box;padding:40px 38px 52px;display:flex;flex-direction:column;

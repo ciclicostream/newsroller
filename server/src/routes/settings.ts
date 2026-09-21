@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { getSupabase } from "../db/supabase.js";
 import { requireAuth } from "../auth/middleware.js";
-import { CLIMA_SLOT_KEYS } from "@newsroller/shared";
+import { CLIMA_SLOT_KEYS, PLATAFORMAS_DEFAULT, type Plataforma } from "@newsroller/shared";
 import type { IO } from "../realtime/socket.js";
 
 // Preferencias del sistema (key/value). Defaults + validación por clave.
@@ -18,10 +18,12 @@ const DEFAULTS = {
   airPausedAt: "" as string,
   // Íconos BIG del clima cargados por el editor: { [slot]: url }. Vacío = predeterminados.
   climaIcons: {} as Record<string, string>,
+  // Plataformas de streaming (Cartelera → series): { id, name, logo? }. Se administran en Ajustes → Plataformas.
+  plataformas: PLATAFORMAS_DEFAULT as Plataforma[],
 };
 
 type SettingsKey = keyof typeof DEFAULTS;
-type SettingsValue = number | boolean | string | Record<string, string>;
+type SettingsValue = number | boolean | string | Record<string, string> | Plataforma[];
 
 // Fallback en memoria cuando no hay Supabase (dev local sin credenciales).
 const memory: Record<string, unknown> = {};
@@ -52,6 +54,21 @@ function coerce(key: SettingsKey, raw: unknown): SettingsValue | null {
       if (v == null || v === "") continue; // sin valor = volver al predeterminado
       if (typeof v !== "string" || !/^https?:\/\//.test(v)) return null;
       out[k] = v;
+    }
+    return out;
+  }
+  if (key === "plataformas") {
+    if (!Array.isArray(raw) || raw.length > 40) return null;
+    const out: Plataforma[] = [];
+    const ids = new Set<string>();
+    for (const it of raw as Record<string, unknown>[]) {
+      const id = typeof it?.id === "string" ? it.id : "";
+      const name = typeof it?.name === "string" ? it.name.trim().slice(0, 30) : "";
+      if (!/^[a-z0-9_-]{1,30}$/.test(id) || !name || ids.has(id)) return null;
+      const logo = it.logo;
+      if (logo != null && logo !== "" && (typeof logo !== "string" || !/^https?:\/\//.test(logo))) return null;
+      ids.add(id);
+      out.push({ id, name, ...(typeof logo === "string" && logo ? { logo } : {}) });
     }
     return out;
   }

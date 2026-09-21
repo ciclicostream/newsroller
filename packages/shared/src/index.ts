@@ -341,19 +341,53 @@ export function formatEfemeridesDate(d: Pick<EfemeridesEntry, "dateKind" | "day"
   return `${d.day ?? 1} DE ${mes.toUpperCase()} DE ${d.year}`;
 }
 
-// Datos del tipo "cartelera" ("En cartelera"). Todo obligatorio salvo el video.
+// Datos del tipo "cartelera" ("En cartelera"), en tres variantes:
+//  - teatro (la de siempre): foto horizontal + título + "De …" + "Con: …" (+ video 9:16 opcional)
+//  - cine: en lugar de la foto, el trailer de YouTube; título + sinopsis y una ficha lateral (director, actores, duración, género)
+//  - evento: como teatro pero SIN director ni elenco
+// Las ya guardadas no traen `kind` y se tratan como teatro.
+export type CarteleraKind = "teatro" | "cine" | "evento";
 export interface CarteleraData {
-  photo_url: string;   // foto horizontal, obligatoria
-  title: string;        // título de la obra, máx 90
-  author: string;       // "De …"
-  cast: string;          // "Con: …"
+  kind?: CarteleraKind;
+  photo_url: string;   // foto horizontal (teatro y evento, obligatoria); en cine va vacía
+  title: string;        // título de la obra/película/evento, máx 90
+  author: string;       // "De …" (teatro: autor, cine: director; en evento va vacío)
+  cast: string;          // "Con: …" (en evento va vacío)
   venue: string;         // lugar
   address: string;       // dirección
   city: string;           // ciudad/barrio
   days: string;           // día(s)
   time: string;           // horario
-  video_url?: string | null; // opcional, 9:16
+  description?: string;      // evento: descripción (va bajo el título)
+  video_url?: string | null; // teatro/evento: opcional, 9:16
+  // ---- Cine (película o serie) ----
+  trailer_id?: string;       // id de YouTube del trailer (obligatorio)
+  synopsis?: string;         // sinopsis (va bajo el título); `author` = director y `cast` = actores (van en la ficha lateral)
+  duration_text?: string;    // "148 min"
+  genre?: string;
+  is_series?: boolean;       // serie: se muestra la plataforma (+ temporadas/capítulos, opcionales)
+  platform?: string;         // id de plataforma (Ajustes → Plataformas)
+  platform_name?: string;    // nombre guardado por si la plataforma se quita después
+  seasons?: number;
+  episodes?: number;
+  ticker?: "recomendada" | "estreno" | "clasico" | null; // newsticker chico encima del título
+  poster_url?: string;       // póster (opcional) en el lugar lateral…
+  short_id?: string;         // …o un short de Cíclico (id de YouTube, de la ingesta de Shorts)
+  short_thumb?: string;      // tapa del short: queda a la vista cuando termina
 }
+
+// Plataformas de streaming elegibles para una serie. La lista se administra en Ajustes → Plataformas
+// (se pueden agregar/quitar y cargar su logo); éstas son las de arranque.
+export interface Plataforma { id: string; name: string; logo?: string }
+export const PLATAFORMAS_DEFAULT: Plataforma[] = [
+  { id: "netflix", name: "Netflix" },
+  { id: "appletv", name: "AppleTV+" },
+  { id: "mubi", name: "Mubi" },
+  { id: "prime", name: "Prime" },
+  { id: "disney", name: "Disney+" },
+  { id: "hbo", name: "HBO+" },
+  { id: "flow", name: "Flow" },
+];
 
 // Programas sugeridos para "Entrevista completa en …" (el editor puede escribir otro).
 export const DECLARACIONES_PROGRAMAS = ["EPA!", "REC!", "Cíclico Noticias", "Modo Cíclico"];

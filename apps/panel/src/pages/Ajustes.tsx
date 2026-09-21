@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Users as UsersIcon, Youtube, Tv, Images, Rss, CloudSun } from "lucide-react";
+import { Users as UsersIcon, Youtube, Tv, Images, Rss, CloudSun, Clapperboard } from "lucide-react";
 import { useAuth } from "../auth/AuthProvider";
 import { settingsApi } from "../lib/settings";
 
@@ -75,6 +75,13 @@ export function Ajustes() {
           <span className="tipo-main">
             <span className="tipo-name">Íconos del clima</span>
             <span className="tipo-desc">Imágenes grandes según el cielo</span>
+          </span>
+        </Link>
+        <Link to="/ajustes/plataformas" className="tipo-card">
+          <span className="tipo-ic"><Clapperboard size={22} /></span>
+          <span className="tipo-main">
+            <span className="tipo-name">Plataformas</span>
+            <span className="tipo-desc">Logos de streaming para series</span>
           </span>
         </Link>
         <Link to="/programas" className="tipo-card">
