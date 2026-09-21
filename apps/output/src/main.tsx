@@ -11,7 +11,21 @@ const draft = params.get("draft"); // monitor de edición de los formularios del
 const demo = params.get("demo"); // vista local SIN Supabase (para revisar placas portadas)
 
 // Datos de ejemplo para el modo demo.
-const DEMOS: Record<string, { type: string; data: Record<string, any> }> = {
+const DEMOS: Record<string, { type: string; data: Record<string, any>; dur?: number }> = {
+  efemerides_multi: {
+    type: "efemerides",
+    dur: 24,
+    data: {
+      dateKind: "anniversary", day: 21, month: 8,
+      title: "Día Mundial del Alzheimer",
+      body: "Jornada destinada a aumentar la concienciación sobre la enfermedad de Alzheimer, combatir el estigma asociado a la demencia y promover el apoyo a las personas afectadas y sus familias.",
+      media_url: "https://upload.wikimedia.org/wikipedia/commons/a/ad/Alois_Alzheimer_003.jpg", media_kind: "image",
+      more: [
+        { dateKind: "full", day: 21, month: 8, year: 1937, title: "Tolkien publica El Hobbit", body: "Se publica en Londres la novela de J. R. R. Tolkien, que abre la saga de la Tierra Media.", media_url: "https://picsum.photos/seed/hobbit/600/800", media_kind: "image" },
+        { dateKind: "full", day: 21, month: 8, year: 1964, title: "Malta se independiza del Reino Unido", body: "Malta obtiene la independencia del Reino Unido y pasa a integrar la Commonwealth.", media_url: "https://picsum.photos/seed/malta/600/800", media_kind: "image" },
+      ],
+    },
+  },
   ultima_hora: {
     type: "ultima_hora",
     data: { text: 'Abogados de Cristina presentaron una "prueba trascendente" para refutar la condena.', media_url: null, media_kind: null },
@@ -49,7 +63,7 @@ const DEMOS: Record<string, { type: string; data: Record<string, any> }> = {
 
 function DemoStage({ id }: { id: string }) {
   const d = DEMOS[id] ?? DEMOS.ultima_hora;
-  const DUR = 8;
+  const DUR = d.dur ?? 8;
   const [scale, setScale] = React.useState(1);
   const [loop, setLoop] = React.useState(0);
   React.useEffect(() => {

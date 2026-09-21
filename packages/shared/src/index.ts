@@ -311,21 +311,32 @@ const MESES_LARGO = [
 
 // Datos del tipo "efemerides". Precisión de fecha variable: día exacto, sólo
 // mes o sólo año (hay efemérides sin fecha exacta conocida).
-export interface EfemeridesData {
-  dateKind: "full" | "month" | "year";
-  day?: number;    // 1-31, sólo si dateKind="full"
-  month?: number;  // 0-11, si dateKind="full" o "month"
-  year: number;
+// Una efeméride (fecha + título + cuerpo + media). La placa puede llevar 1, 2 o 3 en el mismo pase.
+export interface EfemeridesEntry {
+  // "anniversary" = sólo día y mes, sin año (fechas que se repiten: Día Mundial del Alzheimer, 21 de septiembre).
+  // "year" ya no se ofrece en el formulario; queda para las efemérides viejas.
+  dateKind: "full" | "month" | "anniversary" | "year";
+  day?: number;    // 1-31, si dateKind="full" o "anniversary"
+  month?: number;  // 0-11, si dateKind="full", "month" o "anniversary"
+  year?: number;   // no aplica a "anniversary"
   title: string;   // máx 60
   body: string;    // máx 400
   media_url: string;              // obligatoria
   media_kind: "image" | "video";
 }
 
-// "11 DE SEPTIEMBRE DE 2001" / "SEPTIEMBRE DE 2025" / "2025".
-export function formatEfemeridesDate(d: Pick<EfemeridesData, "dateKind" | "day" | "month" | "year">): string {
-  if (d.dateKind === "year") return String(d.year);
+// Datos del tipo "efemerides": la primera efeméride va en los campos de arriba (así siguen valiendo las
+// ya guardadas) y `more` suma la 2ª y la 3ª. Con varias, pasan entre sí girando como un cubo y la
+// duración del bloque se reparte en partes iguales.
+export interface EfemeridesData extends EfemeridesEntry {
+  more?: EfemeridesEntry[]; // hasta 2 más
+}
+
+// "11 DE SEPTIEMBRE DE 2001" / "SEPTIEMBRE DE 2025" / "21 DE SEPTIEMBRE" (aniversario) / "2025".
+export function formatEfemeridesDate(d: Pick<EfemeridesEntry, "dateKind" | "day" | "month" | "year">): string {
+  if (d.dateKind === "year") return String(d.year ?? "");
   const mes = MESES_LARGO[d.month ?? 0] ?? "";
+  if (d.dateKind === "anniversary") return `${d.day ?? 1} DE ${mes.toUpperCase()}`;
   if (d.dateKind === "month") return `${mes.toUpperCase()} DE ${d.year}`;
   return `${d.day ?? 1} DE ${mes.toUpperCase()} DE ${d.year}`;
 }

@@ -3,6 +3,7 @@ import type { AssetKind } from "@newsroller/shared";
 import { getSupabase } from "../db/supabase.js";
 import { requireAuth } from "../auth/middleware.js";
 import { syncShorts, searchUploads } from "../content/youtube.js";
+import { efemeridesDeWikipedia } from "../content/wikipedia.js";
 import { env } from "../config/env.js";
 
 const BUCKETS: Record<AssetKind, string> = {
@@ -161,6 +162,18 @@ export function contentRouter(): Router {
     const { error } = await sb().from("shorts").delete().eq("id", req.params.id);
     if (error) return res.status(500).json({ error: error.message });
     res.status(204).end();
+  });
+
+  // ---- Efemérides sugeridas desde Wikipedia (días conmemorativos + hechos históricos) ----
+  r.get("/efemerides-wikipedia", async (req, res) => {
+    const m = /^(\d{2})-(\d{2})$/.exec(typeof req.query.date === "string" ? req.query.date : "");
+    const mm = m?.[1], dd = m?.[2];
+    if (!mm || !dd || +mm < 1 || +mm > 12 || +dd < 1 || +dd > 31) return res.status(400).json({ error: "date inválida (MM-DD)" });
+    try {
+      res.json(await efemeridesDeWikipedia(mm, dd));
+    } catch (e) {
+      res.status(502).json({ error: e instanceof Error ? e.message : "no se pudo consultar Wikipedia" });
+    }
   });
 
   // ---- Búsqueda en uploads del canal (Promos: autoseleccionar por hashtag) ----
