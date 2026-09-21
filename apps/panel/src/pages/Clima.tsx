@@ -71,7 +71,7 @@ export function Clima() {
 
   return (
     <>
-      <div className="page-head">
+      <div className="page-head pm-head">
         <div>
           <h1>Clima</h1>
           <p>Elegí la ciudad. La temperatura y el pronóstico se toman en vivo de la fuente Clima (no se congelan).</p>
@@ -81,7 +81,7 @@ export function Clima() {
       {err && <div className="alert error">{err}</div>}
       {msg && <div className="alert">{msg}</div>}
 
-      <div style={{ display: "grid", gridTemplateColumns: "400px 1fr", gap: 20, alignItems: "start" }}>
+      <div className="pm-layout">
         <form className="card" style={{ padding: 18 }} onSubmit={save}>
           <div style={{ fontWeight: 500, marginBottom: 14, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             {editingId ? "Editar placa de clima" : "Nueva placa de clima"}

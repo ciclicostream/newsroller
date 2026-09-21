@@ -101,7 +101,7 @@ export function PromosPlaca() {
 
   return (
     <>
-      <div className="page-head">
+      <div className="page-head pm-head">
         <div>
           <h1>Promos / Avances</h1>
           <p>Pill + card de texto + video 9:16 o 4:3, elegido del canal de YouTube (por hashtag o pegando el link/ID, para no listados).</p>
@@ -111,7 +111,7 @@ export function PromosPlaca() {
       {err && <div className="alert error">{err}</div>}
       {msg && <div className="alert">{msg}</div>}
 
-      <div style={{ display: "grid", gridTemplateColumns: "420px 1fr", gap: 20, alignItems: "start" }}>
+      <div className="pm-layout">
         <form className="card" style={{ padding: 18 }} onSubmit={save}>
           <div style={{ fontWeight: 500, marginBottom: 14, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             {editingId ? "Editar promo" : "Nueva promo"}

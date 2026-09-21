@@ -91,7 +91,7 @@ export function InformePlaca() {
 
   return (
     <>
-      <div className="page-head">
+      <div className="page-head pm-head">
         <div>
           <h1>Informe Cíclico</h1>
           <p>Carrusel de hasta {MAX_SLIDES} slides (imágenes 4:5) con título fijo mientras rotan solas.</p>
@@ -101,7 +101,7 @@ export function InformePlaca() {
       {err && <div className="alert error">{err}</div>}
       {msg && <div className="alert">{msg}</div>}
 
-      <div style={{ display: "grid", gridTemplateColumns: "420px 1fr", gap: 20, alignItems: "start" }}>
+      <div className="pm-layout">
         <form className="card" style={{ padding: 18 }} onSubmit={save}>
           <div style={{ fontWeight: 500, marginBottom: 14, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             {editingId ? "Editar informe" : "Nuevo informe"}

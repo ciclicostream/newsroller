@@ -125,17 +125,17 @@ export function UltimaHora() {
 
   return (
     <>
-      <div className="page-head">
+      <div className="page-head pm-head">
         <div>
           <h1>Última Hora</h1>
-          <p>Placa de alerta (roja). Texto obligatorio (máx. {MAX}, admite **negrita** con asteriscos). Foto o video opcional: sin recurso sale a pantalla completa; con recurso, a un lado.</p>
+          <p>Placa de alerta (roja). Texto obligatorio (máx. {MAX}, admite **negrita** con asteriscos).</p>
         </div>
       </div>
 
       {err && <div className="alert error">{err}</div>}
       {msg && <div className="alert">{msg}</div>}
 
-      <div style={{ display: "grid", gridTemplateColumns: "360px 1fr", gap: 20, alignItems: "start" }}>
+      <div className="pm-layout">
         <form className="card" style={{ padding: 18 }} onSubmit={save}>
           <div style={{ fontWeight: 500, marginBottom: 14, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             {editingId ? "Editar placa" : "Nueva placa"}

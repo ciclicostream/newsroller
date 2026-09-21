@@ -92,7 +92,7 @@ export function Dolar() {
 
   return (
     <>
-      <div className="page-head">
+      <div className="page-head pm-head">
         <div>
           <h1>Dólar</h1>
           <p>Elegí 3 cotizaciones. La del centro es la ancla (pill "EL DÓLAR"). Valor en vivo de dolarapi.com; podés forzar un valor manual por cotización.</p>
@@ -102,7 +102,7 @@ export function Dolar() {
       {err && <div className="alert error">{err}</div>}
       {msg && <div className="alert">{msg}</div>}
 
-      <div style={{ display: "grid", gridTemplateColumns: "420px 1fr", gap: 20, alignItems: "start" }}>
+      <div className="pm-layout">
         <form className="card" style={{ padding: 18 }} onSubmit={save}>
           <div style={{ fontWeight: 500, marginBottom: 14, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             {editingId ? "Editar placa" : "Nueva placa"}
