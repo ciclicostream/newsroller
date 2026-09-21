@@ -58,6 +58,13 @@ export function usersRouter(): Router {
     try { return new URL(o).origin; } catch { return `${req.protocol}://${req.get("host")}`; }
   };
 
+  // Link con el dominio del panel (no el de Supabase): lleva el token y el panel lo valida al abrirse (verifyOtp).
+  // Si por algo la API no devuelve el token, se cae al link original de Supabase.
+  const ownLink = (origin: string, props: { action_link?: string; hashed_token?: string; verification_type?: string } | null | undefined): string | undefined => {
+    if (props?.hashed_token && props.verification_type) return `${origin}/login?token_hash=${encodeURIComponent(props.hashed_token)}&type=${encodeURIComponent(props.verification_type)}`;
+    return props?.action_link;
+  };
+
   // Invitar: crea la persona con el rol asignado y devuelve un link de un solo uso (sin enviar mails).
   r.post("/invite", async (req, res) => {
     const { email, role, first_name, last_name } = req.body ?? {};
@@ -77,7 +84,7 @@ export function usersRouter(): Router {
     const { error: upErr } = await sb().from("profiles").update({ role: finalRole, first_name: first || null, last_name: last || null, full_name: fullName || null }).eq("id", data.user.id);
     if (upErr) return res.status(500).json({ error: upErr.message });
     logActivity(req.user, { action: "usuario.invitar", entity: "usuario", entityId: data.user.id, summary: `Invitó a ${email} como ${finalRole}`, meta: { role: finalRole } });
-    res.status(201).json({ id: data.user.id, email, role: finalRole, link: data.properties.action_link });
+    res.status(201).json({ id: data.user.id, email, role: finalRole, link: ownLink(panelOrigin(req), data.properties) });
   });
 
   // Link de acceso para alguien ya creado: invitación (si nunca ingresó) o de recuperación de contraseña.
@@ -93,13 +100,13 @@ export function usersRouter(): Router {
     let link: string | undefined; let kind: "invite" | "recovery" = neverSignedIn ? "invite" : "recovery";
     if (neverSignedIn) {
       const r1 = await sb().auth.admin.generateLink({ type: "invite", email, options: { redirectTo } });
-      link = r1.data?.properties?.action_link;
+      link = ownLink(panelOrigin(req), r1.data?.properties);
     }
     if (!link) {
       kind = "recovery";
       const r2 = await sb().auth.admin.generateLink({ type: "recovery", email, options: { redirectTo } });
       if (r2.error) return res.status(400).json({ error: r2.error.message });
-      link = r2.data?.properties?.action_link;
+      link = ownLink(panelOrigin(req), r2.data?.properties);
     }
     logActivity(req.user, { action: "usuario.link", entity: "usuario", entityId: id, summary: `Generó un link de ${kind === "invite" ? "invitación" : "acceso"} para ${email}` });
     res.json({ link, kind, email });

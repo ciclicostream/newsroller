@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Navigate } from "react-router-dom";
 import { CircleDot, LogIn } from "lucide-react";
 import { useAuth, LOGOUT_MSG_KEY } from "../auth/AuthProvider";
@@ -14,8 +14,27 @@ export function Login() {
   const [info, setInfo] = useState<string | null>(() => { try { return sessionStorage.getItem(LOGOUT_MSG_KEY); } catch { return null; } });
   // Se llega con #type=recovery desde el mail de "olvidé mi contraseña": ahí
   // Supabase ya abrió una sesión de recuperación y toca elegir una nueva.
-  const [invited] = useState(() => window.location.hash.includes("type=invite"));
-  const [recovery] = useState(() => window.location.hash.includes("type=recovery") || window.location.hash.includes("type=invite"));
+  // Los links nuevos vienen con el dominio del panel (?token_hash=…&type=invite|recovery) y se validan acá;
+  // los viejos (que pasaban por Supabase) llegan con #type=… y la sesión ya abierta.
+  const [query] = useState(() => new URLSearchParams(window.location.search));
+  const tokenHash = query.get("token_hash");
+  const linkType = query.get("type");
+  const [invited] = useState(() => window.location.hash.includes("type=invite") || linkType === "invite");
+  const [recovery] = useState(() => window.location.hash.includes("type=recovery") || window.location.hash.includes("type=invite") || linkType === "invite" || linkType === "recovery");
+  const [verifying, setVerifying] = useState(!!tokenHash);
+  const verified = useRef(false);
+  useEffect(() => {
+    if (!tokenHash || verified.current) return; // el token es de un solo uso: se valida una única vez
+    verified.current = true;
+    const type = linkType === "invite" ? "invite" : "recovery";
+    supabase.auth.verifyOtp({ token_hash: tokenHash, type })
+      .then(({ error }) => {
+        window.history.replaceState(null, "", window.location.pathname);
+        if (error) setError("El link venció o ya se usó. Pedile a un administrador que te genere uno nuevo.");
+      })
+      .catch(() => setError("No se pudo validar el link. Probá de nuevo o pedí uno nuevo."))
+      .finally(() => setVerifying(false));
+  }, [tokenHash, linkType]);
   const [newPass, setNewPass] = useState("");
   const [done, setDone] = useState(false);
 
@@ -69,7 +88,15 @@ export function Login() {
     </div>
   );
 
-  if (recovery && !done) {
+  if (verifying) {
+    return (
+      <div className="login-wrap">
+        <div className="login-card">{brand}<div className="muted-note">Validando tu invitación…</div></div>
+      </div>
+    );
+  }
+
+  if (recovery && !done && !(tokenHash && error)) {
     return (
       <div className="login-wrap">
         <form className="login-card" onSubmit={onNewPass}>
