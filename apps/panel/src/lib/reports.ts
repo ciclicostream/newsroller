@@ -10,6 +10,7 @@ export interface Report {
     envios_a_vivo: number; envios_por_persona: Array<{ name: string; count: number }>;
     cortes: number; segundos_fuera: number; cortes_lista: Array<{ start: string; end: string | null; seconds: number; by: string | null }>;
     bloques: number; segundos_aire: number; por_tipo: Array<{ type: string; count: number; seconds: number }>; con_tipo: number;
+    vertical?: { bloques: number; segundos_aire: number; por_tipo: Array<{ type: string; count: number; seconds: number }> };
   };
   incidentes: {
     fuentes: Array<Counted & { key: string; label: string; seconds: number; detail: string | null }>; fuentes_total: number; fuentes_segundos: number;
@@ -71,6 +72,8 @@ export function metrics(c: Report, p: Report): Metric[] {
     m("Emisión", "Tiempo fuera de aire", c.emision.segundos_fuera, p.emision.segundos_fuera, "dur", true),
     m("Emisión", "Bloques emitidos", c.emision.bloques, p.emision.bloques),
     m("Emisión", "Tiempo al aire (bloques)", c.emision.segundos_aire, p.emision.segundos_aire, "dur"),
+    m("Emisión vertical", "Bloques emitidos (vertical)", c.emision.vertical?.bloques ?? 0, p.emision.vertical?.bloques ?? 0),
+    m("Emisión vertical", "Tiempo al aire (vertical)", c.emision.vertical?.segundos_aire ?? 0, p.emision.vertical?.segundos_aire ?? 0, "dur"),
     m("Incidentes", "Caídas de fuentes de datos", c.incidentes.fuentes_total, p.incidentes.fuentes_total, "num", true),
     m("Incidentes", "Tiempo caídas de fuentes", c.incidentes.fuentes_segundos, p.incidentes.fuentes_segundos, "dur", true),
     m("Incidentes", "Cámaras sin señal", c.incidentes.camaras_total, p.incidentes.camaras_total, "num", true),
@@ -109,6 +112,7 @@ export function buildCsv(r: ReportResponse): string {
   table("Emisión: envíos a vivo por persona", ["Persona", "Envíos"], c.emision.envios_por_persona.map((t) => [t.name, t.count]));
   table("Emisión: cortes del aire", ["Desde", "Hasta", "Duración", "Quién"], c.emision.cortes_lista.map((k) => [fmtWhen(k.start), k.end ? fmtWhen(k.end) : "sigue cortado", fmtDur(k.seconds), k.by ?? ""]));
   table("Emisión: bloques emitidos por tipo", ["Tipo", "Bloques", "Tiempo al aire"], c.emision.por_tipo.map((t) => [typeLabel(t.type), t.count, fmtDur(t.seconds)]));
+  table("Emisión vertical: bloques por tipo", ["Tipo", "Bloques", "Tiempo al aire"], (c.emision.vertical?.por_tipo ?? []).map((t) => [typeLabel(t.type), t.count, fmtDur(t.seconds)]));
   table("Incidentes: fuentes de datos", ["Fuente", "Caídas", "Tiempo caída", "Último error"], c.incidentes.fuentes.map((f) => [f.label, f.count, fmtDur(f.seconds), f.detail ?? ""]));
   table("Incidentes: cámaras sin señal", ["Cámara", "Veces"], c.incidentes.camaras.map((f) => [f.label, f.count]));
   table("Incidentes: fotos o videos rotos", ["Archivo", "Veces"], c.incidentes.media.map((f) => [f.label, f.count]));

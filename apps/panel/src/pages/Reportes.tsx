@@ -175,6 +175,13 @@ function Emision({ r }: { r: ReportResponse }) {
         <div><h3>Envíos a vivo por persona</h3><Table head={["Persona", "Envíos"]} rows={e.envios_por_persona.map((x) => [x.name, x.count])} /></div>
         <div><h3>Bloques por tipo</h3><Table head={["Tipo", "Bloques", "Tiempo"]} rows={e.por_tipo.map((x) => [typeLabel(x.type), x.count, x.seconds ? fmtDur(x.seconds) : "—"])} /></div>
       </div>
+      {(e.vertical?.bloques ?? 0) > 0 && (
+        <>
+          <h3>Output vertical (se cuenta aparte)</h3>
+          <Stats items={[["Bloques emitidos", e.vertical!.bloques], ["Tiempo al aire", fmtDur(e.vertical!.segundos_aire)]]} />
+          <Table head={["Tipo", "Bloques", "Tiempo"]} rows={e.vertical!.por_tipo.map((x) => [typeLabel(x.type), x.count, x.seconds ? fmtDur(x.seconds) : "—"])} />
+        </>
+      )}
       <h3>Cortes del aire</h3>
       <Table head={["Desde", "Hasta", "Duración", "Quién"]} rows={e.cortes_lista.map((k) => [fmtWhen(k.start), k.end ? fmtWhen(k.end) : "sigue cortado", fmtDur(k.seconds), k.by ?? "—"])} empty="No hubo cortes del aire." />
     </Section>

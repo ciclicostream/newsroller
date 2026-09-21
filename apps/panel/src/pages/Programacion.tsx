@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   AlertTriangle, TrendingUp, Newspaper, Megaphone, Video, GripVertical, X,
-  MonitorPlay, Zap, ArrowRight, ChevronDown, PauseCircle, LayoutGrid, Check, Inbox, Volume2, VolumeX,
+  MonitorPlay, Zap, ArrowRight, ChevronDown, PauseCircle, LayoutGrid, Check, Inbox, Volume2, VolumeX, RectangleHorizontal, RectangleVertical,
 } from "lucide-react";
 import type { ContentItem, PlaylistItem, Camera } from "@newsroller/shared";
 import { contentHasAudio, DOLAR_CASAS } from "@newsroller/shared";
 import { TIPO_BY_KEY } from "../lib/tipos";
 import { useMonitorAudio } from "../lib/monitorAudio";
+import { useMonitorVertical } from "../lib/monitorOrientation";
 import { parrilla, OUTPUT_FRAME_BASE } from "../lib/parrilla";
 import { contentItems as contentItemsApi } from "../lib/content-items";
 import { settingsApi } from "../lib/settings";
@@ -283,10 +284,12 @@ export function Programacion() {
   // Sonido: sólo en PREVIEW y CLIP. En AIRE no se escucha desde el panel (sería un eco desfasado del aire real).
   const [monSound, toggleMonSound] = useMonitorAudio();
   const soundOn = monSound && mode !== "aire";
+  const [monVertical, toggleMonVertical] = useMonitorVertical(); // 16:9 o 9:16
   const monUrl = (() => {
-    if (mode === "aire") return `${OUTPUT_FRAME_BASE}/output/`;
+    const orient = monVertical ? "orientation=vertical" : "";
+    if (mode === "aire") return `${OUTPUT_FRAME_BASE}/output/${orient ? "?" + orient : ""}`;
     const ci = previewCi();
-    return ci ? `${OUTPUT_FRAME_BASE}/output/?preview=${ci.id}${soundOn ? "&audio=1" : ""}` : null;
+    return ci ? `${OUTPUT_FRAME_BASE}/output/?preview=${ci.id}${soundOn ? "&audio=1" : ""}${orient ? "&" + orient : ""}` : null;
   })();
   const monHasAudio = mode === "aire"
     ? !!liveStatus?.current?.hasAudio
@@ -422,6 +425,10 @@ export function Programacion() {
                   <button key={m} className={"pv-segb" + (mode === m ? " on " + m : "")} onClick={() => setMode(m)}>{m.toUpperCase()}</button>
                 ))}
               </div>
+              <button type="button" className={"pv-snd" + (monVertical ? " on" : "")} onClick={toggleMonVertical} aria-pressed={monVertical}
+                aria-label={monVertical ? "Ver el monitor en horizontal" : "Ver el monitor en vertical"} title={monVertical ? "Ver en 16:9 (horizontal)" : "Ver en 9:16 (vertical)"}>
+                {monVertical ? <RectangleVertical size={15} /> : <RectangleHorizontal size={15} />}
+              </button>
               <button type="button" className={"pv-snd" + (soundOn ? " on" : "")} onClick={toggleMonSound} disabled={mode === "aire"}
                 aria-pressed={soundOn} aria-label={soundOn ? "Silenciar el monitor" : "Escuchar el monitor"}
                 title={mode === "aire" ? "En AIRE no se escucha desde el panel (evita el eco con el aire real)" : soundOn ? "Silenciar el monitor" : "Escuchar el monitor (PREVIEW y CLIP)"}>
@@ -429,7 +436,7 @@ export function Programacion() {
               </button>
             </div>
             <div className="pv-mon-row">
-              <div className="pv-mon">
+              <div className={"pv-mon" + (monVertical ? " v" : "")}>
                 {/* AIRE muestra el output real tal cual: si está cortado, la propia
                     placa off_air.jpg ya lo dice — no le agregamos texto encima. */}
                 {monUrl ? <iframe key={monUrl} src={monUrl} title="monitor" allow="autoplay; encrypted-media" /> : <div className="pv-ph">Elegí un contenido para previsualizarlo.</div>}
@@ -593,6 +600,8 @@ const CSS = `
 .pv-segb.on.aire{background:var(--rd);color:#fff}.pv-segb.on.clip{background:var(--ac);color:#fff}
 .pv-mon-row{display:flex;gap:10px;align-items:stretch}
 .pv-mon{flex:1;aspect-ratio:16/9;background:#05081a;border-radius:12px;overflow:hidden;position:relative}
+.pv-mon-row{justify-content:center}
+.pv-mon.v{flex:none;aspect-ratio:9/16;height:520px}
 .pv-mon iframe{width:100%;height:100%;border:0;display:block}
 .pv-ph,.pv-standby{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#8a93a6;font-size:13px;text-align:center;padding:20px}
 .pv-standby{flex-direction:column;gap:16px;color:#cbd5e1;font-weight:800;letter-spacing:.14em}

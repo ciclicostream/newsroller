@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { RotateCcw, Volume2, VolumeX, X } from "lucide-react";
+import { RectangleHorizontal, RectangleVertical, RotateCcw, Volume2, VolumeX, X } from "lucide-react";
+import { useMonitorVertical } from "../lib/monitorOrientation";
 import { useMonitorAudio } from "../lib/monitorAudio";
 import { api } from "../lib/api";
 import { OUTPUT_FRAME_BASE } from "../lib/parrilla";
@@ -19,6 +20,7 @@ export function PreviewMonitor({ type, data, dur, ready = true }: {
 }) {
   const frame = useRef<HTMLIFrameElement>(null);
   const [sound, toggleSound] = useMonitorAudio();
+  const [vertical, toggleVertical] = useMonitorVertical();
   const [loaded, setLoaded] = useState(false); // el output avisó que está escuchando
   const [selId, setSelId] = useState<string | null>(null);
   const [saved, setSaved] = useState<Saved | null>(null);
@@ -87,6 +89,9 @@ export function PreviewMonitor({ type, data, dur, ready = true }: {
         <span>{saved ? "Contenido guardado" : "Vista previa"}</span>
         <span className="pm-hd-r">
           {saved && <button type="button" className="pm-back" onClick={() => setSelId(null)} title="Volver a lo que estoy cargando"><X size={12} /> Formulario</button>}
+          <button type="button" className={"pm-re pm-snd" + (vertical ? " on" : "")} title={vertical ? "Ver en 16:9 (horizontal)" : "Ver en 9:16 (vertical)"} aria-pressed={vertical} aria-label={vertical ? "Ver horizontal" : "Ver vertical"} onClick={toggleVertical}>
+            {vertical ? <RectangleVertical size={13} /> : <RectangleHorizontal size={13} />}
+          </button>
           <button type="button" className={"pm-re pm-snd" + (sound ? " on" : "")} title={sound ? "Silenciar la vista previa" : "Escuchar la vista previa"} aria-pressed={sound} aria-label={sound ? "Silenciar" : "Escuchar"} onClick={toggleSound}>
             {sound ? <Volume2 size={13} /> : <VolumeX size={13} />}
           </button>
@@ -96,8 +101,8 @@ export function PreviewMonitor({ type, data, dur, ready = true }: {
           </button>
         </span>
       </div>
-      <div className="pm-screen">
-        <iframe key={sound ? "snd" : "mute"} ref={frame} src={`${OUTPUT_FRAME_BASE}/output/?draft=1${sound ? "&audio=1" : ""}`} title="Vista previa" tabIndex={-1} allow="autoplay; encrypted-media" />
+      <div className={"pm-screen" + (vertical ? " v" : "")}>
+        <iframe key={(sound ? "snd" : "mute") + (vertical ? "-v" : "")} ref={frame} src={`${OUTPUT_FRAME_BASE}/output/?draft=1${sound ? "&audio=1" : ""}${vertical ? "&orientation=vertical" : ""}`} title="Vista previa" tabIndex={-1} allow="autoplay; encrypted-media" />
         {!showReady && <div className="pm-ph">Completá los datos para ver la vista previa.</div>}
       </div>
     </div>
@@ -138,6 +143,7 @@ const CSS = `
 .pm-snd.on{background:#2f6bff;border-color:#2f6bff;color:#fff}.pm-snd.on:hover:not(:disabled){color:#fff}
 .pm-re:hover:not(:disabled){color:#2f6bff;border-color:#2f6bff}.pm-re:disabled{opacity:.4;cursor:default}
 .pm-screen{position:relative;aspect-ratio:16/9;background:#05081a;border-radius:9px;overflow:hidden}
+.pm-screen.v{aspect-ratio:9/16;width:min(100%,290px);margin:0 auto}
 .pm-screen iframe{width:100%;height:100%;border:0;display:block;pointer-events:none}
 .pm-ph{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:18px;text-align:center;font-size:12px;color:#8a93a6;background:#05081a}
 `;

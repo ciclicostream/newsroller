@@ -54,7 +54,7 @@ export async function buildReport(range: Range, viewerIsMaster: boolean) {
   const notes: string[] = []; // secciones que no se pudieron leer (p. ej. falta una migración)
   const now = Date.now();
 
-  const [profiles, activity, created, airings, incidents, sessions, logins, media, priorAire] = await Promise.all([
+  const [profiles, activity, created, airingsAll, incidents, sessions, logins, media, priorAire] = await Promise.all([
     rows((f, t) => sb.from("profiles").select("*").range(f, t), notes, "personas"),
     rows((f, t) => sb.from("activity_log").select("actor_id, actor_name, actor_role, action, summary, meta, at").gte("at", iso(from)).lt("at", iso(to)).order("at").range(f, t), notes, "actividad"),
     rows((f, t) => sb.from("content_items").select("id, type, created_by, created_at").gte("created_at", iso(from)).lt("created_at", iso(to)).range(f, t), notes, "contenidos"),
@@ -65,6 +65,10 @@ export async function buildReport(range: Range, viewerIsMaster: boolean) {
     rows((f, t) => sb.from("media_files").select("id, bucket, path, kind, size, created_at, deleted_at, asset_id").lt("created_at", iso(to)).range(f, t), notes, "almacenamiento"),
     sb.from("activity_log").select("action, at").in("action", ["aire.cortar", "aire.reanudar"]).lt("at", iso(from)).order("at", { ascending: false }).limit(1).maybeSingle(),
   ]);
+
+  // Las salidas del output vertical se cuentan aparte (sin la migración 0019 todas son horizontales).
+  const airings = airingsAll.filter((a) => a.orientation !== "vertical");
+  const airingsV = airingsAll.filter((a) => a.orientation === "vertical");
 
   // El Master es invisible para quien no lo es: sus acciones no aparecen en las listas por persona.
   const masterIds = new Set(profiles.filter((p) => p.role === "master").map((p) => p.id as string));
@@ -134,6 +138,19 @@ export async function buildReport(range: Range, viewerIsMaster: boolean) {
     segundos_aire: airings.reduce((s, a) => s + (Number(a.duration_sec) || 0), 0),
     por_tipo: top([...emitidosTipo].map(([type, v]) => ({ type, count: v.count, seconds: v.seconds })), 30),
     con_tipo: airings.filter((a) => a.content_type).length, // cuántas salidas ya traen el tipo (registro nuevo)
+    vertical: (() => {
+      const m = new Map<string, { count: number; seconds: number }>();
+      for (const a of airingsV) {
+        const t = (a.content_type as string) || "otro";
+        const cur = m.get(t) ?? { count: 0, seconds: 0 };
+        cur.count++; cur.seconds += Number(a.duration_sec) || 0; m.set(t, cur);
+      }
+      return {
+        bloques: airingsV.length,
+        segundos_aire: airingsV.reduce((s, a) => s + (Number(a.duration_sec) || 0), 0),
+        por_tipo: top([...m].map(([type, v]) => ({ type, count: v.count, seconds: v.seconds })), 30),
+      };
+    })(),
   };
 
   // ---- 3. Incidentes ----
