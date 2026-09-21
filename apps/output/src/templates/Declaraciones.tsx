@@ -50,7 +50,7 @@ export function Declaraciones({ data, durationSec }: { data: DeclaracionesData; 
     <div className={"dc" + (play ? " play" : "") + (exiting ? " exit" : "")} style={{ position: "absolute", inset: 0 }}>
       <style>{CSS}</style>
       <img className="dc-bg" src={fondo} alt="" />
-      <Chrome hideTemp />
+      <Chrome hideTemp hideLogo />
 
       <img className="dc-photo dc-el" src={data.photo_url} alt="" />
       <div className="dc-idcard dc-idcard-name dc-el">{data.name.toUpperCase()}</div>
