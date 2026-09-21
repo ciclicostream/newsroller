@@ -338,6 +338,7 @@ export interface CamarasData {
 export interface VideoFullData {
   media_url: string; // URL de archivo (image/video) o id de video de YouTube (kind="youtube")
   media_kind: "image" | "video" | "youtube";
+  title?: string; // título del video de YouTube (oEmbed al guardar), para referencia en el panel
 }
 
 // Datos del tipo "informe": carrusel de hasta 10 slides (imágenes 4:5) con un

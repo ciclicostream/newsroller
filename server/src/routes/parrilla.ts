@@ -3,7 +3,7 @@ import { LAYOUTS, type ContentType } from "@newsroller/shared";
 import { getSupabase } from "../db/supabase.js";
 import { requireAuth } from "../auth/middleware.js";
 import type { IO } from "../realtime/socket.js";
-import { writeSettings } from "./settings.js";
+import { writeSettings, readAll } from "./settings.js";
 
 const TYPES: ContentType[] = ["short", "placa", "ad", "background", "data", "template", "content_item"];
 const TEMPLATE_IDS = new Set(LAYOUTS.map((t) => t.id));
@@ -95,7 +95,11 @@ export function parrillaRouter(io: IO): Router {
     }
     // Estampa "al aire desde" para el reloj del Monitor (persiste entre refrescos
     // del navegador). No bloquea la respuesta si esto falla por algún motivo.
-    try { await writeSettings(io, { airSince: new Date().toISOString() }); } catch { /* noop */ }
+    // Con el canal cortado sólo se prepara la parrilla: el reloj queda congelado.
+    try {
+      const st = await readAll();
+      if (st.onAir !== false) await writeSettings(io, { airSince: new Date().toISOString() });
+    } catch { /* noop */ }
     res.json({ ok: true, count: rows.length });
   });
 

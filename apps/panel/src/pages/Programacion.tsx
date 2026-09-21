@@ -1,13 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   AlertTriangle, TrendingUp, Newspaper, Megaphone, Video, GripVertical, X,
-  MonitorPlay, Zap, ArrowRight, Plus, PauseCircle,
+  MonitorPlay, Zap, ArrowRight, ChevronDown, PauseCircle,
 } from "lucide-react";
-import type { ContentItem, PlaylistItem } from "@newsroller/shared";
+import type { ContentItem, PlaylistItem, Camera } from "@newsroller/shared";
 import { contentHasAudio } from "@newsroller/shared";
 import { parrilla, OUTPUT_BASE } from "../lib/parrilla";
 import { contentItems as contentItemsApi } from "../lib/content-items";
 import { settingsApi } from "../lib/settings";
+import { camerasApi, youtubeTitle } from "../lib/cameras";
 
 // ---- catálogo de tipos ----
 const TYPE_CAT: Record<string, string> = {
@@ -29,9 +30,30 @@ const CAT: Record<string, { label: string; color: string; Icon: any }> = {
 };
 const FILTERS = [["all", "Todos"], ["ultima", "Última Hora"], ["datos", "Datos"], ["editorial", "Editorial"], ["media", "Media"], ["camaras", "Cámaras"]];
 
-function itemText(ci: ContentItem): string {
+interface TextCtx { cams: Map<string, Camera>; yt: Record<string, string> }
+const fileName = (u: string) => { try { return decodeURIComponent(u.split("?")[0].split("/").pop() || ""); } catch { return u; } };
+
+// Referencia corta de un contenido (lo que se ve en chips y filas de la parrilla).
+function itemText(ci: ContentItem, ctx: TextCtx): string {
   const d = ci.data || {};
-  return (d.text || d.title || d.subt || TYPE_LABEL[ci.type] || ci.type || "").toString();
+  const fallback = TYPE_LABEL[ci.type] || ci.type || "";
+  switch (ci.type) {
+    case "clima": return d.city ? String(d.city) : fallback;
+    case "camaras": {
+      const cam = ctx.cams.get(d.camera_id);
+      const name = cam?.name ?? "(cámara eliminada)";
+      return d.location ? `${name} · ${d.location}` : name;
+    }
+    case "video_full": {
+      if (d.media_kind === "youtube") return d.title || ctx.yt[d.media_url] || `YouTube · ${d.media_url}`;
+      return d.media_url ? fileName(d.media_url) : fallback;
+    }
+    case "publicidad": return d.media_url ? fileName(d.media_url) : fallback;
+    case "cifras": return (d.subtitle || d.value || fallback).toString();
+    case "declaraciones": return (d.name ? `${d.name}${d.headline ? " · " + d.headline : ""}` : fallback).toString();
+    case "dolar": return fallback;
+  }
+  return (d.text || d.title || d.subt || d.name || fallback).toString();
 }
 const catOf = (t: string) => TYPE_CAT[t] || "media";
 
@@ -77,17 +99,38 @@ export function Programacion() {
   const [liveStatus, setLiveStatus] = useState<LiveStatus | null>(null);
   const [tick, setTick] = useState(0); // fuerza un re-render por segundo para el reloj
   const [publishing, setPublishing] = useState(false);
+  const [airPausedAt, setAirPausedAt] = useState<string | null>(null);
+  const [cams, setCams] = useState<Camera[]>([]);
+  const [ytTitles, setYtTitles] = useState<Record<string, string>>({});
+  const [ins, setIns] = useState<number | null>(null); // hueco de inserción durante el arrastre
+  const [cols, setCols] = useState<{ a: number; c: number }>(() => {
+    try { const j = JSON.parse(localStorage.getItem("pv-cols") || ""); if (j.a > 0 && j.c > 0) return j; } catch { /* noop */ }
+    return { a: 290, c: 560 };
+  });
+  const gridRef = useRef<HTMLDivElement>(null);
+  const rowsRef = useRef<HTMLDivElement>(null);
 
   // Estado real del corte de emisión y del reloj "al aire" (persistidos en
   // /api/settings, no locales) — sobreviven a un refresco del navegador.
   useEffect(() => {
-    settingsApi.get().then((s) => { setOnAirState(s.onAir !== false); setAirSince(s.airSince || null); }).catch(() => {});
+    settingsApi.get().then((s) => { setOnAirState(s.onAir !== false); setAirSince(s.airSince || null); setAirPausedAt(s.onAir === false ? s.airPausedAt || null : null); }).catch(() => {});
+    camerasApi.list().then(setCams).catch(() => {});
   }, []);
+  // Al cortar se congela el reloj "al aire"; al reanudar se corre airSince por el
+  // tiempo que estuvo cortado, así el reloj sigue donde se había quedado.
   async function toggleOnAir() {
     const next = !onAir;
-    setOnAirState(next);
-    try { await settingsApi.update({ onAir: next }); }
-    catch (e) { setOnAirState(!next); setErr(e instanceof Error ? e.message : "error"); }
+    const now = new Date();
+    let since = airSince;
+    const patch: { onAir: boolean; airPausedAt: string; airSince?: string } = { onAir: next, airPausedAt: next ? "" : now.toISOString() };
+    if (next && airSince && airPausedAt) {
+      since = new Date(new Date(airSince).getTime() + (now.getTime() - new Date(airPausedAt).getTime())).toISOString();
+      patch.airSince = since;
+    }
+    const prev = { onAir, airSince, airPausedAt };
+    setOnAirState(next); setAirSince(since); setAirPausedAt(next ? null : patch.airPausedAt);
+    try { await settingsApi.update(patch); }
+    catch (e) { setOnAirState(prev.onAir); setAirSince(prev.airSince); setAirPausedAt(prev.airPausedAt); setErr(e instanceof Error ? e.message : "error"); }
   }
 
   // Telemetría en vivo que el output (embebido en AIRE) manda por postMessage.
@@ -101,6 +144,19 @@ export function Programacion() {
   }, []);
 
   const itemById = useMemo(() => new Map(items.map((c) => [c.id, c])), [items]);
+  const camById = useMemo(() => new Map(cams.map((c) => [c.id, c])), [cams]);
+  const txt = (ci: ContentItem) => itemText(ci, { cams: camById, yt: ytTitles });
+
+  // Títulos de YouTube de videos guardados antes de que se persistiera `title`.
+  useEffect(() => {
+    items.forEach((ci) => {
+      const d: any = ci.data || {};
+      if (ci.type === "video_full" && d.media_kind === "youtube" && !d.title && !ytTitles[d.media_url]) {
+        setYtTitles((m) => (m[d.media_url] ? m : { ...m, [d.media_url]: "" }));
+        void youtubeTitle(d.media_url).then((t) => { if (t) setYtTitles((m) => ({ ...m, [d.media_url]: t })); });
+      }
+    });
+  }, [items]); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function load() {
     try {
@@ -132,23 +188,72 @@ export function Programacion() {
 
   async function publish() {
     setPublishing(true); setErr(null);
-    try { const r = await parrilla.publish(); setMsg(`Al aire: ${r.count} bloque(s)`); setAirSince(new Date().toISOString()); setTimeout(() => setMsg(null), 2500); }
+    try { const r = await parrilla.publish(); setMsg(`Al aire: ${r.count} bloque(s)`); if (onAir) setAirSince(new Date().toISOString()); setTimeout(() => setMsg(null), 2500); }
     catch (e) { setErr(e instanceof Error ? e.message : "error"); }
     finally { setPublishing(false); }
   }
 
   // ---- drag & drop ----
   const dragRef = useRef<{ type: "disp" | "row"; id: string } | null>(null);
-  function onDropAt(targetId: string | null, after: boolean) {
+  // Índice de inserción según la posición del cursor. Descuenta el alto del hueco
+  // ya insertado para que las filas de abajo no "salten" y hagan parpadear el hueco.
+  function calcIdx(clientY: number): number {
+    const box = rowsRef.current; if (!box) return draft.length;
+    const slot = box.querySelector(".pv-slot") as HTMLElement | null;
+    const sh = slot ? slot.offsetHeight + 8 : 0;
+    const els = Array.from(box.querySelectorAll("[data-rid]")) as HTMLElement[];
+    for (let i = 0; i < els.length; i++) {
+      const rc = els[i].getBoundingClientRect();
+      const after = slot && (slot.compareDocumentPosition(els[i]) & Node.DOCUMENT_POSITION_FOLLOWING);
+      const mid = rc.top + rc.height / 2 - (after ? sh : 0);
+      if (clientY < mid) return i;
+    }
+    return els.length;
+  }
+  function onRowsDragOver(e: React.DragEvent) {
+    if (!dragRef.current) return;
+    e.preventDefault();
+    const box = rowsRef.current!;
+    const r = box.getBoundingClientRect(); const edge = 56;
+    if (e.clientY < r.top + edge) box.scrollTop -= Math.ceil(((r.top + edge - e.clientY) / edge) * 18);
+    else if (e.clientY > r.bottom - edge) box.scrollTop += Math.ceil(((e.clientY - (r.bottom - edge)) / edge) * 18);
+    setIns(calcIdx(e.clientY));
+  }
+  function onRowsDrop(e: React.DragEvent) {
+    e.preventDefault();
     const dg = dragRef.current; dragRef.current = null;
+    const idx0 = ins ?? calcIdx(e.clientY); setIns(null);
     if (!dg) return;
-    let idx = targetId ? draft.findIndex((r) => r.id === targetId) : draft.length;
-    if (targetId && after) idx++;
+    let idx = idx0;
     if (dg.type === "disp") { const ci = itemById.get(dg.id); if (ci) void addItem(ci, idx); return; }
     const from = draft.findIndex((r) => r.id === dg.id); if (from < 0) return;
     const next = [...draft]; const [it] = next.splice(from, 1); if (from < idx) idx--; next.splice(idx, 0, it);
     setDraft(next); setSel(it.id); void reorderTo(next.map((r) => r.id));
   }
+  const endDrag = () => { dragRef.current = null; setIns(null); };
+
+  // ---- pinzas de ancho de columnas ----
+  function startResize(which: "a" | "c") {
+    return (e: React.PointerEvent) => {
+      e.preventDefault();
+      const el = e.currentTarget as HTMLElement; el.setPointerCapture(e.pointerId);
+      const x0 = e.clientX, start = cols; const total = gridRef.current?.clientWidth ?? 1400;
+      const move = (ev: PointerEvent) => {
+        const dx = ev.clientX - x0;
+        setCols(() => {
+          let { a, c } = start;
+          if (which === "a") a = start.a + dx; else c = start.c - dx;
+          a = Math.max(220, a); c = Math.max(420, c);
+          const room = total - 2 * 14 - 320; // lo que queda para la parrilla (mín 320)
+          if (a + c > room) { if (which === "a") a = room - c; else c = room - a; }
+          return { a: Math.max(220, a), c: Math.max(420, c) };
+        });
+      };
+      const up = () => { el.removeEventListener("pointermove", move); el.removeEventListener("pointerup", up); };
+      el.addEventListener("pointermove", move); el.addEventListener("pointerup", up);
+    };
+  }
+  useEffect(() => { try { localStorage.setItem("pv-cols", JSON.stringify(cols)); } catch { /* noop */ } }, [cols]);
 
   // ---- monitor ----
   const selRow = draft.find((r) => r.id === sel) || null;
@@ -168,11 +273,11 @@ export function Programacion() {
     ? !!liveStatus?.current?.hasAudio
     : (() => { const ci = previewCi(); return !!ci && contentHasAudio(ci.type, ci.data); })();
 
-  // pills por tipo en parrilla
-  const pills = useMemo(() => {
-    const by: Record<string, number> = {};
-    draft.forEach((r) => { const ci = r.content_id ? itemById.get(r.content_id) : null; const c = ci ? catOf(ci.type) : "media"; by[c] = (by[c] || 0) + 1; });
-    return Object.entries(by);
+  // cantidad en parrilla por categoría (se muestra en los filtros de Disponibles)
+  const catCount = useMemo(() => {
+    const by: Record<string, number> = { all: draft.length };
+    draft.forEach((r) => { const ci = r.content_id ? itemById.get(r.content_id) : null; if (ci) { const c = catOf(ci.type); by[c] = (by[c] || 0) + 1; } });
+    return by;
   }, [draft, itemById]);
   const cicloSec = draft.filter((r) => r.enabled).reduce((a, r) => a + r.duration_sec, 0);
 
@@ -180,25 +285,26 @@ export function Programacion() {
   // Tiempo real al aire desde la última publicación (persiste entre refrescos:
   // se calcula contra airSince, no contra un contador local que arranca de 0).
   void tick; // sólo dispara el re-render de 1x/seg; el valor en sí no se usa
-  const airSec = airSince ? Math.max(0, Math.floor((Date.now() - new Date(airSince).getTime()) / 1000)) : 0;
+  const airRef = !onAir && airPausedAt ? new Date(airPausedAt).getTime() : Date.now(); // cortado = reloj congelado
+  const airSec = airSince ? Math.max(0, Math.floor((airRef - new Date(airSince).getTime()) / 1000)) : 0;
 
   return (
     <div className="pv">
       <style>{CSS}</style>
 
       <div className="pv-head">
-        <div><h1>Programación</h1><p>Arrastrá contenidos a la parrilla, ordená y deslizá el tirador para salir al aire.</p></div>
+        <div><h1>Programación</h1><p>Arrastrá contenidos a la parrilla, ordená y deslizá el tirador del monitor para salir al aire.</p></div>
       </div>
       {err && <div className="pv-alert err">{err}</div>}
       {msg && <div className="pv-alert ok">{msg}</div>}
 
-      <div className="pv-grid">
+      <div className="pv-grid" ref={gridRef} style={{ gridTemplateColumns: `${cols.a}px 14px minmax(0,1fr) 14px ${cols.c}px` }}>
         {/* col1 disponibles */}
         <div className="pv-card pv-disp">
           <div className="pv-ct">Contenidos disponibles</div>
           <div className="pv-cats">
             {FILTERS.map(([id, lb]) => (
-              <button key={id} className={"pv-cat" + (filter === id ? " on" : "")} onClick={() => setFilter(id)}>{lb}</button>
+              <button key={id} className={"pv-cat" + (filter === id ? " on" : "")} onClick={() => setFilter(id)}>{lb}{catCount[id] ? <span className="pv-cn">{catCount[id]}</span> : null}</button>
             ))}
           </div>
           <div className="pv-displist">
@@ -207,55 +313,59 @@ export function Programacion() {
               const c = CAT[catOf(ci.type)]; const n = countIn(ci.id); const ex = exp === ci.id; const Ic = c.Icon;
               return (
                 <div key={ci.id} className={"pv-chip" + (n ? " inuse" : "") + (ex ? " exp" : "")}
-                  draggable onDragStart={() => (dragRef.current = { type: "disp", id: ci.id })}
+                  draggable onDragStart={() => (dragRef.current = { type: "disp", id: ci.id })} onDragEnd={endDrag}
                   onClick={() => setExp(ex ? null : ci.id)}>
                   <span className="pv-t">
                     <span className="pv-k"><Ic size={14} color={c.color} /> {TYPE_LABEL[ci.type] || ci.type}</span>
-                    <span className={"pv-x" + (ex ? " full" : "")}>{itemText(ci)}</span>
+                    <span className={"pv-x" + (ex ? " full" : "")}>{txt(ci)}</span>
                     {ex && <button className="pv-monbtn" onClick={(e) => { e.stopPropagation(); setClipId(ci.id); setMode("clip"); }}><MonitorPlay size={14} /> Monitor</button>}
                     {ex && <span className="pv-dr">arrastrá para agregar a la parrilla</span>}
                   </span>
-                  {!ex && (n ? <span className="pv-tag">×{n}</span> : <span className="pv-add"><Plus size={16} /></span>)}
+                  {n > 0 && !ex && <span className="pv-tag">×{n}</span>}
+                  <span className={"pv-chev" + (ex ? " up" : "")}><ChevronDown size={16} /></span>
                 </div>
               );
             })}
           </div>
         </div>
 
+        <div className="pv-rz" onPointerDown={startResize("a")} onDoubleClick={() => setCols((c) => ({ ...c, a: 290 }))} title="Arrastrar para cambiar el ancho (doble clic: restablecer)"><i /></div>
+
         {/* col2 parrilla */}
         <div className="pv-card pv-par">
-          <div className="pv-ct" style={{ padding: "0 16px" }}>Parrilla</div>
-          <Fader onPublish={publish} publishing={publishing} />
-          <div className="pv-pills">
-            {pills.length === 0 && <span className="pv-mp dim">parrilla vacía</span>}
-            {pills.map(([c, n]) => { const cc = CAT[c]; const Ic = cc.Icon; return (
-              <span key={c} className="pv-mp"><Ic size={15} color={cc.color} /> {cc.label} ×{n}</span>
-            ); })}
-          </div>
-          <div className="pv-rows"
-            onDragOver={(e) => { if (dragRef.current) e.preventDefault(); }}
-            onDrop={(e) => { e.preventDefault(); onDropAt(null, false); }}>
-            {draft.length === 0 && <div className="pv-empty">Arrastrá acá los contenidos disponibles.</div>}
-            {draft.map((r) => {
+          <div className="pv-ct" style={{ padding: "0 16px 10px" }}>Parrilla</div>
+          <div className="pv-rows" ref={rowsRef}
+            onDragOver={onRowsDragOver}
+            onDragLeave={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node)) setIns(null); }}
+            onDrop={onRowsDrop}>
+            {draft.length === 0 && ins === null && <div className="pv-empty">Arrastrá acá los contenidos disponibles.</div>}
+            {draft.map((r, i) => {
               const ci = r.content_id ? itemById.get(r.content_id) : null;
-              const cat = ci ? catOf(ci.type) : "media"; const cc = CAT[cat]; const Ic = cc.Icon;
-              const label = ci ? itemText(ci) : (r.content_type === "content_item" ? "(contenido eliminado)" : r.content_type);
+              // Contenido borrado (o retirado de la parrilla): la fila se marca en rojo.
+              const missing = r.content_type === "content_item" && (!ci || ci.in_parrilla === false);
+              const cat = ci ? catOf(ci.type) : "media"; const cc = CAT[cat]; const Ic = missing ? AlertTriangle : cc.Icon;
+              const label = ci ? txt(ci) : (r.content_type === "content_item" ? "Contenido eliminado" : r.content_type);
               return (
-                <div key={r.id} className={"pv-row" + (r.enabled ? "" : " off") + (sel === r.id ? " sel" : "")}
-                  draggable onDragStart={() => (dragRef.current = { type: "row", id: r.id })}
-                  onDragOver={(e) => { if (dragRef.current) e.preventDefault(); }}
-                  onDrop={(e) => { e.preventDefault(); e.stopPropagation(); const rc = (e.currentTarget as HTMLElement).getBoundingClientRect(); onDropAt(r.id, e.clientY > rc.top + rc.height / 2); }}
-                  onClick={() => setSel(r.id)}>
-                  <GripVertical size={16} className="pv-grip" />
-                  <span className="pv-badge" style={{ background: cc.color }} title={ci ? TYPE_LABEL[ci.type] : ""}><Ic size={15} color="#fff" /></span>
-                  <span className="pv-lbl">{label}</span>
-                  <input className="pv-dur" type="number" value={r.duration_sec} onClick={(e) => e.stopPropagation()} onChange={(e) => setDur(r.id, +e.target.value)} />
-                  <button className="pv-rmv" onClick={(e) => { e.stopPropagation(); void remove(r.id); }}><X size={15} /></button>
+                <div key={r.id} style={{ display: "contents" }}>
+                  {ins === i && <div className="pv-slot" />}
+                  <div data-rid={r.id} className={"pv-row" + (r.enabled ? "" : " off") + (sel === r.id ? " sel" : "") + (missing ? " missing" : "")}
+                    draggable onDragStart={() => (dragRef.current = { type: "row", id: r.id })} onDragEnd={endDrag}
+                    onClick={() => setSel(r.id)}
+                    title={missing ? "No disponible: el contenido se eliminó o se retiró de la parrilla" : undefined}>
+                    <GripVertical size={14} className="pv-grip" />
+                    <span className="pv-badge" style={{ background: missing ? "#EE220C" : cc.color }} title={ci ? TYPE_LABEL[ci.type] : ""}><Ic size={13} color="#fff" /></span>
+                    <span className="pv-lbl">{label}{missing && ci ? " (retirado)" : ""}</span>
+                    <input className="pv-dur" type="number" value={r.duration_sec} onClick={(e) => e.stopPropagation()} onChange={(e) => setDur(r.id, +e.target.value)} />
+                    <button className="pv-rmv" onClick={(e) => { e.stopPropagation(); void remove(r.id); }}><X size={13} /></button>
+                  </div>
                 </div>
               );
             })}
+            {ins !== null && ins >= draft.length && <div className="pv-slot" />}
           </div>
         </div>
+
+        <div className="pv-rz" onPointerDown={startResize("c")} onDoubleClick={() => setCols((c) => ({ ...c, c: 560 }))} title="Arrastrar para cambiar el ancho (doble clic: restablecer)"><i /></div>
 
         {/* col3 monitor */}
         <div className="pv-col">
@@ -277,6 +387,8 @@ export function Programacion() {
               <Vu audio={monHasAudio} />
             </div>
           </div>
+
+          <div className="pv-card pv-fadercard"><Fader onPublish={publish} publishing={publishing} /></div>
 
           <div className="pv-airrow">
             <div className="pv-airmeta">
@@ -357,7 +469,10 @@ const CSS = `
 .pv-head h1{font-size:20px;margin:0}.pv-head p{margin:4px 0 14px;color:var(--dim);font-size:13px}
 .pv-alert{padding:9px 14px;border-radius:9px;font-size:13px;margin-bottom:12px}
 .pv-alert.err{background:#fdecea;color:#c0392b}.pv-alert.ok{background:#e9f8ef;color:#16a34a}
-.pv-grid{display:grid;grid-template-columns:290px minmax(0,1fr) 560px;gap:16px;align-items:start;height:calc(100vh - 150px)}
+.pv-grid{display:grid;grid-template-columns:290px minmax(0,1fr) 560px;gap:0;align-items:start;height:calc(100vh - 150px)}
+.pv-rz{align-self:stretch;cursor:col-resize;display:flex;justify-content:center;touch-action:none}
+.pv-rz i{width:3px;margin:24px 0;border-radius:3px;background:transparent;transition:background .15s}
+.pv-rz:hover i{background:#c9d2e6}.pv-rz:active i{background:var(--ac)}
 .pv-card{background:#fff;border:1px solid var(--ln);border-radius:16px;box-shadow:0 4px 16px rgba(20,30,60,.05)}
 .pv-ct{font-weight:800;font-size:12px;color:var(--dim);text-transform:uppercase;letter-spacing:.05em}
 .pv-col{display:flex;flex-direction:column;gap:14px;min-height:0}
@@ -368,8 +483,10 @@ const CSS = `
 .pv-cats{display:flex;flex-wrap:wrap;gap:6px;padding:12px 16px}
 .pv-cat{border:1px solid var(--ln);background:#fff;color:var(--dim);border-radius:8px;padding:6px 11px;font-size:11.5px;font-weight:700;cursor:pointer}
 .pv-cat.on{background:var(--tx);color:#fff;border-color:var(--tx)}
+.pv-cn{margin-left:6px;font-size:10px;font-weight:800;background:#e8efff;color:var(--ac);border-radius:6px;padding:1px 6px}
+.pv-cat.on .pv-cn{background:rgba(255,255,255,.22);color:#fff}
 .pv-displist{flex:1;min-height:0;overflow:auto;display:flex;flex-direction:column;gap:8px;padding:0 14px 14px}
-.pv-chip{display:flex;align-items:center;gap:10px;background:#fff;border:1px solid var(--ln);border-left:4px solid var(--ln);border-radius:8px;padding:10px 12px;cursor:grab;font-size:13px}
+.pv-chip{display:flex;align-items:center;gap:10px;background:#fff;border:1px solid var(--ln);border-left:4px solid var(--ln);border-radius:8px;padding:8px 10px;cursor:grab;font-size:12px}
 .pv-chip:hover{border-color:var(--ac)}
 .pv-chip.inuse{border-left-color:var(--ac);background:var(--acs)}
 .pv-chip.exp{cursor:default;box-shadow:0 2px 10px rgba(20,30,60,.08)}
@@ -379,26 +496,27 @@ const CSS = `
 .pv-monbtn{margin-top:8px;align-self:flex-start;border:1px solid var(--ac);background:var(--acs);color:var(--ac);font:inherit;font-weight:800;font-size:11.5px;padding:6px 10px;border-radius:8px;cursor:pointer;display:inline-flex;gap:6px;align-items:center}
 .pv-dr{font-size:10px;color:var(--dim);margin-top:6px}
 .pv-tag{font-size:10px;font-weight:800;color:#fff;background:var(--ac);border-radius:6px;padding:3px 9px}
-.pv-add{color:var(--ac)}
+.pv-chev{color:var(--dim);display:inline-flex;flex:none;transition:transform .15s}.pv-chev.up{transform:rotate(180deg)}
 
 .pv-par{display:flex;flex-direction:column;min-height:0;padding:14px 0 0;height:100%}
-.pv-fader{padding:12px 16px 10px}
+.pv-fader{padding:0}
+.pv-fadercard{padding:10px 12px}
 .pv-track{position:relative;height:46px;background:linear-gradient(90deg,#f2f4f9,#ffe9e6);border:1px solid var(--ln);border-radius:10px;overflow:hidden;touch-action:none}
 .pv-fill{position:absolute;left:0;top:0;bottom:0;background:linear-gradient(90deg,rgba(238,34,12,.14),rgba(238,34,12,.34))}
 .pv-arrow{position:absolute;right:14px;top:0;bottom:0;display:flex;align-items:center;color:var(--rd);opacity:.5}
 .pv-handle{position:absolute;top:3px;bottom:3px;width:150px;background:var(--rd);color:#fff;border-radius:8px;display:flex;align-items:center;justify-content:center;gap:6px;font-size:11px;font-weight:800;letter-spacing:.04em;cursor:grab;box-shadow:0 3px 10px rgba(238,34,12,.4)}
-.pv-pills{display:flex;flex-wrap:wrap;gap:6px;padding:0 16px 10px}
-.pv-mp{font-size:11px;font-weight:800;background:#eef1f6;border:1px solid var(--ln);border-radius:8px;padding:4px 9px;display:inline-flex;gap:6px;align-items:center}
-.pv-mp.dim{color:var(--dim)}
 .pv-rows{flex:1;min-height:0;overflow:auto;padding:2px 14px 14px}
-.pv-row{display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:11px;cursor:grab;background:#fff;border:1px solid var(--ln)}
-.pv-row+.pv-row{margin-top:8px}.pv-row.sel{outline:2px solid var(--ac);outline-offset:-1px}.pv-row.off{opacity:.5}
+.pv-row{display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:10px;cursor:grab;background:#fff;border:1px solid var(--ln)}
+.pv-row{margin-bottom:8px}
+.pv-slot{height:38px;margin-bottom:8px;border:2px dashed var(--ac);background:var(--acs);border-radius:10px;animation:pvslot .14s ease-out}
+@keyframes pvslot{from{height:0;margin-bottom:0;opacity:0}}
+.pv-row.missing{background:#fdecea;border-color:#f3b4ac}.pv-row.missing .pv-lbl{color:#c0392b}.pv-row.sel{outline:2px solid var(--ac);outline-offset:-1px}.pv-row.off{opacity:.5}
 .pv-grip{color:#b8c0d4;flex:none}
-.pv-badge{border-radius:7px;padding:4px 6px;display:inline-flex;flex:none}
-.pv-lbl{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px;font-weight:500}
-.pv-dur{width:56px;background:#f4f5f7;border:1px solid var(--ln);color:var(--tx);border-radius:8px;padding:6px 8px;font:inherit;font-size:13px;text-align:center;flex:none;-moz-appearance:textfield}
+.pv-badge{border-radius:6px;padding:3px 5px;display:inline-flex;flex:none}
+.pv-lbl{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12.5px;font-weight:500}
+.pv-dur{width:48px;background:#f4f5f7;border:1px solid var(--ln);color:var(--tx);border-radius:7px;padding:4px 6px;font:inherit;font-size:12px;text-align:center;flex:none;-moz-appearance:textfield}
 .pv-dur::-webkit-inner-spin-button,.pv-dur::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
-.pv-rmv{background:#fff;border:1px solid var(--ln);color:var(--dim);cursor:pointer;border-radius:9px;padding:6px 9px;display:inline-flex;flex:none}
+.pv-rmv{background:#fff;border:1px solid var(--ln);color:var(--dim);cursor:pointer;border-radius:8px;padding:5px 7px;display:inline-flex;flex:none}
 .pv-rmv:hover{color:#fff;background:var(--rd);border-color:var(--rd)}
 
 .pv-mon-card{padding:14px;box-shadow:0 4px 16px rgba(20,30,60,.05),inset 0 2px 14px rgba(20,30,60,.07)}

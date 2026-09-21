@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
-import { API_BASE } from "./lib/scene";
+import { API_BASE, fetchScene, type Scene } from "./lib/scene";
 import { ItemView } from "./templates/items";
 
 // Preview de un contenido tipado (MONITOR del panel). Renderiza una placa, con su animación,
 // y la reproduce en loop para que el operador la vea antes de mandarla al aire.
 export function Preview({ id }: { id: string }) {
   const [item, setItem] = useState<{ type: string; data: Record<string, any>; duration_sec?: number } | null>(null);
+  const [scene, setScene] = useState<Scene | null>(null);
   const [scale, setScale] = useState(1);
   const [loop, setLoop] = useState(0);
 
@@ -15,6 +16,14 @@ export function Preview({ id }: { id: string }) {
       .then((r) => r.json())
       .then((d) => on && setItem(d))
       .catch(() => {});
+    return () => { on = false; };
+  }, [id]);
+
+  // Datos en vivo (clima, dólar) y cámaras: sin esto las placas que dependen
+  // de la escena se ven vacías en el monitor.
+  useEffect(() => {
+    let on = true;
+    fetchScene().then((s) => on && setScene(s)).catch(() => {});
     return () => { on = false; };
   }, [id]);
 
@@ -36,7 +45,7 @@ export function Preview({ id }: { id: string }) {
   return (
     <div className="viewport">
       <div className="stage" style={{ transform: `scale(${scale})` }}>
-        {item ? <ItemView key={loop} type={item.type} data={item.data} durationSec={dur} /> : null}
+        {item ? <ItemView key={loop} type={item.type} data={item.data} durationSec={dur} liveData={scene?.data} cameras={scene?.cameras ?? []} /> : null}
       </div>
     </div>
   );

@@ -13,6 +13,8 @@ const DEFAULTS = {
   tickerSpeed: 90,
   onAir: true,
   airSince: "" as string,
+  // Momento en que se cortó la emisión (vacío = al aire). Congela el reloj "al aire".
+  airPausedAt: "" as string,
 };
 
 type SettingsKey = keyof typeof DEFAULTS;
@@ -34,7 +36,8 @@ function coerce(key: SettingsKey, raw: unknown): SettingsValue | null {
     if (raw === "false") return false;
     return null;
   }
-  if (key === "airSince") {
+  if (key === "airSince" || key === "airPausedAt") {
+    if (key === "airPausedAt" && raw === "") return "";
     if (typeof raw !== "string" || Number.isNaN(Date.parse(raw))) return null;
     return raw;
   }

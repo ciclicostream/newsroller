@@ -3,7 +3,7 @@ import { Plus, Trash2, Check, MonitorPlay, Youtube, X, Loader2, Pencil } from "l
 import type { ContentItem, VideoFullData } from "@newsroller/shared";
 import { contentItems } from "../lib/content-items";
 import { uploadMedia } from "../lib/content";
-import { youtubeId } from "../lib/cameras";
+import { youtubeId, youtubeTitle } from "../lib/cameras";
 
 export function VideoFullPlaca() {
   const [items, setItems] = useState<ContentItem[]>([]);
@@ -49,8 +49,9 @@ export function VideoFullPlaca() {
     if (source === "youtube" && !yt) return setErr("Pegá el link o ID del video de YouTube.");
     setSaving(true);
     try {
+      const ytTitle = yt ? await youtubeTitle(yt) : null;
       const data: VideoFullData = source === "youtube"
-        ? { media_url: yt!, media_kind: "youtube" }
+        ? { media_url: yt!, media_kind: "youtube", ...(ytTitle ? { title: ytTitle } : {}) }
         : { media_url: mediaUrl!, media_kind: mediaKind };
       if (editingId) {
         await contentItems.patch(editingId, { data, duration_sec: dur });
