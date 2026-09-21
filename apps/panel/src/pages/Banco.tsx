@@ -190,11 +190,6 @@ function Biblioteca({ data, reload }: { data: BancoList; reload: () => Promise<v
     } catch (e) { toast(e instanceof Error ? e.message : "no se pudo borrar", "error"); }
     finally { setBusy(false); }
   }
-  async function toggleLogo(f: BancoItem) {
-    try { await banco.setLogo(f.id, !f.logo_active); await reload(); }
-    catch (e) { toast(e instanceof Error ? e.message : "no se pudo cambiar", "error"); }
-  }
-
   const totalSize = visible.reduce((s, f) => s + (f.size ?? 0), 0);
   const unusedCount = data.items.filter(isUnused).length;
 
@@ -259,18 +254,12 @@ function Biblioteca({ data, reload }: { data: BancoList; reload: () => Promise<v
                       {!f.usage.on_air && f.usage.count > 0 && (
                         <span className="bn-badge use" title={f.usage.refs.map((r) => `${typeLabel(r.type)}: ${r.title}`).join("\n")}>En uso{f.usage.count > 1 ? ` (${f.usage.count})` : ""}</span>
                       )}
-                      {f.logo_active && <span className="bn-badge logo">Logo</span>}
                     </div>
                   </div>
                   <div className="asset-body">
                     <div className="asset-name" title={f.name}>{f.name}</div>
                     <div className="bn-meta">{fmtSize(f.size)} · {fmtDate(f.created_at)}</div>
                     <div className="bn-meta">{f.uploaded_by_name ?? "Sin registro"}</div>
-                    {f.kind === "image" && data.ready && (
-                      <button className={"toggle-pill" + (f.logo_active ? " on" : "")} style={{ marginTop: 8 }} onClick={() => toggleLogo(f)} title="Mostrar esta imagen como logo fijo en pantalla">
-                        {f.logo_active && <span className="live-dot" />} Logo en pantalla
-                      </button>
-                    )}
                   </div>
                 </div>
               ))}

@@ -77,6 +77,23 @@ export async function loadUsage(sb: SupabaseClient): Promise<UsageMap> {
   return { byKey, onAirAssets };
 }
 
+// Media que se gestiona en sus propias secciones (íconos del clima, logos de plataformas…): sus URLs viven en
+// app_settings. Esas imágenes NO son del Banco: no se importan ni se listan.
+export async function settingsMediaKeys(sb: SupabaseClient): Promise<Set<string>> {
+  const keys = new Set<string>();
+  try {
+    const { data } = await sb.from("app_settings").select("value");
+    for (const r of data ?? []) {
+      for (const m of JSON.stringify(r.value ?? {}).matchAll(URL_RE)) {
+        let p = m[2]!;
+        try { p = decodeURIComponent(p); } catch { /* tal cual */ }
+        keys.add(`${m[1]}/${p}`);
+      }
+    }
+  } catch { /* noop */ }
+  return keys;
+}
+
 export interface FileUsage { on_air: boolean; count: number; refs: Array<{ id: string; type: string; title: string; on_air: boolean }> }
 export function usageOf(u: UsageMap, f: { bucket: string; path: string; asset_id?: string | null }): FileUsage {
   const refs = u.byKey.get(`${f.bucket}/${f.path}`) ?? [];
@@ -131,6 +148,13 @@ export async function syncFromStorage(sb: SupabaseClient, actor?: Parameters<typ
       const { data: assets } = await sb.from("assets").select("id, bucket, path, name, mime, size, created_by, created_at");
       const assetByKey = new Map((assets ?? []).map((a) => [`${a.bucket}/${a.path}`, a]));
 
+      const managed = await settingsMediaKeys(sb);
+      // Si alguna ya se había importado, se saca del Banco (el archivo en Storage no se toca).
+      for (const k of managed) {
+        if (!have.has(k)) continue;
+        const i = k.indexOf("/");
+        await sb.from("media_files").delete().eq("bucket", k.slice(0, i)).eq("path", k.slice(i + 1));
+      }
       const rows: Record<string, unknown>[] = [];
       for (const bucket of MEDIA_BUCKETS) {
         for (let offset = 0; ; offset += 100) {
@@ -139,7 +163,7 @@ export async function syncFromStorage(sb: SupabaseClient, actor?: Parameters<typ
           for (const o of objs) {
             if (!o.name || o.id == null) continue; // carpetas
             const key = `${bucket}/${o.name}`;
-            if (have.has(key)) continue;
+            if (have.has(key) || managed.has(key)) continue;
             const a = assetByKey.get(key);
             const meta = (o.metadata ?? {}) as { size?: number; mimetype?: string };
             const mime = a?.mime ?? meta.mimetype ?? null;

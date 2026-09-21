@@ -37,11 +37,12 @@ export function contentRouter(): Router {
 
   // 1) Pedir URL firmada para subir directo a Storage (sin pasar el archivo por el server).
   r.post("/uploads/sign", requirePerm("contenidos"), async (req, res) => {
-    const { kind, filename } = req.body ?? {};
+    const { kind, filename, folder } = req.body ?? {};
     if (!isUploadKind(kind)) return res.status(400).json({ error: "kind inválido" });
     if (typeof filename !== "string" || !filename) return res.status(400).json({ error: "filename requerido" });
     const bucket = UPLOAD_BUCKETS[kind]!; // isUploadKind garantiza que existe
-    const path = `${Date.now()}-${crypto.randomUUID()}-${safeName(filename)}`;
+    // `folder: "ajustes"`: media de Ajustes (íconos del clima, logos de plataformas); nunca entra al Banco.
+    const path = `${folder === "ajustes" ? "ajustes/" : ""}${Date.now()}-${crypto.randomUUID()}-${safeName(filename)}`;
     const { data, error } = await sb().storage.from(bucket).createSignedUploadUrl(path);
     if (error || !data) return res.status(500).json({ error: error?.message ?? "no se pudo firmar" });
     res.json({ bucket, path: data.path, token: data.token, signedUrl: data.signedUrl });

@@ -7,7 +7,7 @@ import { fetchAll, type Row } from "../db/fetchAll.js";
 import { TRASH_DAYS } from "../trash.js";
 import {
   UNUSED_DAYS, hasSynced, isMediaReady, isMissingMediaTable, loadUsage, markMediaMissing, prettyName, removeFiles, syncFromStorage, usageOf,
-  kindFromMime,
+  kindFromMime, settingsMediaKeys,
 } from "../media.js";
 
 // Banco unificado (Ajustes > Banco): toda la media cargada, con uso, papelera y borrado múltiple.
@@ -40,20 +40,17 @@ export function bancoRouter(): Router {
       if (isMissingMediaTable(error)) { markMediaMissing(); return res.json(await legacy(client)); }
       return res.status(500).json({ error });
     }
-    const [usage, names, { data: assets }] = await Promise.all([
+    const [usage, names, hiddenKeys] = await Promise.all([
       loadUsage(client),
       namesOf(rows.map((m) => m.uploaded_by)),
-      client.from("assets").select("id, kind, active"),
+      settingsMediaKeys(client),
     ]);
-    const assetById = new Map((assets ?? []).map((a) => [a.id as string, a]));
-    const items = rows.map((m) => {
+    const items = rows.filter((m) => !hiddenKeys.has(`${m.bucket}/${m.path}`)).map((m) => {
       const u = usageOf(usage, m as never);
-      const a = m.asset_id ? assetById.get(m.asset_id) : null;
       return {
         id: m.id, name: m.name ?? prettyName(m.path), url: publicUrl(m.bucket, m.path), bucket: m.bucket, path: m.path,
         mime: m.mime, size: m.size, kind: m.kind, source: m.source, created_at: m.created_at,
         uploaded_by: m.uploaded_by, uploaded_by_name: names.get(m.uploaded_by) ?? null,
-        logo_active: !!(a && a.kind === "logo" && a.active), is_logo_asset: !!(a && a.kind === "logo"),
         usage: u,
       };
     });
@@ -70,7 +67,7 @@ export function bancoRouter(): Router {
       items: (data ?? []).map((a) => ({
         id: a.id, name: a.name ?? prettyName(a.path), url: publicUrl(a.bucket, a.path), bucket: a.bucket, path: a.path, mime: a.mime, size: a.size,
         kind: kindFromMime(a.mime, a.name), source: "banco", created_at: a.created_at, uploaded_by: a.created_by, uploaded_by_name: names.get(a.created_by) ?? null,
-        logo_active: a.kind === "logo" && a.active, is_logo_asset: a.kind === "logo", usage: { on_air: false, count: 0, refs: [] },
+        usage: { on_air: false, count: 0, refs: [] },
       })),
     };
   }
@@ -152,29 +149,6 @@ export function bancoRouter(): Router {
     const n = await removeFiles(sb(), (data ?? []) as any);
     if (n > 0) logActivity(req.user, { action: "banco.purgar", entity: "media", summary: `Eliminó definitivamente ${n} archivo(s) del Banco`, meta: { count: n, names: (data ?? []).slice(0, 10).map((f) => f.name ?? prettyName(f.path)) } });
     res.json({ purged: n });
-  });
-
-  // Usar/dejar de usar una imagen como logo global en pantalla (crea el asset "logo" si hace falta).
-  r.patch("/:id/logo", async (req, res) => {
-    if (!isMediaReady()) return res.status(409).json({ error: "falta correr la migración 0017 en Supabase", code: "no_migration" });
-    const active = req.body?.active === true;
-    const client = sb();
-    const { data: f } = await client.from("media_files").select("*").eq("id", req.params.id).is("deleted_at", null).maybeSingle();
-    if (!f) return res.status(404).json({ error: "archivo no encontrado" });
-    if (f.kind !== "image") return res.status(400).json({ error: "sólo una imagen puede ser logo" });
-    let assetId: string | null = f.asset_id;
-    if (!assetId) {
-      if (!active) return res.json({ logo_active: false });
-      const { data: a, error } = await client.from("assets").insert({ kind: "logo", bucket: f.bucket, path: f.path, name: f.name, mime: f.mime, size: f.size, active: true, created_by: req.user!.id }).select("id").single();
-      if (error || !a) return res.status(500).json({ error: error?.message ?? "no se pudo marcar como logo" });
-      assetId = a.id;
-      await client.from("media_files").update({ asset_id: assetId }).eq("id", f.id);
-    } else {
-      const { error } = await client.from("assets").update({ active }).eq("id", assetId);
-      if (error) return res.status(500).json({ error: error.message });
-    }
-    logActivity(req.user, { action: "banco.logo", entity: "media", entityId: f.id, summary: `${active ? "Puso" : "Sacó"} "${f.name}" ${active ? "como" : "de los"} logo${active ? "" : "s"} en pantalla` });
-    res.json({ logo_active: active });
   });
 
   return r;

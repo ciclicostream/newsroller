@@ -63,7 +63,7 @@ export function AjustesPlataformas() {
     if (!/^image\//.test(file.type)) return setErr("El logo tiene que ser una imagen (PNG o SVG con fondo transparente, ideal).");
     setBusy(id); setErr(null);
     try {
-      const url = await uploadMedia(file, "media");
+      const url = await uploadMedia(file, "media", "ajustes");
       await save(list.map((p) => (p.id === id ? { ...p, logo: url } : p)), id, "Logo guardado.");
     } catch (er) {
       setErr(er instanceof Error ? er.message : "no se pudo subir el logo"); setBusy(null);

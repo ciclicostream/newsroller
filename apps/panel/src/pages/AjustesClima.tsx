@@ -46,7 +46,7 @@ export function AjustesClima() {
     if (!/^image\//.test(file.type)) return setErr("El archivo tiene que ser una imagen (PNG con fondo transparente, ideal).");
     setBusy(key); setErr(null);
     try {
-      const url = await uploadMedia(file, "media");
+      const url = await uploadMedia(file, "media", "ajustes");
       await save({ ...icons, [key]: url }, key, "Ícono guardado.");
     } catch (er) {
       setErr(er instanceof Error ? er.message : "no se pudo subir la imagen");
