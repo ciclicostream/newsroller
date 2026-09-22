@@ -20,6 +20,8 @@ import { Banco } from "./pages/Banco";
 import { Reportes } from "./pages/Reportes";
 import { Ajustes } from "./pages/Ajustes";
 import { Users } from "./pages/Users";
+import { Sesiones } from "./pages/Sesiones";
+import { SesionEditor } from "./pages/SesionEditor";
 
 function Protected({ children, perm }: { children: React.ReactNode; perm?: Perm }) {
   return (
@@ -51,6 +53,8 @@ export function App() {
       <Route path="/ajustes/plataformas" element={<Protected perm="ajustes"><AjustesPlataformas /></Protected>} />
       <Route path="/perfil" element={<Protected><Perfil /></Protected>} />
       <Route path="/usuarios" element={<Protected perm="perfiles"><Users /></Protected>} />
+      <Route path="/sesiones" element={<Protected perm="sesiones"><Sesiones /></Protected>} />
+      <Route path="/sesiones/:id" element={<Protected perm="sesiones"><SesionEditor /></Protected>} />
     </Routes>
   );
 }

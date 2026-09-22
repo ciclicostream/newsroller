@@ -66,9 +66,10 @@ export async function buildReport(range: Range, viewerIsMaster: boolean) {
     sb.from("activity_log").select("action, at").in("action", ["aire.cortar", "aire.reanudar"]).lt("at", iso(from)).order("at", { ascending: false }).limit(1).maybeSingle(),
   ]);
 
-  // Las salidas del output vertical se cuentan aparte (sin la migración 0019 todas son horizontales).
-  const airings = airingsAll.filter((a) => a.orientation !== "vertical");
-  const airingsV = airingsAll.filter((a) => a.orientation === "vertical");
+  // Las salidas del output vertical y las de Sesiones se cuentan aparte del aire principal.
+  const airings = airingsAll.filter((a) => a.orientation !== "vertical" && !a.session_id);
+  const airingsV = airingsAll.filter((a) => a.orientation === "vertical" && !a.session_id);
+  const airingsS = airingsAll.filter((a) => !!a.session_id);
 
   // El Master es invisible para quien no lo es: sus acciones no aparecen en las listas por persona.
   const masterIds = new Set(profiles.filter((p) => p.role === "master").map((p) => p.id as string));
@@ -150,6 +151,14 @@ export async function buildReport(range: Range, viewerIsMaster: boolean) {
         segundos_aire: airingsV.reduce((s, a) => s + (Number(a.duration_sec) || 0), 0),
         por_tipo: top([...m].map(([type, v]) => ({ type, count: v.count, seconds: v.seconds })), 30),
       };
+    })(),
+    por_sesion: (() => {
+      const m = new Map<string, { count: number; seconds: number }>();
+      for (const a of airingsS) {
+        const cur = m.get(a.session_id as string) ?? { count: 0, seconds: 0 };
+        cur.count++; cur.seconds += Number(a.duration_sec) || 0; m.set(a.session_id as string, cur);
+      }
+      return [...m.entries()].map(([session_id, v]) => ({ session_id, ...v }));
     })(),
   };
 
@@ -302,6 +311,14 @@ export function reportsRouter(): Router {
     try {
       const [current, previous] = await Promise.all([buildReport(cur, master), buildReport(prev, master)]);
       previous.almacenamiento.sin_uso = null; // el "sin uso" es del estado de hoy: no se compara
+
+      // Nombre de cada Sesión (las salidas se agregaron por id).
+      const sessIds = [...new Set([...current.emision.por_sesion, ...previous.emision.por_sesion].map((s) => s.session_id))];
+      if (sessIds.length) {
+        const { data: sessRows } = await getSupabase()!.from("sessions").select("id, name").in("id", sessIds);
+        const nameOf = new Map((sessRows ?? []).map((s) => [s.id, s.name]));
+        for (const rep of [current, previous]) for (const s of rep.emision.por_sesion) (s as any).name = nameOf.get(s.session_id) ?? "(sesión borrada)";
+      }
       const ymd = dayKey;
       res.json({
         period, start: ymd(cur.from), end: ymd(cur.to - 1), label: cur.label, in_progress: Date.now() < cur.to,

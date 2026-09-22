@@ -11,6 +11,7 @@ export interface Report {
     cortes: number; segundos_fuera: number; cortes_lista: Array<{ start: string; end: string | null; seconds: number; by: string | null }>;
     bloques: number; segundos_aire: number; por_tipo: Array<{ type: string; count: number; seconds: number }>; con_tipo: number;
     vertical?: { bloques: number; segundos_aire: number; por_tipo: Array<{ type: string; count: number; seconds: number }> };
+    por_sesion: Array<{ session_id: string; name?: string; count: number; seconds: number }>;
   };
   incidentes: {
     fuentes: Array<Counted & { key: string; label: string; seconds: number; detail: string | null }>; fuentes_total: number; fuentes_segundos: number;
@@ -113,6 +114,7 @@ export function buildCsv(r: ReportResponse): string {
   table("Emisión: cortes del aire", ["Desde", "Hasta", "Duración", "Quién"], c.emision.cortes_lista.map((k) => [fmtWhen(k.start), k.end ? fmtWhen(k.end) : "sigue cortado", fmtDur(k.seconds), k.by ?? ""]));
   table("Emisión: bloques emitidos por tipo", ["Tipo", "Bloques", "Tiempo al aire"], c.emision.por_tipo.map((t) => [typeLabel(t.type), t.count, fmtDur(t.seconds)]));
   table("Emisión vertical: bloques por tipo", ["Tipo", "Bloques", "Tiempo al aire"], (c.emision.vertical?.por_tipo ?? []).map((t) => [typeLabel(t.type), t.count, fmtDur(t.seconds)]));
+  table("Sesiones: salidas al aire", ["Sesión", "Bloques", "Tiempo al aire"], c.emision.por_sesion.map((x) => [x.name ?? x.session_id, x.count, fmtDur(x.seconds)]));
   table("Incidentes: fuentes de datos", ["Fuente", "Caídas", "Tiempo caída", "Último error"], c.incidentes.fuentes.map((f) => [f.label, f.count, fmtDur(f.seconds), f.detail ?? ""]));
   table("Incidentes: cámaras sin señal", ["Cámara", "Veces"], c.incidentes.camaras.map((f) => [f.label, f.count]));
   table("Incidentes: fotos o videos rotos", ["Archivo", "Veces"], c.incidentes.media.map((f) => [f.label, f.count]));

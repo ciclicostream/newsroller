@@ -9,6 +9,16 @@ import offAir from "./assets/off-air.jpg";
 import { reportAiring, reportIncident, isLiveOutput } from "./lib/telemetry";
 import { IS_VERTICAL, ORIENTATION, fitScale, stageStyle, supportsVertical } from "./lib/orientation";
 
+// Sesión: si la URL trae ?session=<id>, este output pasa a reproducir esa playlist en vez del aire
+// principal. El resto (rotación, sonido, telemetría, recarga por antigüedad) funciona igual.
+const SESSION_ID = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("session") : null;
+
+// Contenidos reproducibles de una Sesión embebida: sólo los del banco (content_item; es lo único que se
+// puede cargar en una Sesión hoy) y, en vertical, sólo los que tengan versión 9:16.
+function sessionPlayable(blocks: Block[], vertical: boolean): Block[] {
+  return blocks.filter((b) => b.item && (!vertical || supportsVertical(b.item.type, b.item.data)));
+}
+
 // Horas de encendido tras las cuales el output se recarga solo al cerrar una vuelta de la parrilla.
 const MAX_UPTIME_H = 12;
 
@@ -21,7 +31,7 @@ export function Output() {
 
   const load = useCallback(async () => {
     try {
-      setScene(await fetchScene());
+      setScene(await fetchScene(SESSION_ID));
     } catch {
       /* reintenta en el próximo ciclo */
     }
@@ -41,7 +51,12 @@ export function Output() {
     socket.on("data:update", (d: { source: string; payload: unknown }) => {
       setScene((prev) => (prev ? { ...prev, data: { ...prev.data, [d.source]: d.payload } } : prev));
     });
-    socket.on("settings:update", (s: Record<string, unknown>) => setOnAir(s?.onAir !== false));
+    if (SESSION_ID) {
+      // Corte de emergencia de la sesión: instantáneo por socket, filtrando por id.
+      socket.on("session:update", (s: { id: string; active: boolean }) => { if (s.id === SESSION_ID) setOnAir(s.active); });
+    } else {
+      socket.on("settings:update", (s: Record<string, unknown>) => setOnAir(s?.onAir !== false));
+    }
     return () => {
       socket.disconnect();
     };
@@ -52,6 +67,9 @@ export function Output() {
   // tuvo que blindarse antes), así que el corte de emisión no puede depender
   // SÓLO del socket — si se pierde el mensaje, esto lo aplica igual en pocos segundos.
   useEffect(() => {
+    // Sesión: el estado activo/detenido viaja dentro de su propia escena (ya se está pollando arriba);
+    // sólo el aire principal necesita este chequeo aparte de /api/settings.
+    if (SESSION_ID) return;
     const check = () =>
       fetch(`${API_BASE}/api/settings`)
         .then((r) => r.json())
@@ -77,8 +95,11 @@ export function Output() {
   }, []);
 
   // Output vertical: sólo salen los contenidos con versión 9:16 (las cámaras nunca); el resto se saltea en la rotación.
+  // Un bloque "Sesión" pasa si, para esta orientación, le queda al menos un contenido propio reproducible.
   const allItems = scene?.items ?? [];
-  const items = IS_VERTICAL ? allItems.filter((b) => b.item && supportsVertical(b.item.type, b.item.data)) : allItems;
+  const items = IS_VERTICAL
+    ? allItems.filter((b) => (b.item && supportsVertical(b.item.type, b.item.data)) || (b.session && sessionPlayable(b.session.items, true).length > 0))
+    : allItems;
   const current = items.length ? items[index % items.length] : null;
 
   // Ref (no state/dep) para que `advance` tenga una identidad ESTABLE entre
@@ -121,7 +142,12 @@ export function Output() {
   useEffect(() => {
     advanced.current = false;
     if (!current) return;
-    const dur = Math.max(2, current.duration_sec ?? 8);
+    // Sesión: no tiene una duración propia — se calcula sumando lo que realmente va a reproducir (según
+    // orientación). Es sólo la red de seguridad: quien manda el avance en la práctica es SessionRunner
+    // al completar su vuelta; este timer existe por si algo se traba adentro.
+    const dur = current.session
+      ? Math.max(2, sessionPlayable(current.session.items, IS_VERTICAL).reduce((s, b) => s + Math.max(2, b.duration_sec ?? 8), 0))
+      : Math.max(2, current.duration_sec ?? 8);
     const t = setTimeout(advance, dur * 1000);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -134,7 +160,7 @@ export function Output() {
   useEffect(() => {
     if (!airKey || !onAir || !current?.item || airedRef.current === airKey) return;
     airedRef.current = airKey;
-    reportAiring(current.item.id, current.item.type, current.duration_sec, ORIENTATION);
+    reportAiring(current.item.id, current.item.type, current.duration_sec, ORIENTATION, SESSION_ID);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [airKey, onAir]);
 
@@ -204,8 +230,9 @@ export function Output() {
   const bg = scene?.background;
   const isTemplate = !!current?.tpl;
   const isItem = !!current?.item;
-  // Bloques con diseño propio (plantilla o contenido tipado 2026): traen su propio fondo/chrome.
-  const isCustom = isTemplate || isItem;
+  const isSession = !!current?.session;
+  // Bloques con diseño propio (plantilla, contenido tipado 2026 o una Sesión embebida): traen su propio fondo/chrome.
+  const isCustom = isTemplate || isItem || isSession;
 
   // Corte manual de emisión: muestra la placa de "fuera del aire" a pantalla
   // completa, sin ticker ni rotación, hasta que se reanuda desde el Monitor.
@@ -249,6 +276,18 @@ export function Output() {
               <TemplateView template={current.tpl!} data={scene!.data} logos={scene!.logos} cameras={scene!.cameras ?? []} onEnded={advance} />
             </motion.div>
           )}
+          {current && isSession && (
+            <motion.div
+              key={current.id + ":" + index}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.4 }}
+              style={{ position: "absolute", inset: 0, zIndex: 5 }}
+            >
+              <SessionRunner scene={scene!} blocks={current.session!.items} sessionId={current.session!.id} onDone={advance} />
+            </motion.div>
+          )}
           {current && isItem && (
             <motion.div
               key={current.id + ":" + index}
@@ -275,40 +314,74 @@ export function Output() {
             </motion.div>
           )}
         </AnimatePresence>
-        {items.length === 0 && <div className="content"><Standby /></div>}
+        {/* Sin nada para mostrar (sesión recién creada, parrilla vacía): sólo el fondo de color, nada
+            más -- sin logo, sin reloj ni ticker dando vueltas sobre la nada. */}
+        {items.length > 0 && (
+          <>
+            {logo && !isCustom && (
+              <div className="chrome-logo">
+                <img src={logo.url} alt={logo.name ?? ""} />
+              </div>
+            )}
+            {!isCustom && <div className="chrome-clock">{clock}</div>}
 
-        {/* Chrome (se oculta el logo/reloj sobre plantillas, que traen su propio diseño) */}
-        {logo && !isCustom && (
-          <div className="chrome-logo">
-            <img src={logo.url} alt={logo.name ?? ""} />
-          </div>
+            {!isItem && <div className="ticker">
+              <div className="ticker-tag">CÍCLICO</div>
+              <div className="ticker-track">
+                {(() => {
+                  const txt = scene ? tickerText(scene.data) : "Cíclico";
+                  const durS = Math.max(60, Math.round(txt.length * 0.45));
+                  return <span style={{ animationDuration: `${durS}s` }}>{txt + "        "}</span>;
+                })()}
+              </div>
+            </div>}
+          </>
         )}
-        {!isCustom && <div className="chrome-clock">{clock}</div>}
-
-        {!isItem && <div className="ticker">
-          <div className="ticker-tag">CÍCLICO</div>
-          <div className="ticker-track">
-            {(() => {
-              const txt = scene ? tickerText(scene.data) : "Cíclico";
-              // Velocidad legible: ~0.45s por caracter, mínimo 60s.
-              const durS = Math.max(60, Math.round(txt.length * 0.45));
-              return <span style={{ animationDuration: `${durS}s` }}>{txt + "        "}</span>;
-            })()}
-          </div>
-        </div>}
       </div>
     </div>
   );
 }
 
-function Standby() {
-  return (
-    <div className="standby">
-      <div className="mark">C</div>
-      <div style={{ fontSize: 40, fontWeight: 600 }}>Cíclico</div>
-      <div style={{ fontSize: 24, color: "#6b7688" }}>Programación vacía — cargá bloques en el panel</div>
-    </div>
-  );
+// Reproduce, dentro de un bloque de la Emisión (o de otra Sesión anfitriona), los contenidos propios de una
+// Sesión embebida: gira sólo entre ellos con sus propias duraciones y, al completar una vuelta entera,
+// avisa (`onDone`, con guarda propia arriba en `advance`) para que la Emisión siga con su próximo bloque.
+function SessionRunner({ scene, blocks, sessionId, onDone }: { scene: Scene; blocks: Block[]; sessionId: string; onDone: () => void }) {
+  const playable = sessionPlayable(blocks, IS_VERTICAL);
+  const [idx, setIdx] = useState(0);
+  const cur = playable.length ? playable[idx % playable.length] : null;
+
+  const lenRef = useRef(playable.length);
+  lenRef.current = playable.length;
+  const onDoneRef = useRef(onDone);
+  onDoneRef.current = onDone;
+  const advanceSub = useCallback(() => {
+    setIdx((i) => {
+      const len = lenRef.current || 1;
+      const next = (i + 1) % len;
+      if (next === 0) onDoneRef.current();
+      return next;
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!cur) { onDoneRef.current(); return; }
+    const t = setTimeout(advanceSub, Math.max(2, cur.duration_sec ?? 8) * 1000);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cur?.id, cur?.duration_sec]);
+
+  // Reportes: las salidas de los contenidos de una Sesión embebida cuentan para ESA Sesión, no para el aire.
+  const airedRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!cur?.item) return;
+    const key = `${cur.id}:${idx}`;
+    if (airedRef.current === key) return;
+    airedRef.current = key;
+    reportAiring(cur.item.id, cur.item.type, cur.duration_sec, ORIENTATION, sessionId);
+  }, [cur?.id, idx, sessionId]);
+
+  if (!cur?.item) return null;
+  return <ItemView id={cur.item.id} type={cur.item.type} data={cur.item.data} durationSec={cur.duration_sec} liveData={scene.data} cameras={scene.cameras ?? []} />;
 }
 
 function AnimatedWords({ text, size }: { text: string; size: number }) {

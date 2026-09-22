@@ -209,7 +209,7 @@ export interface Short {
 
 // ---- Programación (playlist) + plantillas ----
 
-export type ContentType = "short" | "placa" | "ad" | "background" | "data" | "template" | "content_item";
+export type ContentType = "short" | "placa" | "ad" | "background" | "data" | "template" | "content_item" | "session";
 
 // ---- Banco de contenidos tipados 2026 ----
 export type ContentItemType =
@@ -550,6 +550,7 @@ export interface ServerToClientEvents {
   "data:update": (data: CachedData) => void;
   "sources:status": (statuses: SourceStatus[]) => void;
   "settings:update": (settings: Record<string, unknown>) => void;
+  "session:update": (s: { id: string; active: boolean; paused_at: string | null }) => void;
 }
 export interface ClientToServerEvents {
   // reservado para futuras acciones del panel (ej: forzar refetch)
@@ -591,13 +592,15 @@ export type Perm =
   | "perfiles" // invitar/editar/desactivar personas (salvo Master)
   | "eliminar_personas" // borrar personas
   | "vaciar_papelera" // borrar definitivamente (de la papelera)
-  | "config_sistema"; // configuración sensible del sistema (ej. tiempos de inactividad)
+  | "config_sistema" // configuración sensible del sistema (ej. tiempos de inactividad)
+  | "sesiones" // ver/editar las sesiones (playlists propias) que le fueron asignadas
+  | "sesiones_admin"; // crear/borrar sesiones y asignar quién las gestiona
 
 export const ROLE_PERMS: Record<Role, Perm[]> = {
-  master: ["programar", "contenidos", "plantillas_ver", "plantillas_editar", "camaras", "fuentes", "reportes", "ajustes", "perfiles", "eliminar_personas", "vaciar_papelera", "config_sistema"],
-  administrador: ["programar", "contenidos", "plantillas_ver", "camaras", "reportes", "ajustes", "perfiles", "vaciar_papelera"],
-  programador: ["programar", "contenidos", "camaras", "fuentes", "ajustes"],
-  generador: ["contenidos"],
+  master: ["programar", "contenidos", "plantillas_ver", "plantillas_editar", "camaras", "fuentes", "reportes", "ajustes", "perfiles", "eliminar_personas", "vaciar_papelera", "config_sistema", "sesiones", "sesiones_admin"],
+  administrador: ["programar", "contenidos", "plantillas_ver", "camaras", "reportes", "ajustes", "perfiles", "vaciar_papelera", "sesiones", "sesiones_admin"],
+  programador: ["programar", "contenidos", "camaras", "fuentes", "ajustes", "sesiones"],
+  generador: ["contenidos", "sesiones"],
 };
 export const can = (role: Role | null | undefined, perm: Perm): boolean => !!role && ROLE_PERMS[role].includes(perm);
 

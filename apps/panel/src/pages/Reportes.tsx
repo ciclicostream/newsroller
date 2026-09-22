@@ -182,6 +182,12 @@ function Emision({ r }: { r: ReportResponse }) {
           <Table head={["Tipo", "Bloques", "Tiempo"]} rows={e.vertical!.por_tipo.map((x) => [typeLabel(x.type), x.count, x.seconds ? fmtDur(x.seconds) : "—"])} />
         </>
       )}
+      {e.por_sesion.length > 0 && (
+        <>
+          <h3>Sesiones (se cuentan aparte del aire principal)</h3>
+          <Table head={["Sesión", "Bloques", "Tiempo al aire"]} rows={e.por_sesion.map((x) => [x.name ?? x.session_id, x.count, fmtDur(x.seconds)])} />
+        </>
+      )}
       <h3>Cortes del aire</h3>
       <Table head={["Desde", "Hasta", "Duración", "Quién"]} rows={e.cortes_lista.map((k) => [fmtWhen(k.start), k.end ? fmtWhen(k.end) : "sigue cortado", fmtDur(k.seconds), k.by ?? "—"])} empty="No hubo cortes del aire." />
     </Section>
@@ -208,8 +214,8 @@ function Personas({ r }: { r: ReportResponse }) {
   const p = r.current.personas;
   return (
     <Section n={4} title="Personas">
-      <Table head={["Persona", "Rol", "Nuevos", "Editados", "Envíos", "Sesiones", "Días activos", "Sesiones por día", "Tiempo activo", "Hora pico"]}
-        rows={p.lista.map((x) => [x.name, ROLE_LABEL[normalizeRole(x.role)], x.creados, x.editados, x.envios, x.sesiones, x.dias_activos, x.sesiones_por_dia, fmtDur(x.segundos_activo), fmtHour(x.hora_pico)])}
+      <Table head={["Persona", "Rol", "Nuevos", "Editados", "Envíos", "Ingresos", "Días activos", "Ingresos por día", "Tiempo activo", "Hora pico"]}
+        rows={p.lista.map((x) => [x.name, ROLE_LABEL[normalizeRole(x.role)], x.creados, x.editados, x.envios, x.sesiones, x.dias_activos, x.sesiones_por_dia, fmtDur(x.segundos_activo), fmtHour(x.hora_pico)])} 
         empty="Sin programadores ni generadores." />
       <h3>Horarios pico (ingresos y acciones, hora de Argentina)</h3>
       <Hours horas={p.horas} />

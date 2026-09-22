@@ -6,9 +6,9 @@ import type { IO } from "../realtime/socket.js";
 import { writeSettings, readAll } from "./settings.js";
 import { logActivity } from "../activity.js";
 
-const TYPES: ContentType[] = ["short", "placa", "ad", "background", "data", "template", "content_item"];
+const TYPES: ContentType[] = ["short", "placa", "ad", "background", "data", "template", "content_item", "session"];
 const TEMPLATE_IDS = new Set(LAYOUTS.map((t) => t.id));
-const SELF_LAYOUT = new Set<ContentType>(["template", "content_item"]);
+const SELF_LAYOUT = new Set<ContentType>(["template", "content_item", "session"]);
 
 // Parrilla en BORRADOR (parrilla_draft). Se publica a playlist_items (el aire) con /publish.
 export function parrillaRouter(io: IO): Router {

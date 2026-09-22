@@ -9,6 +9,7 @@ import {
   BarChart3,
   Settings,
   LogOut,
+  ListMusic,
 } from "lucide-react";
 import { ROLE_LABEL, type Perm } from "@newsroller/shared";
 import { useAuth } from "../auth/AuthProvider";
@@ -25,13 +26,18 @@ interface NavDef {
   perm: Perm;
 }
 
-const NAV: NavDef[] = [
-  { to: "/", label: "Programación", icon: <ListVideo size={18} />, perm: "programar" },
+// Orden simétrico alrededor de Emisión (que se dibuja aparte, al centro y en rojo):
+// izquierda Contenido/Sesiones/Fuentes, derecha Plantillas/Cámaras/Reportes, y Ajustes
+// separado por una rayita porque no es parte de la simetría.
+const NAV_LEFT: NavDef[] = [
+  { to: "/contenido", label: "Contenido", icon: <FilePlus2 size={18} />, perm: "contenidos" },
+  { to: "/sesiones", label: "Sesiones", icon: <ListMusic size={18} />, perm: "sesiones" },
+  { to: "/fuentes", label: "Fuentes", icon: <Radio size={18} />, perm: "fuentes" },
+];
+const NAV_RIGHT: NavDef[] = [
   { to: "/plantillas", label: "Plantillas", icon: <LayoutTemplate size={18} />, perm: "plantillas_ver" },
   { to: "/camaras", label: "Cámaras", icon: <Video size={18} />, perm: "camaras" },
-  { to: "/fuentes", label: "Fuentes", icon: <Radio size={18} />, perm: "fuentes" },
   { to: "/reportes", label: "Reportes", icon: <BarChart3 size={18} />, perm: "reportes" },
-  { to: "/ajustes", label: "Ajustes", icon: <Settings size={18} />, perm: "ajustes" },
 ];
 
 export function Layout({ children }: { children: ReactNode }) {
@@ -52,31 +58,33 @@ export function Layout({ children }: { children: ReactNode }) {
         </div>
 
         <nav className="topnav">
-          {/* Programación */}
-          {canDo("programar") && (
-            <NavLink to="/" end className={({ isActive }) => "nav-item" + (isActive ? " active" : "")}>
-              <ListVideo size={18} /> Programación
-            </NavLink>
-          )}
-
-          {/* Contenido: link directo (el submenú de plantillas vive en la página). */}
-          {canDo("contenidos") && (
-            <NavLink to="/contenido" className={({ isActive }) => "nav-item" + (isActive ? " active" : "")}>
-              <FilePlus2 size={18} /> Contenido
-            </NavLink>
-          )}
-
-          {/* Resto: sólo lo que el rol puede ver */}
-          {NAV.slice(1).filter((n) => canDo(n.perm)).map((n) => (
-            <NavLink
-              key={n.to}
-              to={n.to}
-              className={({ isActive }) => "nav-item" + (isActive ? " active" : "")}
-            >
+          {NAV_LEFT.filter((n) => canDo(n.perm)).map((n) => (
+            <NavLink key={n.to} to={n.to} className={({ isActive }) => "nav-item" + (isActive ? " active" : "")}>
               {n.icon}
               {n.label}
             </NavLink>
           ))}
+
+          {/* Emisión (antes "Programación"): al centro, destacada en rojo — es el aire en vivo. */}
+          {canDo("programar") && (
+            <NavLink to="/" end className={({ isActive }) => "nav-item nav-emision" + (isActive ? " active" : "")}>
+              <ListVideo size={18} /> Emisión
+            </NavLink>
+          )}
+
+          {NAV_RIGHT.filter((n) => canDo(n.perm)).map((n) => (
+            <NavLink key={n.to} to={n.to} className={({ isActive }) => "nav-item" + (isActive ? " active" : "")}>
+              {n.icon}
+              {n.label}
+            </NavLink>
+          ))}
+
+          {canDo("ajustes") && <span className="nav-sep" aria-hidden="true" />}
+          {canDo("ajustes") && (
+            <NavLink to="/ajustes" className={({ isActive }) => "nav-item" + (isActive ? " active" : "")}>
+              <Settings size={18} /> Ajustes
+            </NavLink>
+          )}
         </nav>
 
         <div className="topbar-right">

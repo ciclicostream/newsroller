@@ -1,69 +1,20 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  AlertTriangle, TrendingUp, Newspaper, Megaphone, Video, GripVertical, X,
-  MonitorPlay, Zap, ArrowRight, ChevronDown, PauseCircle, LayoutGrid, Check, Inbox, Volume2, VolumeX, RectangleHorizontal, RectangleVertical,
+  Zap, ArrowRight, PauseCircle, Volume2, VolumeX, RectangleHorizontal, RectangleVertical,
 } from "lucide-react";
 import type { ContentItem, PlaylistItem, Camera } from "@newsroller/shared";
-import { contentHasAudio, DOLAR_CASAS } from "@newsroller/shared";
-import { TIPO_BY_KEY } from "../lib/tipos";
+import { contentHasAudio } from "@newsroller/shared";
 import { useMonitorAudio } from "../lib/monitorAudio";
 import { useMonitorVertical } from "../lib/monitorOrientation";
 import { parrilla, OUTPUT_FRAME_BASE } from "../lib/parrilla";
+import { sessions as sessionsApi, type SessionRow } from "../lib/sessions";
 import { contentItems as contentItemsApi } from "../lib/content-items";
 import { settingsApi } from "../lib/settings";
 import { camerasApi, youtubeTitle } from "../lib/cameras";
-
-// ---- catálogo de tipos ----
-const TYPE_CAT: Record<string, string> = {
-  ultima_hora: "ultima", dolar: "datos", cifras: "datos", clima: "datos",
-  efemerides: "editorial", cartelera: "editorial", declaraciones: "editorial", informe: "editorial",
-  publicidad: "media", promos: "media", video_full: "media", shorts: "media", camaras: "camaras",
-};
-const TYPE_LABEL: Record<string, string> = {
-  ultima_hora: "Última Hora", dolar: "Dólar", cifras: "Cifras", clima: "Clima",
-  efemerides: "Efemérides", cartelera: "Cartelera", declaraciones: "Declaraciones", informe: "Informe",
-  publicidad: "Publicidad", promos: "Promo", video_full: "Video", shorts: "Shorts", camaras: "Cámara",
-};
-const CAT: Record<string, { label: string; color: string; Icon: any }> = {
-  ultima: { label: "Última Hora", color: "#EE220C", Icon: AlertTriangle },
-  datos: { label: "Datos", color: "#0ea5a3", Icon: TrendingUp },
-  editorial: { label: "Editorial", color: "#2f6bff", Icon: Newspaper },
-  media: { label: "Media", color: "#8b5cf6", Icon: Megaphone },
-  camaras: { label: "Cámaras", color: "#e08a1e", Icon: Video },
-};
-const CAT_ORDER = ["ultima", "datos", "editorial", "media", "camaras"];
-
-interface TextCtx { cams: Map<string, Camera>; yt: Record<string, string> }
-const fileName = (u: string) => { try { return decodeURIComponent(u.split("?")[0].split("/").pop() || ""); } catch { return u; } };
-
-// Referencia corta de un contenido (lo que se ve en chips y filas de la parrilla).
-function itemText(ci: ContentItem, ctx: TextCtx): string {
-  const d = ci.data || {};
-  const fallback = TYPE_LABEL[ci.type] || ci.type || "";
-  switch (ci.type) {
-    case "clima": return d.city ? String(d.city) : fallback;
-    case "camaras": {
-      const cam = ctx.cams.get(d.camera_id);
-      const name = cam?.name ?? "(cámara eliminada)";
-      return d.location ? `${name} · ${d.location}` : name;
-    }
-    case "video_full": {
-      if (d.title) return String(d.title);
-      if (d.media_kind === "youtube") return d.title || ctx.yt[d.media_url] || `YouTube · ${d.media_url}`;
-      return d.media_url ? fileName(d.media_url) : fallback;
-    }
-    case "publicidad": return d.title ? String(d.title) : d.media_url ? fileName(d.media_url) : fallback;
-    case "cifras": return (d.subtitle || d.value || fallback).toString();
-    case "declaraciones": return (d.name ? `${d.name}${d.headline ? " · " + d.headline : ""}` : fallback).toString();
-    case "dolar": return Array.isArray(d.casas) ? `Dólar · ${d.casas.map((c: string) => DOLAR_CASAS[c] ?? c).join(", ")}` : fallback;
-  }
-  return (d.text || d.title || d.subt || d.name || fallback).toString();
-}
-const catOf = (t: string) => TYPE_CAT[t] || "media";
-// Ícono de cada tipo: el mismo que tiene su botón en Contenido (si no, el de su categoría).
-const iconOf = (t: string): any => TIPO_BY_KEY[t]?.Icon ?? CAT[catOf(t)].Icon;
-// Ícono de cada categoría del filtro: el de su tipo principal en Contenido.
-const CAT_ICON: Record<string, any> = { ultima: TIPO_BY_KEY.ultima_hora.Icon, datos: TIPO_BY_KEY.dolar.Icon, editorial: TIPO_BY_KEY.placas.Icon, media: TIPO_BY_KEY.video_full.Icon, camaras: TIPO_BY_KEY.camaras.Icon };
+import { OutputLinksPicker } from "../components/OutputLinksPicker";
+import { AvailablePanel } from "../components/AvailablePanel";
+import { PlaylistRows } from "../components/PlaylistRows";
+import { TYPE_LABEL } from "../lib/contentCatalog";
 
 interface LiveStatus {
   updatedAt: string;
@@ -97,17 +48,6 @@ export function Programacion() {
   const [items, setItems] = useState<ContentItem[]>([]);
   const [err, setErr] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
-  const [filter, setFilter] = useState("all");
-  const [ddOpen, setDdOpen] = useState(false);
-  const ddRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (!ddOpen) return;
-    const close = (e: MouseEvent) => { if (!ddRef.current?.contains(e.target as Node)) setDdOpen(false); };
-    const esc = (e: KeyboardEvent) => { if (e.key === "Escape") setDdOpen(false); };
-    document.addEventListener("mousedown", close); document.addEventListener("keydown", esc);
-    return () => { document.removeEventListener("mousedown", close); document.removeEventListener("keydown", esc); };
-  }, [ddOpen]);
-  const [exp, setExp] = useState<string | null>(null);
   const [sel, setSel] = useState<string | null>(null);
   const [mode, setMode] = useState<"preview" | "aire" | "clip">("preview");
   const [clipId, setClipId] = useState<string | null>(null);
@@ -118,6 +58,7 @@ export function Programacion() {
   const [publishing, setPublishing] = useState(false);
   const [airPausedAt, setAirPausedAt] = useState<string | null>(null);
   const [cams, setCams] = useState<Camera[]>([]);
+  const [availableSessions, setAvailableSessions] = useState<SessionRow[]>([]); // Sesiones que se pueden meter como contenido
   const [ytTitles, setYtTitles] = useState<Record<string, string>>({});
   const [ins, setIns] = useState<number | null>(null); // hueco de inserción durante el arrastre
   const [cols, setCols] = useState<{ a: number; c: number }>(() => {
@@ -132,6 +73,7 @@ export function Programacion() {
   useEffect(() => {
     settingsApi.get().then((s) => { setOnAirState(s.onAir !== false); setAirSince(s.airSince || null); setAirPausedAt(s.onAir === false ? s.airPausedAt || null : null); }).catch(() => {});
     camerasApi.list().then(setCams).catch(() => {});
+    sessionsApi.list().then(setAvailableSessions).catch(() => {}); // si falta la migración 0020, sigue sin Sesiones
   }, []);
   // Al cortar se congela el reloj "al aire"; al reanudar se corre airSince por el
   // tiempo que estuvo cortado, así el reloj sigue donde se había quedado.
@@ -161,8 +103,9 @@ export function Programacion() {
   }, []);
 
   const itemById = useMemo(() => new Map(items.map((c) => [c.id, c])), [items]);
+  const sessionById = useMemo(() => new Map(availableSessions.map((s) => [s.id, s])), [availableSessions]);
   const camById = useMemo(() => new Map(cams.map((c) => [c.id, c])), [cams]);
-  const txt = (ci: ContentItem) => itemText(ci, { cams: camById, yt: ytTitles });
+  const ctx = useMemo(() => ({ cams: camById, yt: ytTitles }), [camById, ytTitles]);
 
   // Títulos de YouTube de videos guardados antes de que se persistiera `title`.
   useEffect(() => {
@@ -186,12 +129,21 @@ export function Programacion() {
   useEffect(() => { void load(); }, []);
   useEffect(() => { const t = setInterval(() => setTick((s) => s + 1), 1000); return () => clearInterval(t); }, []);
 
-  const countIn = (id: string) => draft.filter((r) => r.content_id === id).length;
-  const disponibles = items.filter((c) => c.in_parrilla !== false && (filter === "all" || (filter === "sin" ? countIn(c.id) === 0 : catOf(c.type) === filter)));
-
   async function addItem(ci: ContentItem, atIdx?: number) {
     try {
       const row = await parrilla.add({ content_type: "content_item", content_id: ci.id, template: "custom", duration_sec: ci.duration_sec });
+      const next = [...draft];
+      next.splice(atIdx ?? next.length, 0, row);
+      setDraft(next);
+      setSel(row.id);
+      if (atIdx != null) await reorderTo(next.map((r) => r.id));
+    } catch (e) { setErr(e instanceof Error ? e.message : "error"); }
+  }
+  // Una Sesión como contenido: reproduce todos sus contenidos y sigue. La duración real la calcula el
+  // output según lo que la Sesión tenga en cada momento; acá el número guardado es sólo un valor inicial.
+  async function addSession(s: SessionRow, atIdx?: number) {
+    try {
+      const row = await parrilla.add({ content_type: "session", content_id: s.id, template: "custom", duration_sec: 8 });
       const next = [...draft];
       next.splice(atIdx ?? next.length, 0, row);
       setDraft(next);
@@ -211,7 +163,7 @@ export function Programacion() {
   }
 
   // ---- drag & drop ----
-  const dragRef = useRef<{ type: "disp" | "row"; id: string } | null>(null);
+  const dragRef = useRef<{ type: "disp"; ci: ContentItem } | { type: "session"; s: SessionRow } | { type: "row"; id: string } | null>(null);
   // Índice de inserción según la posición del cursor. Descuenta el alto del hueco
   // ya insertado para que las filas de abajo no "salten" y hagan parpadear el hueco.
   function calcIdx(clientY: number): number {
@@ -242,7 +194,8 @@ export function Programacion() {
     const idx0 = ins ?? calcIdx(e.clientY); setIns(null);
     if (!dg) return;
     let idx = idx0;
-    if (dg.type === "disp") { const ci = itemById.get(dg.id); if (ci) void addItem(ci, idx); return; }
+    if (dg.type === "disp") { void addItem(dg.ci, idx); return; }
+    if (dg.type === "session") { void addSession(dg.s, idx); return; }
     const from = draft.findIndex((r) => r.id === dg.id); if (from < 0) return;
     const next = [...draft]; const [it] = next.splice(from, 1); if (from < idx) idx--; next.splice(idx, 0, it);
     setDraft(next); setSel(it.id); void reorderTo(next.map((r) => r.id));
@@ -295,17 +248,6 @@ export function Programacion() {
     ? !!liveStatus?.current?.hasAudio
     : (() => { const ci = previewCi(); return !!ci && contentHasAudio(ci.type, ci.data); })();
 
-  // Cantidades de Contenidos disponibles: total, sin asignar (todavía no están en la parrilla) y por categoría.
-  const catCount = useMemo(() => {
-    const inDraft = new Set(draft.map((r) => r.content_id));
-    const by: Record<string, number> = { all: 0, sin: 0 };
-    for (const c of items) {
-      if (c.in_parrilla === false) continue;
-      const k = catOf(c.type); by[k] = (by[k] || 0) + 1; by.all++;
-      if (!inDraft.has(c.id)) by.sin++;
-    }
-    return by;
-  }, [draft, items]);
   const cicloSec = draft.filter((r) => r.enabled).reduce((a, r) => a + r.duration_sec, 0);
 
   const fmt = (s: number) => [Math.floor(s / 3600), Math.floor((s % 3600) / 60), s % 60].map((n) => String(n).padStart(2, "0")).join(":");
@@ -317,7 +259,6 @@ export function Programacion() {
 
   return (
     <div className="pv">
-      <style>{CSS}</style>
 
       <div className="pv-head">
         <h1>Programación</h1>
@@ -328,90 +269,23 @@ export function Programacion() {
       {msg && <div className="pv-alert ok">{msg}</div>}
 
       <div className="pv-grid" ref={gridRef} style={{ gridTemplateColumns: `${cols.a}px 14px minmax(0,1fr) 14px ${cols.c}px` }}>
-        {/* col1 disponibles */}
-        <div className="pv-card pv-disp">
-          <div className="pv-ct">Contenidos disponibles</div>
-          <div className="pv-filters">
-            <div className="pv-dd" ref={ddRef}>
-              <button className={"pv-ddb" + (filter !== "all" ? " on" : "")} onClick={() => setDdOpen((v) => !v)} aria-haspopup="listbox" aria-expanded={ddOpen}>
-                {(() => { const I = filter === "all" ? LayoutGrid : filter === "sin" ? Inbox : CAT_ICON[filter]; return <I size={14} color={filter === "all" || filter === "sin" ? undefined : CAT[filter].color} />; })()}
-                <span className="pv-ddl">{filter === "all" ? "Todos" : filter === "sin" ? "Sin asignar" : CAT[filter].label}</span>
-                <span className="pv-cn">{catCount[filter] ?? 0}</span>
-                <ChevronDown size={14} className={ddOpen ? "pv-up" : ""} />
-              </button>
-              {ddOpen && (
-                <div className="pv-ddm" role="listbox">
-                  {[["all", "Todos", LayoutGrid, "#5b6678"] as const, ["sin", "Sin asignar", Inbox, "#5b6678"] as const, ...CAT_ORDER.map((k) => [k, CAT[k].label, CAT_ICON[k], CAT[k].color] as const)].map(([id, lb, I, col], i) => (
-                    <div key={id} style={{ display: "contents" }}>
-                      {i === 2 && <div className="pv-dds" />}
-                      <button role="option" aria-selected={filter === id} className={"pv-ddi" + (filter === id ? " sel" : "")} onClick={() => { setFilter(id); setDdOpen(false); }}>
-                        <I size={14} color={col} /><span className="pv-ddl">{lb}</span>
-                        <span className="pv-cn">{catCount[id] ?? 0}</span>
-                        {filter === id && <Check size={14} />}
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-          <div className="pv-displist">
-            {disponibles.length === 0 && <div className="pv-empty">Sin contenidos. Cargá desde "Nuevo contenido".</div>}
-            {disponibles.map((ci) => {
-              const c = CAT[catOf(ci.type)]; const n = countIn(ci.id); const ex = exp === ci.id; const Ic = iconOf(ci.type);
-              return (
-                <div key={ci.id} className={"pv-chip" + (n ? " inuse" : "") + (ex ? " exp" : "")}
-                  draggable onDragStart={() => (dragRef.current = { type: "disp", id: ci.id })} onDragEnd={endDrag}
-                  onClick={() => setExp(ex ? null : ci.id)}>
-                  <span className="pv-t">
-                    <span className="pv-k"><Ic size={14} color={c.color} /> {TYPE_LABEL[ci.type] || ci.type}</span>
-                    <span className={"pv-x" + (ex ? " full" : "")}>{txt(ci)}</span>
-                    {ex && <button className="pv-monbtn" onClick={(e) => { e.stopPropagation(); setClipId(ci.id); setMode("clip"); }}><MonitorPlay size={14} /> Monitor</button>}
-                    {ex && <span className="pv-dr">arrastrá para agregar a la parrilla</span>}
-                  </span>
-                  {n > 0 && !ex && <span className="pv-tag">×{n}</span>}
-                  <span className={"pv-chev" + (ex ? " up" : "")}><ChevronDown size={16} /></span>
-                </div>
-              );
-            })}
-          </div>
-        </div>
+        <AvailablePanel
+          items={items} draft={draft} camById={camById} ytTitles={ytTitles}
+          onDragStart={(ci) => (dragRef.current = { type: "disp", ci })} onDragEnd={endDrag}
+          onPreviewClip={(id) => { setClipId(id); setMode("clip"); }}
+          sessions={availableSessions} onDragStartSession={(s) => (dragRef.current = { type: "session", s })}
+        />
 
         <div className="pv-rz" onPointerDown={startResize("a")} onDoubleClick={() => setCols((c) => ({ ...c, a: 290 }))} title="Arrastrar para cambiar el ancho (doble clic: restablecer)"><i /></div>
 
-        {/* col2 parrilla */}
-        <div className="pv-card pv-par">
-          <div className="pv-ct" style={{ padding: "0 16px 10px" }}>Parrilla</div>
-          <div className="pv-rows" ref={rowsRef}
-            onDragOver={onRowsDragOver}
-            onDragLeave={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node)) setIns(null); }}
-            onDrop={onRowsDrop}>
-            {draft.length === 0 && ins === null && <div className="pv-empty">Arrastrá acá los contenidos disponibles.</div>}
-            {draft.map((r, i) => {
-              const ci = r.content_id ? itemById.get(r.content_id) : null;
-              // Contenido borrado (o retirado de la parrilla): la fila se marca en rojo.
-              const missing = r.content_type === "content_item" && (!ci || ci.in_parrilla === false);
-              const cat = ci ? catOf(ci.type) : "media"; const cc = CAT[cat]; const Ic = missing ? AlertTriangle : ci ? iconOf(ci.type) : cc.Icon;
-              const label = ci ? txt(ci) : (r.content_type === "content_item" ? "Contenido eliminado" : r.content_type);
-              return (
-                <div key={r.id} style={{ display: "contents" }}>
-                  {ins === i && <div className="pv-slot" />}
-                  <div data-rid={r.id} className={"pv-row" + (r.enabled ? "" : " off") + (sel === r.id ? " sel" : "") + (missing ? " missing" : "")}
-                    draggable onDragStart={() => (dragRef.current = { type: "row", id: r.id })} onDragEnd={endDrag}
-                    onClick={() => setSel(r.id)}
-                    title={missing ? "No disponible: el contenido se eliminó o se retiró de la parrilla" : undefined}>
-                    <GripVertical size={14} className="pv-grip" />
-                    <span className="pv-badge" style={{ background: missing ? "#EE220C" : cc.color }} title={ci ? TYPE_LABEL[ci.type] : ""}><Ic size={13} color="#fff" /></span>
-                    <span className="pv-lbl">{label}{missing && ci ? " (retirado)" : ""}</span>
-                    <input className="pv-dur" type="number" value={r.duration_sec} onClick={(e) => e.stopPropagation()} onChange={(e) => setDur(r.id, +e.target.value)} />
-                    <button className="pv-rmv" onClick={(e) => { e.stopPropagation(); void remove(r.id); }}><X size={13} /></button>
-                  </div>
-                </div>
-              );
-            })}
-            {ins !== null && ins >= draft.length && <div className="pv-slot" />}
-          </div>
-        </div>
+        <PlaylistRows
+          title="Parrilla" draft={draft} itemById={itemById} ctx={ctx} sel={sel} ins={ins} rowsRef={rowsRef} sessionById={sessionById}
+          onSelect={setSel} onRemove={(id) => void remove(id)} onDur={setDur}
+          onDragStart={(id) => (dragRef.current = { type: "row", id })} onDragEnd={endDrag}
+          onRowsDragOver={onRowsDragOver}
+          onRowsDragLeave={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node)) setIns(null); }}
+          onRowsDrop={onRowsDrop}
+        />
 
         <div className="pv-rz" onPointerDown={startResize("c")} onDoubleClick={() => setCols((c) => ({ ...c, c: 560 }))} title="Arrastrar para cambiar el ancho (doble clic: restablecer)"><i /></div>
 
@@ -446,6 +320,11 @@ export function Programacion() {
           </div>
 
           <div className="pv-card pv-fadercard"><Fader onPublish={publish} publishing={publishing} /></div>
+
+          <details className="pv-links">
+            <summary>Enlaces para transmitir</summary>
+            <OutputLinksPicker title="" />
+          </details>
 
           <div className="pv-airrow">
             <div className="pv-airmeta">
@@ -520,107 +399,4 @@ function Vu({ audio }: { audio: boolean }) {
   );
 }
 
-const CSS = `
-.pv{--ac:#2f6bff;--acs:#e8efff;--rd:#EE220C;--ln:#e3e7ef;--dim:#7c869b;--tx:#1a2235}
-.pv{color:var(--tx)}
-.pv-head{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:12px;margin-bottom:14px}
-.pv-head h1{font-size:20px;margin:0;color:#fff}
-.pv-hint{background:#fff;color:var(--tx);border-radius:999px;padding:9px 22px;font-size:13px;text-align:center;box-shadow:0 4px 14px rgba(5,15,42,.18)}
-@media (max-width:1180px){.pv-head{grid-template-columns:1fr}.pv-head h1{text-align:center}.pv-head span{display:none}}
-.pv-alert{padding:9px 14px;border-radius:9px;font-size:13px;margin-bottom:12px}
-.pv-alert.err{background:#fdecea;color:#c0392b}.pv-alert.ok{background:#e9f8ef;color:#16a34a}
-.pv-grid{display:grid;grid-template-columns:290px minmax(0,1fr) 560px;gap:0;align-items:stretch}
-.pv-rz{align-self:stretch;cursor:col-resize;display:flex;justify-content:center;touch-action:none}
-.pv-rz i{width:3px;margin:24px 0;border-radius:3px;background:transparent;transition:background .15s}
-.pv-rz:hover i{background:#c9d2e6}.pv-rz:active i{background:var(--ac)}
-.pv-card{background:#fff;border:1px solid var(--ln);border-radius:16px;box-shadow:0 4px 16px rgba(20,30,60,.05)}
-.pv-ct{font-weight:800;font-size:12px;color:var(--dim);text-transform:uppercase;letter-spacing:.05em}
-.pv-col{display:flex;flex-direction:column;gap:14px;min-height:0}
-.pv-empty{color:var(--dim);font-size:13px;padding:26px;text-align:center;border:1.5px dashed var(--ln);border-radius:12px;margin:6px 0}
 
-.pv-disp{display:flex;flex-direction:column;min-height:0;padding:14px 0 0;height:0;min-height:100%}
-.pv-disp .pv-ct{padding:0 16px}
-.pv-filters{display:flex;flex-wrap:wrap;gap:8px;padding:12px 16px;align-items:center}
-.pv-ddb{border:1px solid var(--ln);background:#f4f5f8;color:var(--tx);border-radius:10px;padding:7px 11px;font:inherit;font-size:12px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:7px}
-.pv-ddb:hover{border-color:#c5cbd8;background:#eceef3}
-.pv-ddb.on{border-color:var(--ac);background:var(--acs)}
-.pv-ddb .pv-up{transform:rotate(180deg)}
-.pv-dd{position:relative;flex:1;min-width:150px}
-.pv-dds{height:1px;background:var(--ln);margin:3px 6px}.pv-dd .pv-ddb{width:100%}
-.pv-ddl{flex:1;text-align:left;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.pv-ddm{position:absolute;left:0;right:0;top:calc(100% + 6px);z-index:30;background:#fff;border:1px solid var(--ln);border-radius:12px;box-shadow:0 12px 30px rgba(20,30,60,.18);padding:5px;display:flex;flex-direction:column;gap:2px;min-width:200px}
-.pv-ddi{border:0;background:transparent;font:inherit;font-size:12.5px;color:var(--tx);border-radius:8px;padding:8px 10px;display:flex;align-items:center;gap:9px;cursor:pointer;text-align:left}
-.pv-ddi:hover{background:#f1f3f8}.pv-ddi.sel{background:var(--acs);font-weight:700}
-.pv-cn{margin-left:2px;font-size:10px;font-weight:800;background:#e3e7ee;color:#4a5468;border-radius:6px;padding:1px 6px}
-.pv-ddi.sel .pv-cn{background:#fff;color:var(--ac)}
-.pv-displist{flex:1;min-height:0;overflow:auto;display:flex;flex-direction:column;gap:8px;padding:0 14px 14px}
-.pv-chip{display:flex;align-items:center;gap:10px;background:#fff;border:1px solid var(--ln);border-left:4px solid var(--ln);border-radius:8px;padding:8px 10px;cursor:grab;font-size:12px}
-.pv-chip:hover{border-color:var(--ac)}
-.pv-chip.inuse{border-left-color:var(--ac);background:var(--acs)}
-.pv-chip.exp{cursor:default;box-shadow:0 2px 10px rgba(20,30,60,.08)}
-.pv-t{flex:1;overflow:hidden;display:flex;flex-direction:column}
-.pv-k{font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:.05em;font-weight:700;display:flex;gap:6px;align-items:center}
-.pv-x{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:3px}.pv-x.full{white-space:normal}
-.pv-monbtn{margin-top:8px;align-self:flex-start;border:1px solid var(--ac);background:var(--acs);color:var(--ac);font:inherit;font-weight:800;font-size:11.5px;padding:6px 10px;border-radius:8px;cursor:pointer;display:inline-flex;gap:6px;align-items:center}
-.pv-dr{font-size:10px;color:var(--dim);margin-top:6px}
-.pv-tag{font-size:10px;font-weight:800;color:#fff;background:var(--ac);border-radius:6px;padding:3px 9px}
-.pv-chev{color:var(--dim);display:inline-flex;flex:none;transition:transform .15s}.pv-chev.up{transform:rotate(180deg)}
-
-.pv-par{display:flex;flex-direction:column;min-height:0;padding:14px 0 0;height:0;min-height:100%}
-.pv-fader{padding:0}
-.pv-fadercard{padding:10px 12px}
-.pv-track{position:relative;height:46px;background:linear-gradient(90deg,#f2f4f9,#ffe9e6);border:1px solid var(--ln);border-radius:10px;overflow:hidden;touch-action:none}
-.pv-fill{position:absolute;left:0;top:0;bottom:0;background:linear-gradient(90deg,rgba(238,34,12,.14),rgba(238,34,12,.34))}
-.pv-arrow{position:absolute;right:14px;top:0;bottom:0;display:flex;align-items:center;color:var(--rd);opacity:.5}
-.pv-handle{position:absolute;top:3px;bottom:3px;width:150px;background:var(--rd);color:#fff;border-radius:8px;display:flex;align-items:center;justify-content:center;gap:6px;font-size:11px;font-weight:800;letter-spacing:.04em;cursor:grab;box-shadow:0 3px 10px rgba(238,34,12,.4)}
-.pv-rows{flex:1;min-height:0;overflow:auto;padding:2px 14px 14px}
-.pv-row{display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:10px;cursor:grab;background:#fff;border:1px solid var(--ln)}
-.pv-row{margin-bottom:8px}
-.pv-slot{height:38px;margin-bottom:8px;border:2px dashed var(--ac);background:var(--acs);border-radius:10px;animation:pvslot .14s ease-out}
-@keyframes pvslot{from{height:0;margin-bottom:0;opacity:0}}
-.pv-row.missing{background:#fdecea;border-color:#f3b4ac}.pv-row.missing .pv-lbl{color:#c0392b}.pv-row.sel{outline:2px solid var(--ac);outline-offset:-1px}.pv-row.off{opacity:.5}
-.pv-grip{color:#b8c0d4;flex:none}
-.pv-badge{border-radius:6px;padding:3px 5px;display:inline-flex;flex:none}
-.pv-lbl{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12.5px;font-weight:500}
-.pv-dur{width:48px;background:#f4f5f7;border:1px solid var(--ln);color:var(--tx);border-radius:7px;padding:4px 6px;font:inherit;font-size:12px;text-align:center;flex:none;-moz-appearance:textfield}
-.pv-dur::-webkit-inner-spin-button,.pv-dur::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
-.pv-rmv{background:#fff;border:1px solid var(--ln);color:var(--dim);cursor:pointer;border-radius:8px;padding:5px 7px;display:inline-flex;flex:none}
-.pv-rmv:hover{color:#fff;background:var(--rd);border-color:var(--rd)}
-
-.pv-mon-card{padding:14px;box-shadow:0 4px 16px rgba(20,30,60,.05),inset 0 2px 14px rgba(20,30,60,.07)}
-.pv-mon-hd{display:flex;align-items:center;gap:8px;margin-bottom:10px}
-.pv-mon-hd .pv-ct{flex:1}
-.pv-snd{border:1px solid var(--ln);background:#eef1f6;color:var(--dim);border-radius:9px;padding:6px 8px;display:inline-flex;cursor:pointer}
-.pv-snd:hover:not(:disabled){color:var(--tx);border-color:#c5cbd8}
-.pv-snd.on{background:var(--ac);border-color:var(--ac);color:#fff}
-.pv-snd:disabled{opacity:.45;cursor:not-allowed}
-.pv-seg{display:inline-flex;background:#eef1f6;border-radius:9px;padding:3px}
-.pv-segb{border:0;background:transparent;color:var(--dim);font:inherit;font-weight:800;font-size:11px;padding:5px 12px;border-radius:7px;cursor:pointer;letter-spacing:.04em}
-.pv-segb.on{background:#fff;color:var(--tx);box-shadow:0 1px 3px rgba(0,0,0,.12)}
-.pv-segb.on.aire{background:var(--rd);color:#fff}.pv-segb.on.clip{background:var(--ac);color:#fff}
-.pv-mon-row{display:flex;gap:10px;align-items:stretch}
-.pv-mon{flex:1;aspect-ratio:16/9;background:#05081a;border-radius:12px;overflow:hidden;position:relative}
-.pv-mon-row{justify-content:center}
-.pv-mon.v{flex:none;aspect-ratio:9/16;height:520px}
-.pv-mon iframe{width:100%;height:100%;border:0;display:block}
-.pv-ph,.pv-standby{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#8a93a6;font-size:13px;text-align:center;padding:20px}
-.pv-standby{flex-direction:column;gap:16px;color:#cbd5e1;font-weight:800;letter-spacing:.14em}
-.pv-vu{width:36px;background:#fff;border:1px solid var(--ln);border-radius:10px;display:flex;flex-direction:column;align-items:center;padding:8px 0 6px;gap:6px}
-.pv-vubars{flex:1;width:18px;display:flex;flex-direction:column-reverse;gap:3px}
-.pv-vubars i{flex:0 0 3px;background:#e6e9f0;border-radius:2px;transition:background .09s}
-.pv-vulb{font-size:8.5px;color:var(--dim);font-weight:800;text-align:center;line-height:1.15;white-space:pre-line}
-
-.pv-airrow{display:flex;gap:12px;align-items:stretch}
-.pv-airmeta{flex:1;display:flex;flex-direction:column;justify-content:center;gap:6px;font-size:12.5px;color:var(--dim);background:#fff;border:1px solid var(--ln);border-radius:14px;padding:12px 16px}
-.pv-airmeta b{color:var(--tx);font-weight:700}
-.pv-clock{background:#160404;border:1px solid #3a0d0d;border-radius:14px;display:flex;align-items:center;gap:14px;padding:12px 22px}
-.pv-clock .lb{font-size:10px;color:#a15;letter-spacing:.12em;font-weight:800;text-transform:uppercase}
-.pv-clock .dg{font-family:"Share Tech Mono",ui-monospace,monospace;font-size:36px;color:#ff2b2b;letter-spacing:4px;text-shadow:0 0 10px rgba(255,43,43,.7)}
-.pv-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
-.pv-kpi{background:#fff;border:1px solid var(--ln);border-radius:12px;padding:10px;text-align:center;box-shadow:0 3px 12px rgba(20,30,60,.05)}
-.pv-kpi .v{font-size:22px;font-weight:800;line-height:1}.pv-kpi .l{font-size:10px;color:var(--dim);margin-top:3px;font-weight:600}
-.pv-kpi.live .v{color:var(--rd);display:inline-flex;align-items:center;gap:6px;font-size:16px}
-.pv-kpi.live.off{background:#f2f4f8}.pv-kpi.live .v.off{color:var(--dim)}
-.pv-dot{width:9px;height:9px;border-radius:50%;background:var(--rd);animation:pvpulse 1.4s infinite}
-@keyframes pvpulse{0%,100%{opacity:1}50%{opacity:.35}}
-`;

@@ -7,9 +7,9 @@ export const isLiveOutput = (): boolean => typeof window !== "undefined" && wind
 const post = (path: string, body: unknown) =>
   fetch(`${API_BASE}${path}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body), keepalive: true }).catch(() => {});
 
-export function reportAiring(contentItemId: string, contentType: string, durationSec: number, orientation: "horizontal" | "vertical" = "horizontal") {
+export function reportAiring(contentItemId: string, contentType: string, durationSec: number, orientation: "horizontal" | "vertical" = "horizontal", sessionId?: string | null) {
   if (!isLiveOutput()) return;
-  void post("/api/output/airing", { content_item_id: contentItemId, content_type: contentType, duration_sec: durationSec, orientation });
+  void post("/api/output/airing", { content_item_id: contentItemId, content_type: contentType, duration_sec: durationSec, orientation, ...(sessionId ? { session_id: sessionId } : {}) });
 }
 
 // Un mismo problema se avisa como mucho una vez cada 5 minutos desde este output (el server además lo agrupa).

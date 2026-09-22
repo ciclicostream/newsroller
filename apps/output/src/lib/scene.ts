@@ -16,6 +16,7 @@ export interface Block {
   media?: { url: string; mime: string | null };
   data?: { source: string };
   item?: { id: string; type: string; data: Record<string, any> };
+  session?: { id: string; items: Block[] }; // Sesión embebida como contenido: sus propios bloques (sólo content_item)
   tpl?: {
     id: string;
     name: string;
@@ -51,12 +52,14 @@ export interface Scene {
   data: Record<string, any>;
   cameras: Camera[];
   updatedAt: string;
+  active?: boolean; // sólo en la escena de una Sesión (false = detenida)
 }
 
 export const API_BASE = (import.meta.env.VITE_API_URL as string | undefined) ?? "";
 
-export async function fetchScene(): Promise<Scene> {
-  const res = await fetch(`${API_BASE}/api/output/scene`);
+export async function fetchScene(sessionId?: string | null): Promise<Scene> {
+  const url = sessionId ? `${API_BASE}/api/output/session/${sessionId}/scene` : `${API_BASE}/api/output/scene`;
+  const res = await fetch(url);
   if (!res.ok) throw new Error(`scene HTTP ${res.status}`);
   return res.json();
 }
