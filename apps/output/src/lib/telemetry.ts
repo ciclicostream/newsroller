@@ -1,8 +1,12 @@
 import { API_BASE } from "./scene";
 
 // Registros para los reportes. Sólo cuentan cuando el output corre "de verdad" (OBS/vMix): dentro de un
-// iframe (monitor del panel) o en vistas previas no se registra nada, para no inflar los números.
-export const isLiveOutput = (): boolean => typeof window !== "undefined" && window.parent === window;
+// iframe (monitor del panel), en vistas previas o en el Monitor con la parrilla BORRADOR (?borrador=1,
+// que todavía no salió al aire) no se registra nada, para no inflar los números.
+export const isLiveOutput = (): boolean =>
+  typeof window !== "undefined" &&
+  window.parent === window &&
+  !new URLSearchParams(window.location.search).has("borrador");
 
 const post = (path: string, body: unknown) =>
   fetch(`${API_BASE}${path}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body), keepalive: true }).catch(() => {});

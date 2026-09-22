@@ -17,6 +17,12 @@ const WANT_AUDIO = typeof window !== "undefined" && new URLSearchParams(window.l
 // principal. El resto (rotación, sonido, telemetría, recarga por antigüedad) funciona igual.
 const SESSION_ID = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("session") : null;
 
+// Borrador: ?borrador=1 hace que el Monitor de Emisión (PREVIEW) rote la parrilla BORRADOR
+// (parrilla_draft, lo que todavía no se publicó) en vez del aire real — misma rotación, música y
+// todo, para probar antes de publicar. Nunca cuenta para reportes (ver isLiveOutput) ni respeta el
+// corte de emisión real (no tiene sentido: es sólo una previsualización).
+const DRAFT_AIR = typeof window !== "undefined" && new URLSearchParams(window.location.search).has("borrador");
+
 // Contenidos reproducibles de una Sesión embebida: sólo los del banco (content_item; es lo único que se
 // puede cargar en una Sesión hoy) y, en vertical, sólo los que tengan versión 9:16.
 function sessionPlayable(blocks: Block[], vertical: boolean): Block[] {
@@ -49,7 +55,7 @@ export function Output() {
 
   const load = useCallback(async () => {
     try {
-      setScene(await fetchScene(SESSION_ID));
+      setScene(await fetchScene(SESSION_ID, DRAFT_AIR));
     } catch {
       /* reintenta en el próximo ciclo */
     }
@@ -74,7 +80,7 @@ export function Output() {
       socket.on("session:update", (s: { id: string; active: boolean }) => { if (s.id === SESSION_ID) setOnAir(s.active); });
     } else {
       socket.on("settings:update", (s: Record<string, unknown>) => {
-        setOnAir(s?.onAir !== false);
+        if (!DRAFT_AIR) setOnAir(s?.onAir !== false);
         setMusic((s?.music as MusicSettings) ?? MUSIC_DEFAULT);
       });
     }
@@ -94,7 +100,7 @@ export function Output() {
     const check = () =>
       fetch(`${API_BASE}/api/settings`)
         .then((r) => r.json())
-        .then((s) => { setOnAir(s?.onAir !== false); setMusic(s?.music ?? MUSIC_DEFAULT); })
+        .then((s) => { if (!DRAFT_AIR) setOnAir(s?.onAir !== false); setMusic(s?.music ?? MUSIC_DEFAULT); })
         .catch(() => {});
     void check();
     const t = setInterval(check, 5_000);

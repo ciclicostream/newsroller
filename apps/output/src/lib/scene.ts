@@ -57,8 +57,12 @@ export interface Scene {
 
 export const API_BASE = (import.meta.env.VITE_API_URL as string | undefined) ?? "";
 
-export async function fetchScene(sessionId?: string | null): Promise<Scene> {
-  const url = sessionId ? `${API_BASE}/api/output/session/${sessionId}/scene` : `${API_BASE}/api/output/scene`;
+export async function fetchScene(sessionId?: string | null, draftAir?: boolean): Promise<Scene> {
+  const url = sessionId
+    ? `${API_BASE}/api/output/session/${sessionId}/scene`
+    : draftAir
+      ? `${API_BASE}/api/output/draft-scene`
+      : `${API_BASE}/api/output/scene`;
   const res = await fetch(url);
   if (!res.ok) throw new Error(`scene HTTP ${res.status}`);
   return res.json();

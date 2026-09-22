@@ -32,6 +32,27 @@ export function outputRouter(): Router {
     res.json({ background, logos, items, data, cameras: cameras ?? [], updatedAt: new Date().toISOString() });
   });
 
+  // Escena del BORRADOR (parrilla_draft, lo que todavía no se publicó al aire). Misma forma que /scene;
+  // la usa el Monitor de Emisión en PREVIEW para rotar la lista completa (con música de fondo y todo)
+  // antes de mandarla al aire real. Sin auth (como /scene): sólo lectura de lo que ya se está editando.
+  r.get("/draft-scene", async (_req, res) => {
+    const sb = getSupabase();
+    const store = getStore();
+    const cached = await store.getAll();
+    const data: Record<string, unknown> = {};
+    for (const c of cached) data[c.source] = c.payload;
+
+    if (!sb) return res.json({ background: null, logos: [], items: [], data, updatedAt: new Date().toISOString() });
+
+    const [{ data: draftRows }, { data: cameras }] = await Promise.all([
+      sb.from("parrilla_draft").select("*").eq("enabled", true).order("sort"),
+      sb.from("cameras").select("*"),
+    ]);
+    const { items, background, logos } = await resolveSceneItems(sb, draftRows ?? []);
+
+    res.json({ background, logos, items, data, cameras: cameras ?? [], updatedAt: new Date().toISOString() });
+  });
+
   // Escena pública de una Sesión (misma forma que /scene, pero de session_items). Sin auth: es lo que
   // abre OBS/el celular en /output/?session=<id>. `active=false` => el output muestra la placa fija.
   r.get("/session/:id/scene", async (req, res) => {

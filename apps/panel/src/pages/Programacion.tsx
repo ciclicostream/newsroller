@@ -235,12 +235,10 @@ export function Programacion() {
   useEffect(() => { try { localStorage.setItem("pv-cols", JSON.stringify(cols)); } catch { /* noop */ } }, [cols]);
 
   // ---- monitor ----
-  const selRow = draft.find((r) => r.id === sel) || null;
-  const previewCi = (): ContentItem | null => {
-    if (mode === "clip") return clipId ? itemById.get(clipId) ?? null : null;
-    if (mode === "aire") return null;
-    return selRow?.content_type === "content_item" && selRow.content_id ? itemById.get(selRow.content_id) ?? null : null;
-  };
+  // CLIP: un contenido suelto elegido a mano (botón "Monitor" de Contenidos disponibles), en loop y sin
+  // el resto de la parrilla. PREVIEW: la parrilla BORRADOR completa rotando de verdad (con música y
+  // todo), tal cual va a salir al publicar — no un solo contenido.
+  const previewCi = (): ContentItem | null => (mode === "clip" && clipId ? itemById.get(clipId) ?? null : null);
   // AIRE siempre carga el output real (aunque esté cortado, el propio output
   // muestra la placa de "fuera del aire" — no hace falta un placeholder local).
   // Sonido: sólo en PREVIEW y CLIP. En AIRE no se escucha desde el panel (sería un eco desfasado del aire real).
@@ -250,12 +248,18 @@ export function Programacion() {
   const monUrl = (() => {
     const orient = monVertical ? "orientation=vertical" : "";
     if (mode === "aire") return `${OUTPUT_FRAME_BASE}/output/${orient ? "?" + orient : ""}`;
+    if (mode === "preview") {
+      const params = new URLSearchParams({ borrador: "1", ...(soundOn ? { audio: "1" } : {}), ...(orient ? { orientation: "vertical" } : {}) });
+      return `${OUTPUT_FRAME_BASE}/output/?${params.toString()}`;
+    }
     const ci = previewCi();
     return ci ? `${OUTPUT_FRAME_BASE}/output/?preview=${ci.id}${soundOn ? "&audio=1" : ""}${orient ? "&" + orient : ""}` : null;
   })();
-  const monHasAudio = mode === "aire"
-    ? !!liveStatus?.current?.hasAudio
-    : (() => { const ci = previewCi(); return !!ci && contentHasAudio(ci.type, ci.data); })();
+  // AIRE y PREVIEW cargan el output real (por telemetría postMessage sabemos si suena algo,
+  // contenido propio o la música de fondo); CLIP es un contenido suelto sin telemetría.
+  const monHasAudio = mode === "clip"
+    ? (() => { const ci = previewCi(); return !!ci && contentHasAudio(ci.type, ci.data); })()
+    : !!liveStatus?.current?.hasAudio;
 
   const cicloSec = draft.filter((r) => r.enabled).reduce((a, r) => a + r.duration_sec, 0);
 
