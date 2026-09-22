@@ -5,6 +5,7 @@ import fondo from "../assets/fondo2.jpg";
 import { Chrome } from "./Chrome";
 import { useAutoFit } from "../lib/autofit";
 import { IS_VERTICAL } from "../lib/orientation";
+import { useForcePlay } from "../lib/autoplay";
 
 const WANT_AUDIO = typeof window !== "undefined" && new URLSearchParams(window.location.search).has("audio");
 
@@ -40,6 +41,7 @@ function Typed({ text, start, ms }: { text: string; start: boolean; ms: number }
 function Face({ entry, i, idx, slotMs, play }: { entry: EfemeridesEntry; i: number; idx: number; slotMs: number; play: boolean }) {
   const titleRef = useRef<HTMLDivElement>(null);
   const bodyRef = useRef<HTMLDivElement>(null);
+  const videoRef = useForcePlay<HTMLVideoElement>();
   useAutoFit(titleRef, IS_VERTICAL ? 100 : 118, 60, [entry.title]);
   useAutoFit(bodyRef, IS_VERTICAL ? 48 : 44, 26, [entry.body]);
 
@@ -59,7 +61,7 @@ function Face({ entry, i, idx, slotMs, play }: { entry: EfemeridesEntry; i: numb
       <div className="ef-panel" />
       <div className="ef-media ef-el">
         {entry.media_kind === "video" ? (
-          <video src={entry.media_url} autoPlay muted={!WANT_AUDIO} loop playsInline />
+          <video key={entry.media_url} ref={videoRef} src={entry.media_url} autoPlay muted={!WANT_AUDIO} loop playsInline />
         ) : (
           <img src={entry.media_url} alt="" />
         )}

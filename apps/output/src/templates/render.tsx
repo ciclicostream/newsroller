@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import Hls from "hls.js";
 import { dataView, type Camera, type Logo, type TemplateElement } from "../lib/scene";
 import { reportIncident } from "../lib/telemetry";
+import { useForcePlay } from "../lib/autoplay";
 
 // Sonido: por defecto MUTEADO (así el autoplay nunca se bloquea en el navegador).
 // Para OBS/vMix, abrir el output con ?audio=1 → intenta activar el audio.
@@ -125,8 +126,10 @@ function HlsVideo({ url, onFail }: { url: string; onFail: () => void }) {
       hls.loadSource(url);
       hls.attachMedia(v);
       hls.on(Hls.Events.ERROR, (_e, d) => { if (d.fatal) onFail(); });
+      hls.on(Hls.Events.MANIFEST_PARSED, () => { void v.play().catch(() => {}); });
       return () => hls.destroy();
     }
+    void v.play().catch(() => {});
   }, [url]);
   return <video ref={ref} autoPlay muted playsInline data-nr-skip onError={onFail} style={{ width: "100%", height: "100%", objectFit: "cover" }} />;
 }
@@ -142,8 +145,11 @@ function RefreshingImage({ url, onFail }: { url: string; onFail: () => void }) {
 }
 
 function VideoAsset({ src, fit, radius, onEnded }: { src: string; fit: string; radius: number; onEnded: () => void }) {
+  const ref = useForcePlay<HTMLVideoElement>();
   return (
     <video
+      key={src}
+      ref={ref}
       src={src}
       autoPlay
       muted={!WANT_AUDIO}

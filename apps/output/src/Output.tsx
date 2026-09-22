@@ -8,6 +8,7 @@ import { ItemView } from "./templates/items";
 import offAir from "./assets/off-air.jpg";
 import { reportAiring, reportIncident, isLiveOutput } from "./lib/telemetry";
 import { IS_VERTICAL, ORIENTATION, fitScale, stageStyle, supportsVertical } from "./lib/orientation";
+import { useForcePlay } from "./lib/autoplay";
 
 // Sesión: si la URL trae ?session=<id>, este output pasa a reproducir esa playlist en vez del aire
 // principal. El resto (rotación, sonido, telemetría, recarga por antigüedad) funciona igual.
@@ -28,6 +29,7 @@ export function Output() {
   const [scale, setScale] = useState(1);
   const [now, setNow] = useState(() => new Date());
   const [onAir, setOnAir] = useState(true);
+  const bgVideoRef = useForcePlay<HTMLVideoElement>();
 
   const load = useCallback(async () => {
     try {
@@ -253,7 +255,7 @@ export function Output() {
         {!isCustom && (
           <div className="layer">
             {bg?.mime?.startsWith("video/") ? (
-              <video className="bg-media" src={bg.url} autoPlay muted loop playsInline />
+              <video key={bg.url} ref={bgVideoRef} className="bg-media" src={bg.url} autoPlay muted loop playsInline />
             ) : bg?.url ? (
               <img className="bg-media" src={bg.url} alt="" />
             ) : (
@@ -529,8 +531,9 @@ function BlockView({ block, data }: { block: Block; data: Record<string, any> })
 }
 
 function MediaNode({ url, mime }: { url: string; mime: string | null }) {
+  const ref = useForcePlay<HTMLVideoElement>();
   return mime?.startsWith("video/") ? (
-    <video src={url} autoPlay muted loop playsInline />
+    <video key={url} ref={ref} src={url} autoPlay muted loop playsInline />
   ) : (
     <img src={url} alt="" />
   );

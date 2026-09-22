@@ -4,6 +4,7 @@ import fondo from "../assets/fondo-placas.jpg";
 import { Chrome } from "./Chrome";
 import { useAutoFit } from "../lib/autofit";
 import { IS_VERTICAL } from "../lib/orientation";
+import { useForcePlay } from "../lib/autoplay";
 
 const WANT_AUDIO = typeof window !== "undefined" && new URLSearchParams(window.location.search).has("audio");
 
@@ -19,6 +20,7 @@ export function Placas({ data, durationSec }: { data: PlacasData; durationSec?: 
   const [exiting, setExiting] = useState(false);
   const titleRef = useRef<HTMLDivElement>(null);
   const bodyRef = useRef<HTMLDivElement>(null);
+  const videoRef = useForcePlay<HTMLVideoElement>();
 
   useEffect(() => {
     const id = requestAnimationFrame(() => setPlay(true));
@@ -51,7 +53,7 @@ export function Placas({ data, durationSec }: { data: PlacasData; durationSec?: 
       {hasMedia && (
         <div className="pl-photo pl-card">
           {data.media_kind === "video" ? (
-            <video src={data.media_url!} autoPlay muted={!WANT_AUDIO} loop playsInline />
+            <video key={data.media_url} ref={videoRef} src={data.media_url!} autoPlay muted={!WANT_AUDIO} loop playsInline />
           ) : (
             <img src={data.media_url!} alt="" />
           )}

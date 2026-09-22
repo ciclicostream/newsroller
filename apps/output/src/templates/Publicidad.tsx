@@ -2,6 +2,7 @@ import type { PublicidadData } from "@newsroller/shared";
 import fondo from "../assets/fondo2.jpg";
 import { Chrome } from "./Chrome";
 import { IS_VERTICAL } from "../lib/orientation";
+import { useForcePlay } from "../lib/autoplay";
 
 const WANT_AUDIO = typeof window !== "undefined" && new URLSearchParams(window.location.search).has("audio");
 
@@ -9,9 +10,11 @@ const WANT_AUDIO = typeof window !== "undefined" && new URLSearchParams(window.l
 // + logo/QR de marca opcionales). Entrada y salida por CORTE. Única familia
 // que genera reporte de avisos; la salida al aire se registra en Output.tsx (todos los tipos).
 export function Publicidad({ data }: { id?: string; data: PublicidadData }) {
+  const mediaRef = useForcePlay<HTMLVideoElement>();
+  const vMediaRef = useForcePlay<HTMLVideoElement>();
   const media =
     data.media_kind === "video" ? (
-      <video src={data.media_url} autoPlay loop muted={!WANT_AUDIO} playsInline style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+      <video key={data.media_url} ref={mediaRef} src={data.media_url} autoPlay loop muted={!WANT_AUDIO} playsInline style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
     ) : (
       <img src={data.media_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
     );
@@ -20,7 +23,7 @@ export function Publicidad({ data }: { id?: string; data: PublicidadData }) {
     // Output vertical: el aviso Full sale con su versión 9:16 (sin ella no se emite).
     const vMedia = data.vertical_url
       ? data.vertical_kind === "video"
-        ? <video src={data.vertical_url} autoPlay loop muted={!WANT_AUDIO} playsInline style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+        ? <video key={data.vertical_url} ref={vMediaRef} src={data.vertical_url} autoPlay loop muted={!WANT_AUDIO} playsInline style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
         : <img src={data.vertical_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
       : null;
     return (

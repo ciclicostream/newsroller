@@ -5,6 +5,7 @@ import { Chrome } from "./Chrome";
 import { CarteleraCine } from "./CarteleraCine";
 import { useAutoFit } from "../lib/autofit";
 import { IS_VERTICAL } from "../lib/orientation";
+import { useForcePlay } from "../lib/autoplay";
 
 const WANT_AUDIO = typeof window !== "undefined" && new URLSearchParams(window.location.search).has("audio");
 
@@ -31,6 +32,7 @@ function CarteleraClasica({ data, durationSec }: { data: CarteleraData; duration
   const titleRef = useRef<HTMLDivElement>(null);
   const elencoRef = useRef<HTMLDivElement>(null);
   const evTitleRef = useRef<HTMLDivElement>(null);
+  const videoRef = useForcePlay<HTMLVideoElement>();
   const evDescRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -83,7 +85,7 @@ function CarteleraClasica({ data, durationSec }: { data: CarteleraData; duration
 
       {hasVideo && (
         <div className="cl-video cl-el">
-          <video src={data.video_url!} autoPlay muted={!WANT_AUDIO} loop playsInline />
+          <video key={data.video_url} ref={videoRef} src={data.video_url!} autoPlay muted={!WANT_AUDIO} loop playsInline />
         </div>
       )}
 

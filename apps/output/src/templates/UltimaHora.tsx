@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { UltimaHoraData } from "@newsroller/shared";
 import ciclicoWhite from "../assets/ciclico-white.png";
 import { IS_VERTICAL, STAGE_H } from "../lib/orientation";
+import { useForcePlay } from "../lib/autoplay";
 
 const WANT_AUDIO = typeof window !== "undefined" && new URLSearchParams(window.location.search).has("audio");
 const MESES = ["ENE", "FEB", "MAR", "ABR", "MAY", "JUN", "JUL", "AGO", "SEP", "OCT", "NOV", "DIC"];
@@ -20,6 +21,7 @@ export function UltimaHora({ data }: { data: UltimaHoraData }) {
   const [now, setNow] = useState(() => new Date());
   const [play, setPlay] = useState(false);
   const bajadaRef = useRef<HTMLDivElement>(null);
+  const videoRef = useForcePlay<HTMLVideoElement>();
 
   useEffect(() => {
     const t = setInterval(() => setNow(new Date()), 30_000);
@@ -61,7 +63,7 @@ export function UltimaHora({ data }: { data: UltimaHoraData }) {
       {hasMedia && (
         <div className="uh-media">
           {data.media_kind === "video" ? (
-            <video src={data.media_url!} autoPlay muted={!WANT_AUDIO} loop playsInline />
+            <video key={data.media_url} ref={videoRef} src={data.media_url!} autoPlay muted={!WANT_AUDIO} loop playsInline />
           ) : (
             <img src={data.media_url!} alt="" />
           )}
