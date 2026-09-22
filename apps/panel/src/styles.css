@@ -517,6 +517,12 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 6px
 .pv-snd:hover:not(:disabled){color:var(--tx);border-color:#c5cbd8}
 .pv-snd.on{background:var(--ac);border-color:var(--ac);color:#fff}
 .pv-snd:disabled{opacity:.45;cursor:not-allowed}
+.pv-mon-wrap{display:flex;align-items:stretch;gap:0}
+.pv-mon-wrap .pv-mon-card{flex:1;min-width:0}
+.pv-mon-wrap .pv-mon-card:has(+ .pv-sndcard){border-top-right-radius:0;border-bottom-right-radius:0;border-right:0}
+.pv-sndcard{flex:none;width:58px;padding:12px 10px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;border-top-left-radius:0;border-bottom-left-radius:0}
+.pv-sndcard .pv-vu{width:100%}
+.pv-sndcard .pv-snd{width:100%;justify-content:center;padding:7px 0}
 .pv-seg{display:inline-flex;background:#eef1f6;border-radius:9px;padding:3px}
 .pv-segb{border:0;background:transparent;color:var(--dim);font:inherit;font-weight:800;font-size:11px;padding:5px 12px;border-radius:7px;cursor:pointer;letter-spacing:.04em}
 .pv-segb.on{background:#fff;color:var(--tx);box-shadow:0 1px 3px rgba(0,0,0,.12)}

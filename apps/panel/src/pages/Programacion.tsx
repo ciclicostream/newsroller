@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  Zap, ArrowRight, PauseCircle, Volume2, VolumeX, RectangleHorizontal, RectangleVertical,
+  Zap, ArrowRight, PauseCircle, Volume2, VolumeX, RectangleHorizontal, RectangleVertical, Music,
 } from "lucide-react";
-import type { ContentItem, PlaylistItem, Camera } from "@newsroller/shared";
-import { contentHasAudio } from "@newsroller/shared";
+import type { ContentItem, PlaylistItem, Camera, MusicSettings } from "@newsroller/shared";
+import { contentHasAudio, MUSIC_DEFAULT } from "@newsroller/shared";
 import { useMonitorAudio } from "../lib/monitorAudio";
 import { useMonitorVertical } from "../lib/monitorOrientation";
 import { parrilla, OUTPUT_FRAME_BASE } from "../lib/parrilla";
@@ -57,6 +57,8 @@ export function Programacion() {
   const [airPausedAt, setAirPausedAt] = useState<string | null>(null);
   const [cams, setCams] = useState<Camera[]>([]);
   const [availableSessions, setAvailableSessions] = useState<SessionRow[]>([]); // Sesiones que se pueden meter como contenido
+  const [music, setMusicState] = useState<MusicSettings>(MUSIC_DEFAULT); // canal de música de fondo (Ajustes → Música)
+  const [musicBusy, setMusicBusy] = useState(false);
   const [ytTitles, setYtTitles] = useState<Record<string, string>>({});
   const [ins, setIns] = useState<number | null>(null); // hueco de inserción durante el arrastre
   const [cols, setCols] = useState<{ a: number; c: number }>(() => {
@@ -69,10 +71,19 @@ export function Programacion() {
   // Estado real del corte de emisión y del reloj "al aire" (persistidos en
   // /api/settings, no locales) — sobreviven a un refresco del navegador.
   useEffect(() => {
-    settingsApi.get().then((s) => { setOnAirState(s.onAir !== false); setAirSince(s.airSince || null); setAirPausedAt(s.onAir === false ? s.airPausedAt || null : null); }).catch(() => {});
+    settingsApi.get().then((s) => { setOnAirState(s.onAir !== false); setAirSince(s.airSince || null); setAirPausedAt(s.onAir === false ? s.airPausedAt || null : null); setMusicState(s.music ?? MUSIC_DEFAULT); }).catch(() => {});
     camerasApi.list().then(setCams).catch(() => {});
     sessionsApi.list().then(setAvailableSessions).catch(() => {}); // si falta la migración 0020, sigue sin Sesiones
   }, []);
+  // Canal de música de fondo: on/off desde el Monitor (qué tema suena se elige en Ajustes → Música).
+  async function toggleMusic() {
+    const next = { ...music, enabled: !music.enabled };
+    const prev = music;
+    setMusicState(next); setMusicBusy(true);
+    try { const s = await settingsApi.update({ music: next }); setMusicState(s.music ?? MUSIC_DEFAULT); }
+    catch (e) { setMusicState(prev); setErr(e instanceof Error ? e.message : "error"); }
+    finally { setMusicBusy(false); }
+  }
   // Al cortar se congela el reloj "al aire"; al reanudar se corre airSince por el
   // tiempo que estuvo cortado, así el reloj sigue donde se había quedado.
   async function toggleOnAir() {
@@ -289,30 +300,38 @@ export function Programacion() {
 
         {/* col3 monitor */}
         <div className="pv-col">
-          <div className="pv-card pv-mon-card">
-            <div className="pv-mon-hd">
-              <span className="pv-ct">Monitor</span>
-              <div className="pv-seg">
-                {(["preview", "aire", "clip"] as const).map((m) => (
-                  <button key={m} className={"pv-segb" + (mode === m ? " on " + m : "")} onClick={() => setMode(m)}>{m.toUpperCase()}</button>
-                ))}
+          <div className="pv-mon-wrap">
+            <div className="pv-card pv-mon-card">
+              <div className="pv-mon-hd">
+                <span className="pv-ct">Monitor</span>
+                <div className="pv-seg">
+                  {(["preview", "aire", "clip"] as const).map((m) => (
+                    <button key={m} className={"pv-segb" + (mode === m ? " on " + m : "")} onClick={() => setMode(m)}>{m.toUpperCase()}</button>
+                  ))}
+                </div>
+                <button type="button" className={"pv-snd" + (monVertical ? " on" : "")} onClick={toggleMonVertical} aria-pressed={monVertical}
+                  aria-label={monVertical ? "Ver el monitor en horizontal" : "Ver el monitor en vertical"} title={monVertical ? "Ver en 16:9 (horizontal)" : "Ver en 9:16 (vertical)"}>
+                  {monVertical ? <RectangleVertical size={15} /> : <RectangleHorizontal size={15} />}
+                </button>
               </div>
-              <button type="button" className={"pv-snd" + (monVertical ? " on" : "")} onClick={toggleMonVertical} aria-pressed={monVertical}
-                aria-label={monVertical ? "Ver el monitor en horizontal" : "Ver el monitor en vertical"} title={monVertical ? "Ver en 16:9 (horizontal)" : "Ver en 9:16 (vertical)"}>
-                {monVertical ? <RectangleVertical size={15} /> : <RectangleHorizontal size={15} />}
-              </button>
-              <button type="button" className={"pv-snd" + (soundOn ? " on" : "")} onClick={toggleMonSound} disabled={mode === "aire"}
-                aria-pressed={soundOn} aria-label={soundOn ? "Silenciar el monitor" : "Escuchar el monitor"}
-                title={mode === "aire" ? "En AIRE no se escucha desde el panel (evita el eco con el aire real)" : soundOn ? "Silenciar el monitor" : "Escuchar el monitor (PREVIEW y CLIP)"}>
-                {soundOn ? <Volume2 size={15} /> : <VolumeX size={15} />}
-              </button>
-            </div>
-            <div className="pv-mon-row">
               <div className={"pv-mon" + (monVertical ? " v" : "")}>
                 {/* AIRE muestra el output real tal cual: si está cortado, la propia
                     placa off_air.jpg ya lo dice — no le agregamos texto encima. */}
                 {monUrl ? <iframe key={monUrl} src={monUrl} title="monitor" allow="autoplay; encrypted-media" /> : <div className="pv-ph">Elegí un contenido para previsualizarlo.</div>}
               </div>
+            </div>
+
+            <div className="pv-card pv-sndcard">
+              <button type="button" className={"pv-snd" + (soundOn ? " on" : "")} onClick={toggleMonSound} disabled={mode === "aire"}
+                aria-pressed={soundOn} aria-label={soundOn ? "Silenciar el monitor" : "Escuchar el monitor"}
+                title={mode === "aire" ? "En AIRE no se escucha desde el panel (evita el eco con el aire real)" : soundOn ? "Silenciar el monitor" : "Escuchar el monitor (PREVIEW y CLIP)"}>
+                {soundOn ? <Volume2 size={14} /> : <VolumeX size={14} />}
+              </button>
+              <button type="button" className={"pv-snd" + (music.enabled ? " on" : "")} onClick={toggleMusic} disabled={musicBusy || !music.activeId}
+                aria-pressed={music.enabled} aria-label={music.enabled ? "Apagar la música de fondo" : "Encender la música de fondo"}
+                title={!music.activeId ? "Elegí un tema en Ajustes → Música primero" : music.enabled ? "Apagar la música de fondo" : "Encender la música de fondo (fadeout automático con contenido con audio)"}>
+                <Music size={14} />
+              </button>
               <Vu audio={monHasAudio} />
             </div>
           </div>

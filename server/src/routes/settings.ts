@@ -3,7 +3,7 @@ import { getSupabase } from "../db/supabase.js";
 import { requireAuth, requirePerm } from "../auth/middleware.js";
 import { clearLimitsCache } from "../auth/sessions.js";
 import { logActivity } from "../activity.js";
-import { CLIMA_SLOT_KEYS, PLATAFORMAS_DEFAULT, IDLE_MINUTES_DEFAULT, ROLES, can, type Plataforma, type Role } from "@newsroller/shared";
+import { CLIMA_SLOT_KEYS, PLATAFORMAS_DEFAULT, IDLE_MINUTES_DEFAULT, MUSIC_DEFAULT, ROLES, can, type Plataforma, type Role, type MusicSettings } from "@newsroller/shared";
 import type { IO } from "../realtime/socket.js";
 
 // Preferencias del sistema (key/value). Defaults + validación por clave.
@@ -24,10 +24,13 @@ const DEFAULTS = {
   plataformas: PLATAFORMAS_DEFAULT as Plataforma[],
   // Minutos de inactividad para cerrar la sesión, por rol (sólo lo cambia el Master).
   idleMinutes: IDLE_MINUTES_DEFAULT as Record<Role, number>,
+  // Música de fondo continua (Ajustes → Música): temas cargados, cuál está seleccionado y si
+  // el canal está habilitado (el toggle vive en el Monitor de Emisión, no acá).
+  music: MUSIC_DEFAULT as MusicSettings,
 };
 
 type SettingsKey = keyof typeof DEFAULTS;
-type SettingsValue = number | boolean | string | Record<string, string> | Record<string, number> | Plataforma[];
+type SettingsValue = number | boolean | string | Record<string, string> | Record<string, number> | Plataforma[] | MusicSettings;
 
 // Fallback en memoria cuando no hay Supabase (dev local sin credenciales).
 const memory: Record<string, unknown> = {};
@@ -85,6 +88,24 @@ function coerce(key: SettingsKey, raw: unknown): SettingsValue | null {
       out.push({ id, name, ...(typeof logo === "string" && logo ? { logo } : {}) });
     }
     return out;
+  }
+  if (key === "music") {
+    if (typeof raw !== "object" || raw === null || Array.isArray(raw)) return null;
+    const m = raw as Record<string, unknown>;
+    if (!Array.isArray(m.tracks) || m.tracks.length > 40) return null;
+    const tracks: MusicSettings["tracks"] = [];
+    const ids = new Set<string>();
+    for (const it of m.tracks as Record<string, unknown>[]) {
+      const id = typeof it?.id === "string" ? it.id : "";
+      const name = typeof it?.name === "string" ? it.name.trim().slice(0, 60) : "";
+      const url = typeof it?.url === "string" ? it.url : "";
+      if (!/^[a-z0-9_-]{1,40}$/.test(id) || !name || !/^https?:\/\//.test(url) || ids.has(id)) return null;
+      ids.add(id);
+      tracks.push({ id, name, url });
+    }
+    const activeId = m.activeId === null ? null : typeof m.activeId === "string" && tracks.some((t) => t.id === m.activeId) ? m.activeId : null;
+    const enabled = typeof m.enabled === "boolean" ? m.enabled : false;
+    return { tracks, activeId, enabled };
   }
   return null;
 }

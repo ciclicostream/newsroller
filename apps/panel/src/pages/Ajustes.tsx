@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { ROLES, ROLE_LABEL, IDLE_MINUTES_DEFAULT, type Role } from "@newsroller/shared";
-import { Users as UsersIcon, Youtube, Tv, Images, Rss, CloudSun, Clapperboard, History } from "lucide-react";
+import { Users as UsersIcon, Youtube, Tv, Images, Rss, CloudSun, Clapperboard, History, Music } from "lucide-react";
 import { useAuth } from "../auth/AuthProvider";
 import { settingsApi } from "../lib/settings";
 
@@ -100,6 +100,13 @@ export function Ajustes() {
             </span>
           </Link>
         )}
+        <Link to="/ajustes/musica" className="tipo-card">
+          <span className="tipo-ic"><Music size={22} /></span>
+          <span className="tipo-main">
+            <span className="tipo-name">Música</span>
+            <span className="tipo-desc">Temas para el canal de fondo</span>
+          </span>
+        </Link>
         <Link to="/ajustes/plataformas" className="tipo-card">
           <span className="tipo-ic"><Clapperboard size={22} /></span>
           <span className="tipo-main">

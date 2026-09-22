@@ -1,5 +1,5 @@
 import { api } from "./api";
-import type { Plataforma } from "@newsroller/shared";
+import type { Plataforma, MusicSettings } from "@newsroller/shared";
 
 export interface AppSettings {
   tickerSpeed: number; // segundos por vuelta del newsticker (mayor = más lento)
@@ -9,6 +9,7 @@ export interface AppSettings {
   plataformas?: Plataforma[]; // plataformas de streaming para series (Ajustes → Plataformas)
   climaIcons?: Record<string, string>; // íconos BIG del clima cargados en Ajustes ({slot: url})
   airPausedAt: string; // ISO del corte de emisión ("" = al aire); congela el reloj
+  music?: MusicSettings; // música de fondo continua (Ajustes → Música + toggle en el Monitor de Emisión)
 }
 
 export const settingsApi = {

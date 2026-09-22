@@ -1,14 +1,17 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { io } from "socket.io-client";
-import { contentHasAudio } from "@newsroller/shared";
+import { contentHasAudio, MUSIC_DEFAULT, type MusicSettings } from "@newsroller/shared";
 import { API_BASE, fetchScene, dataView, tickerText, type Block, type Scene } from "./lib/scene";
-import { TemplateView } from "./templates/render";
+import { TemplateView, templateHasVideo } from "./templates/render";
 import { ItemView } from "./templates/items";
 import offAir from "./assets/off-air.jpg";
 import { reportAiring, reportIncident, isLiveOutput } from "./lib/telemetry";
 import { IS_VERTICAL, ORIENTATION, fitScale, stageStyle, supportsVertical } from "./lib/orientation";
 import { useForcePlay } from "./lib/autoplay";
+
+// Sonido de la música de fondo: como todo lo demás, muteada salvo ?audio=1 (lo controla vMix/OBS).
+const WANT_AUDIO = typeof window !== "undefined" && new URLSearchParams(window.location.search).has("audio");
 
 // Sesión: si la URL trae ?session=<id>, este output pasa a reproducir esa playlist en vez del aire
 // principal. El resto (rotación, sonido, telemetría, recarga por antigüedad) funciona igual.
@@ -20,6 +23,17 @@ function sessionPlayable(blocks: Block[], vertical: boolean): Block[] {
   return blocks.filter((b) => b.item && (!vertical || supportsVertical(b.item.type, b.item.data)));
 }
 
+// Heurística de si el bloque actual trae audio propio (para el fadeout de la música de fondo).
+// No es una medición real, es la misma idea que ya usa la telemetría del Monitor.
+function blockHasAudio(b: Block | null): boolean {
+  if (!b) return false;
+  if (b.content_type === "short" || b.content_type === "promos") return true; // siempre video de YouTube
+  if (b.content_type === "ad") return !!b.media?.mime?.startsWith("video/");
+  if (b.tpl) return templateHasVideo(b.tpl as any);
+  if (b.item) return contentHasAudio(b.item.type, b.item.data);
+  return false;
+}
+
 // Horas de encendido tras las cuales el output se recarga solo al cerrar una vuelta de la parrilla.
 const MAX_UPTIME_H = 12;
 
@@ -29,6 +43,8 @@ export function Output() {
   const [scale, setScale] = useState(1);
   const [now, setNow] = useState(() => new Date());
   const [onAir, setOnAir] = useState(true);
+  const [music, setMusic] = useState<MusicSettings>(MUSIC_DEFAULT);
+  const [sessionAudio, setSessionAudio] = useState(false); // lo reporta el SessionRunner activo, si hay uno
   const bgVideoRef = useForcePlay<HTMLVideoElement>();
 
   const load = useCallback(async () => {
@@ -57,7 +73,10 @@ export function Output() {
       // Corte de emergencia de la sesión: instantáneo por socket, filtrando por id.
       socket.on("session:update", (s: { id: string; active: boolean }) => { if (s.id === SESSION_ID) setOnAir(s.active); });
     } else {
-      socket.on("settings:update", (s: Record<string, unknown>) => setOnAir(s?.onAir !== false));
+      socket.on("settings:update", (s: Record<string, unknown>) => {
+        setOnAir(s?.onAir !== false);
+        setMusic((s?.music as MusicSettings) ?? MUSIC_DEFAULT);
+      });
     }
     return () => {
       socket.disconnect();
@@ -75,7 +94,7 @@ export function Output() {
     const check = () =>
       fetch(`${API_BASE}/api/settings`)
         .then((r) => r.json())
-        .then((s) => setOnAir(s?.onAir !== false))
+        .then((s) => { setOnAir(s?.onAir !== false); setMusic(s?.music ?? MUSIC_DEFAULT); })
         .catch(() => {});
     void check();
     const t = setInterval(check, 5_000);
@@ -236,6 +255,32 @@ export function Output() {
   // Bloques con diseño propio (plantilla, contenido tipado 2026 o una Sesión embebida): traen su propio fondo/chrome.
   const isCustom = isTemplate || isItem || isSession;
 
+  // Música de fondo continua (Ajustes → Música + interruptor del Monitor de Emisión): sólo en el aire
+  // principal (no en el output de una Sesión), y sólo si hay un tema elegido. Hace fadeout cuando el
+  // bloque actual trae audio propio (mp3, short, video con sonido) y fadein cuando vuelve a estar mudo.
+  const musicTrack = !SESSION_ID ? music.tracks.find((t) => t.id === music.activeId) ?? null : null;
+  const wantMusic = music.enabled && !!musicTrack && onAir;
+  const currentHasAudio = isSession ? sessionAudio : blockHasAudio(current);
+  useEffect(() => { if (!isSession) setSessionAudio(false); }, [isSession]);
+  const musicRef = useRef<HTMLAudioElement>(null);
+  useEffect(() => {
+    const el = musicRef.current;
+    if (!el || !musicTrack) return;
+    const target = wantMusic && !currentHasAudio ? 1 : 0;
+    if (wantMusic && el.paused) void el.play().catch(() => {});
+    if (!wantMusic && !el.paused) el.pause();
+    let raf: number;
+    const step = () => {
+      const a = musicRef.current;
+      if (!a) return;
+      const next = a.volume + (target - a.volume) * 0.08;
+      a.volume = Math.abs(next - target) < 0.01 ? target : next;
+      if (a.volume !== target) raf = requestAnimationFrame(step);
+    };
+    raf = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(raf);
+  }, [wantMusic, currentHasAudio, musicTrack?.url]);
+
   // Corte manual de emisión: muestra la placa de "fuera del aire" a pantalla
   // completa, sin ticker ni rotación, hasta que se reanuda desde el Monitor.
   if (!onAir) {
@@ -251,6 +296,8 @@ export function Output() {
   return (
     <div className="viewport">
       <div className="stage" style={stageStyle(scale)}>
+        {/* Música de fondo continua: sin capa visual, se controla toda por volumen (fadeout/fadein). */}
+        {musicTrack && <audio key={musicTrack.url} ref={musicRef} src={musicTrack.url} loop muted={!WANT_AUDIO} data-nr-skip />}
         {/* Fondo (para bloques con chrome estándar; plantillas y contenidos tipados traen su propio fondo) */}
         {!isCustom && (
           <div className="layer">
@@ -287,7 +334,7 @@ export function Output() {
               transition={{ duration: 0.4 }}
               style={{ position: "absolute", inset: 0, zIndex: 5 }}
             >
-              <SessionRunner scene={scene!} blocks={current.session!.items} sessionId={current.session!.id} onDone={advance} />
+              <SessionRunner scene={scene!} blocks={current.session!.items} sessionId={current.session!.id} onDone={advance} onAudioChange={setSessionAudio} />
             </motion.div>
           )}
           {current && isItem && (
@@ -347,10 +394,13 @@ export function Output() {
 // Reproduce, dentro de un bloque de la Emisión (o de otra Sesión anfitriona), los contenidos propios de una
 // Sesión embebida: gira sólo entre ellos con sus propias duraciones y, al completar una vuelta entera,
 // avisa (`onDone`, con guarda propia arriba en `advance`) para que la Emisión siga con su próximo bloque.
-function SessionRunner({ scene, blocks, sessionId, onDone }: { scene: Scene; blocks: Block[]; sessionId: string; onDone: () => void }) {
+function SessionRunner({ scene, blocks, sessionId, onDone, onAudioChange }: { scene: Scene; blocks: Block[]; sessionId: string; onDone: () => void; onAudioChange?: (has: boolean) => void }) {
   const playable = sessionPlayable(blocks, IS_VERTICAL);
   const [idx, setIdx] = useState(0);
   const cur = playable.length ? playable[idx % playable.length] : null;
+
+  // Avisa al padre si el sub-contenido actual trae audio propio (fadeout de la música de fondo).
+  useEffect(() => { onAudioChange?.(blockHasAudio(cur)); }, [cur?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const lenRef = useRef(playable.length);
   lenRef.current = playable.length;

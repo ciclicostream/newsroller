@@ -389,6 +389,14 @@ export const PLATAFORMAS_DEFAULT: Plataforma[] = [
   { id: "flow", name: "Flow" },
 ];
 
+// Música de fondo continua (Ajustes → Música): suena mientras el aire no tiene
+// contenido con audio propio, y hace fadeout/fadein al cruzarse con uno que sí
+// (mp3, short, video con sonido). Sólo puede sonar un tema a la vez; el volumen
+// real lo controla el mezclador de vMix/OBS, acá sólo se maneja el fundido.
+export interface MusicTrack { id: string; name: string; url: string }
+export interface MusicSettings { tracks: MusicTrack[]; activeId: string | null; enabled: boolean }
+export const MUSIC_DEFAULT: MusicSettings = { tracks: [], activeId: null, enabled: false };
+
 // Programas sugeridos para "Entrevista completa en …" (el editor puede escribir otro).
 export const DECLARACIONES_PROGRAMAS = ["EPA!", "REC!", "Cíclico Noticias", "Modo Cíclico"];
 
