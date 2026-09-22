@@ -122,6 +122,16 @@ export function Output() {
     ? allItems.filter((b) => (b.item && supportsVertical(b.item.type, b.item.data)) || (b.session && sessionPlayable(b.session.items, true).length > 0))
     : allItems;
   const current = items.length ? items[index % items.length] : null;
+  const isTemplate = !!current?.tpl;
+  const isItem = !!current?.item;
+  const isSession = !!current?.session;
+
+  // Música de fondo continua (Ajustes → Música + interruptor del Monitor de Emisión): sólo en el aire
+  // principal (no en el output de una Sesión), y sólo si hay un tema elegido. Hace fadeout cuando el
+  // bloque actual trae audio propio (mp3, short, video con sonido) y fadein cuando vuelve a estar mudo.
+  const musicTrack = !SESSION_ID ? music.tracks.find((t) => t.id === music.activeId) ?? null : null;
+  const wantMusic = music.enabled && !!musicTrack && onAir;
+  const currentHasAudio = isSession ? sessionAudio : blockHasAudio(current);
 
   // Ref (no state/dep) para que `advance` tenga una identidad ESTABLE entre
   // refrescos de escena — así no reinicia el timer de reproducción (ver abajo).
@@ -233,7 +243,8 @@ export function Output() {
           ? {
               id: current.id,
               itemType: current.item?.type ?? null,
-              hasAudio: current.item ? contentHasAudio(current.item.type, current.item.data) : false,
+              // Suena algo si el propio bloque trae audio, o si no lo trae pero la música de fondo está audible.
+              hasAudio: blockHasAudio(current) || (wantMusic && !currentHasAudio),
               durationSec: current.duration_sec,
             }
           : null,
@@ -244,23 +255,14 @@ export function Output() {
       "*",
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [now, current?.id, items.length, index, onAir]);
+  }, [now, current?.id, items.length, index, onAir, wantMusic, currentHasAudio]);
 
   const clock = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
   const logo = scene?.logos?.[0];
   const bg = scene?.background;
-  const isTemplate = !!current?.tpl;
-  const isItem = !!current?.item;
-  const isSession = !!current?.session;
   // Bloques con diseño propio (plantilla, contenido tipado 2026 o una Sesión embebida): traen su propio fondo/chrome.
   const isCustom = isTemplate || isItem || isSession;
 
-  // Música de fondo continua (Ajustes → Música + interruptor del Monitor de Emisión): sólo en el aire
-  // principal (no en el output de una Sesión), y sólo si hay un tema elegido. Hace fadeout cuando el
-  // bloque actual trae audio propio (mp3, short, video con sonido) y fadein cuando vuelve a estar mudo.
-  const musicTrack = !SESSION_ID ? music.tracks.find((t) => t.id === music.activeId) ?? null : null;
-  const wantMusic = music.enabled && !!musicTrack && onAir;
-  const currentHasAudio = isSession ? sessionAudio : blockHasAudio(current);
   useEffect(() => { if (!isSession) setSessionAudio(false); }, [isSession]);
   const musicRef = useRef<HTMLAudioElement>(null);
   useEffect(() => {
