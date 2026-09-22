@@ -194,20 +194,19 @@ function ManageInline({ session, people, onSave, onDone }: { session: SessionRow
 
   return (
     <div className="card lp" style={{ marginTop: 12 }} onClick={(e) => e.stopPropagation()}>
-      <div className="lp-hd">Quién gestiona "{session.name}"</div>
-      <p className="muted-note" style={{ margin: "0 0 12px" }}>Pueden armar la lista de esta sesión y usar el corte de emergencia. Master y Administrador siempre pueden, no hace falta agregarlos.</p>
-      <div style={{ maxHeight: 260, overflow: "auto", display: "flex", flexDirection: "column", gap: 4 }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+        <div className="lp-hd" style={{ margin: 0 }}>Quién gestiona "{session.name}"</div>
+        <button type="button" className="btn primary btn-sm" disabled={saving} onClick={save}>{saving ? "Guardando…" : "Guardar"}</button>
+      </div>
+      <div className="mng-grid">
         {assignable.length === 0 && <div className="muted-note">No hay Programadores ni Generadores todavía.</div>}
         {assignable.map((p) => (
-          <label key={p.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "6px 4px" }}>
-            <input type="checkbox" checked={selected.has(p.id)} onChange={(e) => setSelected((s) => { const n = new Set(s); e.target.checked ? n.add(p.id) : n.delete(p.id); return n; })} />
-            <span style={{ flex: 1 }}>{p.full_name || p.email}</span>
-            <span className="muted-note">{ROLE_LABEL[p.role as keyof typeof ROLE_LABEL] ?? p.role}</span>
+          <label key={p.id} className={"mng-row" + (selected.has(p.id) ? " on" : "")}>
+            <input type="checkbox" checked={selected.has(p.id)} style={{ width: 16, height: 16, flex: "none" }} onChange={(e) => setSelected((s) => { const n = new Set(s); e.target.checked ? n.add(p.id) : n.delete(p.id); return n; })} />
+            <span className="mng-name">{p.full_name || p.email}</span>
+            <span className="mng-role">{ROLE_LABEL[p.role as keyof typeof ROLE_LABEL] ?? p.role}</span>
           </label>
         ))}
-      </div>
-      <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 12 }}>
-        <button type="button" className="btn primary btn-sm" disabled={saving} onClick={save}>{saving ? "Guardando…" : "Guardar"}</button>
       </div>
     </div>
   );

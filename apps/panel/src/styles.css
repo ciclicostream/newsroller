@@ -132,7 +132,7 @@ tr:last-child td { border-bottom: none; }
 .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
 .btn.primary:hover { background: #2559d8; }
 .btn.danger-ghost { color: var(--danger); border-color: #f0c7c2; }
-.btn-sm { padding: 5px 10px; font-size: 12.5px; gap: 5px; }
+.btn-sm { padding: 3px 8px; font-size: 11px; gap: 4px; }
 .btn.danger-ghost:hover { background: #fbeceA; }
 .btn:disabled { opacity: .55; cursor: not-allowed; }
 input, select, textarea { font-family: inherit; font-size: 14px; padding: 9px 11px; border: 1px solid var(--border); border-radius: 8px; width: 100%; background: #fff; }
@@ -570,5 +570,10 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 6px
 .sess-icon.danger:hover { background: #fdecec; border-color: var(--danger); color: var(--danger); }
 .sess-num { display: inline-flex; align-items: center; gap: 4px; font-size: 12.5px; font-weight: 600; color: var(--muted); min-width: 18px; text-align: center; background: var(--bg); border-radius: 7px; padding: 6px 8px; line-height: 1; }
 .sess-sep { width: 1px; height: 20px; background: var(--border); margin: 0 2px; }
+.mng-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; max-height: 260px; overflow: auto; }
+.mng-row { display: flex; align-items: center; gap: 8px; padding: 7px 9px; border-radius: 8px; background: var(--bg); min-width: 0; }
+.mng-row.on { background: var(--accent-weak); }
+.mng-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; }
+.mng-role { font-size: 10.5px; font-weight: 700; letter-spacing: .02em; text-transform: uppercase; color: var(--muted); background: #fff; border-radius: 999px; padding: 2px 7px; flex: none; }
 
 .pv-durfixed { width: 48px; text-align: center; font-size: 10.5px; color: var(--dim); line-height: 1.15; flex: none; }
