@@ -51,10 +51,12 @@ export function Clima({ data, live, durationSec }: { data: ClimaData; live?: Cli
   const [play, setPlay] = useState(false);
   const [exiting, setExiting] = useState(false);
   const [custom, setCustom] = useState<ClimaIconsConfig>({});
-  // Íconos cargados en Ajustes (si falla el fetch se usan los predeterminados).
+  // Los íconos BIG se cargan en Ajustes; hasta saber cuáles hay cargados no se muestra ninguno
+  // (si no, se ve primero el predeterminado de fábrica y después el que cargó el editor).
+  const [iconsLoaded, setIconsLoaded] = useState(false);
   useEffect(() => {
     let on = true;
-    fetch(`${API_BASE}/api/settings`).then((r) => r.json()).then((s) => on && setCustom(s?.climaIcons ?? {})).catch(() => {});
+    fetch(`${API_BASE}/api/settings`).then((r) => r.json()).then((s) => { if (!on) return; setCustom(s?.climaIcons ?? {}); setIconsLoaded(true); }).catch(() => on && setIconsLoaded(true));
     return () => { on = false; };
   }, []);
   useEffect(() => {
@@ -88,7 +90,7 @@ export function Clima({ data, live, durationSec }: { data: ClimaData; live?: Cli
       <img className="cw-bg" src={fondo} alt="" />
       <Chrome hideTemp hideLogo />
 
-      <img className="cw-big" src={resolveBig(bigKey, custom)} alt="" />
+      {iconsLoaded && <img className="cw-big" src={resolveBig(bigKey, custom)} alt="" />}
 
       <div className="cw-main cw-flip">
         <div className="cw-t">{city.tempC != null ? `${city.tempC}°` : "--"}</div>
