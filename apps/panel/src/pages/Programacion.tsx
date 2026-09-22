@@ -24,14 +24,12 @@ interface LiveStatus {
   next: { id: string; itemType: string | null; durationSec: number } | null;
 }
 
-// Cuántos segundos/minutos/horas pasaron (para "Última actualización").
-function relAgo(ms: number): string {
-  const s = Math.max(0, Math.round(ms / 1000));
-  if (s < 2) return "ahora";
-  if (s < 60) return `hace ${s}s`;
-  const m = Math.round(s / 60);
-  if (m < 60) return `hace ${m}min`;
-  return `hace ${Math.round(m / 60)}h`;
+// Hora (y fecha si no es hoy) del último mensaje de telemetría recibido, para "Última actualización".
+function fmtUpdatedAt(iso: string): string {
+  const d = new Date(iso);
+  const time = d.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+  const sameDay = d.toDateString() === new Date().toDateString();
+  return sameDay ? time : `${d.toLocaleDateString("es-AR")} ${time}`;
 }
 
 // Duración del ciclo en un formato legible (no siempre segundos crudos).
@@ -321,14 +319,11 @@ export function Programacion() {
 
           <div className="pv-card pv-fadercard"><Fader onPublish={publish} publishing={publishing} /></div>
 
-          <details className="pv-links">
-            <summary>Enlaces para transmitir</summary>
-            <OutputLinksPicker title="" />
-          </details>
+          <OutputLinksPicker title="Enlaces para transmitir" />
 
           <div className="pv-airrow">
             <div className="pv-airmeta">
-              <div>Última actualización: <b>{liveStatus ? relAgo(Date.now() - new Date(liveStatus.updatedAt).getTime()) : "—"}</b></div>
+              <div>Última actualización: <b>{liveStatus ? fmtUpdatedAt(liveStatus.updatedAt) : "—"}</b></div>
               <div>Próximo item: <b>{
                 liveStatus?.next
                   ? (TYPE_LABEL[liveStatus.next.itemType ?? ""] ?? liveStatus.next.itemType ?? "—") + " · " + liveStatus.next.durationSec + "s"
