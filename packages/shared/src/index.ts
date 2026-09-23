@@ -571,6 +571,8 @@ export function contentHasAudio(type: string, data: Record<string, any> = {}): b
   if (data?.audio_url) return true;
   if (type === "camaras") return false; // las cámaras nunca llevan audio
   if (type === "shorts" || type === "promos") return true; // siempre video de YouTube
+  if (type === "cartelera") return !!(data?.trailer_id || data?.short_id || data?.video_url); // trailer/short de YouTube o video propio
+  if (type === "efemerides" && Array.isArray(data?.more) && data.more.some((m: any) => m?.media_kind === "video")) return true;
   const kind = data?.media_kind;
   return kind === "video" || kind === "youtube";
 }
