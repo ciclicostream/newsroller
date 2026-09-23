@@ -13,6 +13,8 @@ const T_MAX = 90;
 const KINDS: { key: CarteleraKind; label: string }[] = [{ key: "teatro", label: "Teatro" }, { key: "cine", label: "Cine" }, { key: "evento", label: "Eventos" }];
 const kindOf = (d: CarteleraData): CarteleraKind => d.kind ?? "teatro"; // las ya guardadas son de teatro
 const isYtId = (s: string) => /^[\w-]{11}$/.test(s);
+const isJpgOrPng = (f: File) =>
+  ["image/jpeg", "image/png"].includes(f.type) || /\.(jpe?g|png)$/i.test(f.name);
 const fmtMin = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 
 export function Cartelera() {
@@ -93,7 +95,13 @@ export function Cartelera() {
   async function onPoster(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
-    setErr(null); setUploadingPoster(true);
+    setErr(null);
+    if (!isJpgOrPng(file)) {
+      setErr("El póster tiene que ser un archivo JPG o PNG.");
+      if (posterRef.current) posterRef.current.value = "";
+      return;
+    }
+    setUploadingPoster(true);
     try { setPosterUrl(await uploadMedia(file, "media")); }
     catch (e) { setErr(e instanceof Error ? e.message : "error subiendo"); }
     finally { setUploadingPoster(false); }
@@ -312,14 +320,14 @@ export function Cartelera() {
                 {side === "poster" && (
                   <div className="cfm-sub">
                     <div className="field">
-                      <label>Póster <i>(opcional)</i></label>
+                      <label>Póster <i>(opcional, JPG o PNG)</i></label>
                       {posterUrl ? (
                         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                           <img src={posterUrl} alt="" style={{ width: 44, height: 66, objectFit: "cover", borderRadius: 6 }} />
                           <button type="button" className="btn" onClick={() => { setPosterUrl(null); if (posterRef.current) posterRef.current.value = ""; }}><X size={14} /> quitar</button>
                         </div>
                       ) : (
-                        <input ref={posterRef} type="file" accept="image/*" onChange={onPoster} disabled={uploadingPoster} />
+                        <input ref={posterRef} type="file" accept="image/jpeg,image/png,.jpg,.jpeg,.png" onChange={onPoster} disabled={uploadingPoster} />
                       )}
                       {uploadingPoster && <div style={{ fontSize: 12, color: "#6b7688", marginTop: 4 }}><Loader2 size={13} className="spin" /> subiendo…</div>}
                     </div>

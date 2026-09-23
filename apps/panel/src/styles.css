@@ -509,6 +509,8 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 6px
 .pv-dur::-webkit-inner-spin-button,.pv-dur::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
 .pv-rmv{background:#fff;border:1px solid var(--ln);color:var(--dim);cursor:pointer;border-radius:8px;padding:5px 7px;display:inline-flex;flex:none}
 .pv-rmv:hover{color:#fff;background:var(--rd);border-color:var(--rd)}
+.pv-monrow{background:#fff;border:1px solid var(--ln);color:var(--dim);cursor:pointer;border-radius:8px;padding:5px 7px;display:inline-flex;flex:none}
+.pv-monrow:hover{color:#fff;background:var(--ac);border-color:var(--ac)}
 
 .pv-mon-card{padding:14px;box-shadow:0 4px 16px rgba(20,30,60,.05),inset 0 2px 14px rgba(20,30,60,.07)}
 .pv-mon-hd{display:flex;align-items:center;gap:8px;margin-bottom:10px}

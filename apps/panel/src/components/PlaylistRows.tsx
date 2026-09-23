@@ -1,5 +1,5 @@
 import type { RefObject } from "react";
-import { AlertTriangle, GripVertical, X } from "lucide-react";
+import { AlertTriangle, GripVertical, MonitorPlay, X } from "lucide-react";
 import type { ContentItem, PlaylistItem } from "@newsroller/shared";
 import { CAT, TYPE_LABEL, catOf, iconOf, itemText, SESSION_ICON, SESSION_COLOR, type TextCtx } from "../lib/contentCatalog";
 import type { SessionRow } from "../lib/sessions";
@@ -9,7 +9,7 @@ import type { SessionRow } from "../lib/sessions";
 // opcional: sólo hace falta en Emisión, que es la única que puede tener bloques "sesión".
 export function PlaylistRows({
   title, draft, itemById, ctx, sel, ins, rowsRef, sessionById,
-  onSelect, onRemove, onDur, onDragStart, onDragEnd, onRowsDragOver, onRowsDragLeave, onRowsDrop,
+  onSelect, onRemove, onDur, onDragStart, onDragEnd, onRowsDragOver, onRowsDragLeave, onRowsDrop, onPreviewClip,
 }: {
   title: string;
   draft: PlaylistItem[];
@@ -27,6 +27,7 @@ export function PlaylistRows({
   onRowsDragOver: (e: React.DragEvent) => void;
   onRowsDragLeave: (e: React.DragEvent) => void;
   onRowsDrop: (e: React.DragEvent) => void;
+  onPreviewClip?: (id: string) => void;
 }) {
   const txt = (ci: ContentItem) => itemText(ci, ctx);
   return (
@@ -62,6 +63,9 @@ export function PlaylistRows({
                   <span className="pv-durfixed" title="Dura lo que sume la Sesión">según la sesión</span>
                 ) : (
                   <input className="pv-dur" type="number" value={r.duration_sec} onClick={(e) => e.stopPropagation()} onChange={(e) => onDur(r.id, +e.target.value)} />
+                )}
+                {!isSession && ci && onPreviewClip && (
+                  <button className="pv-monrow" title="Ver en el monitor (CLIP)" onClick={(e) => { e.stopPropagation(); onPreviewClip(ci.id); }}><MonitorPlay size={13} /></button>
                 )}
                 <button className="pv-rmv" onClick={(e) => { e.stopPropagation(); onRemove(r.id); }}><X size={13} /></button>
               </div>

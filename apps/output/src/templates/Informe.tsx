@@ -37,8 +37,10 @@ export function Informe({ data, durationSec }: { data: InformeData; durationSec?
       <img className="in-bg" src={fondo} alt="" />
       <Chrome />
 
-      <div className="in-pill in-el">INFORME CÍCLICO</div>
-      <div className="in-titlecard in-el">{data.title}</div>
+      <div className="in-titleblock in-el">
+        <div className="in-pill">INFORME CÍCLICO</div>
+        <div className="in-titlecard">{data.title}</div>
+      </div>
 
       <div className="in-carousel in-el">
         <div className="in-viewport">
@@ -71,8 +73,8 @@ const SLIDE_W = IS_VERTICAL ? 860 : 620; // ancho de cada slide (4:5)
 const CSS_V = `
 .in.v .in-carousel{left:110px;top:160px;width:860px;height:1075px;transform:translateX(0)}
 .in.v .in-slide{flex:0 0 860px;height:1075px}
-.in.v .in-pill{left:60px;top:1330px}
-.in.v .in-titlecard{left:60px;top:1402px;width:960px;min-height:260px;font-size:58px}
+.in.v .in-titleblock{left:60px;top:1330px;bottom:auto;width:960px}
+.in.v .in-titlecard{width:960px;min-height:260px;font-size:58px;text-align:left}
 `;
 
 const CSS = `
@@ -81,10 +83,11 @@ const CSS = `
 .in-el{opacity:0;transition:opacity .6s ease, transform .6s cubic-bezier(.2,.8,.2,1)}
 .in.play .in-el{opacity:1;transform:none}
 
-.in-pill{position:absolute;left:300px;top:576px;background:#fff;color:#0b2b6b;font-weight:800;font-size:38px;
-  letter-spacing:.02em;padding:14px 34px;border-radius:14px;box-shadow:0 8px 20px rgba(0,0,0,.18);transform:translateY(20px)}
-.in-titlecard{position:absolute;left:300px;top:648px;width:560px;min-height:270px;background:#1e56b3;border-radius:24px;
-  box-sizing:border-box;padding:40px 44px;display:flex;align-items:flex-start;color:#fff;font-weight:800;font-size:56px;line-height:1.1;transform:translateY(20px)}
+.in-titleblock{position:absolute;left:300px;bottom:195px;width:560px;display:flex;flex-direction:column;align-items:flex-start;transform:translateY(20px)}
+.in-pill{background:#fff;color:#0b2b6b;font-weight:800;font-size:38px;
+  letter-spacing:.02em;padding:14px 34px;border-radius:14px;box-shadow:0 8px 20px rgba(0,0,0,.18)}
+.in-titlecard{width:560px;min-height:270px;background:#1e56b3;border-radius:24px;
+  box-sizing:border-box;padding:40px 44px;text-align:right;color:#fff;font-weight:800;font-size:56px;line-height:1.1}
 .in-carousel{position:absolute;left:940px;top:110px;width:620px;height:775px;transform:translateX(60px)}
 .in-viewport{position:absolute;inset:0;border-radius:20px;overflow:hidden;box-shadow:0 16px 40px rgba(0,0,0,.45)}
 .in-track{display:flex;height:100%;will-change:transform;transition:transform .6s cubic-bezier(.4,0,.2,1)}

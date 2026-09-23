@@ -298,6 +298,7 @@ export function Programacion() {
           onRowsDragOver={onRowsDragOver}
           onRowsDragLeave={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node)) setIns(null); }}
           onRowsDrop={onRowsDrop}
+          onPreviewClip={(id) => { setClipId(id); setMode("clip"); }}
         />
 
         <div className="pv-rz" onPointerDown={startResize("c")} onDoubleClick={() => setCols((c) => ({ ...c, c: 560 }))} title="Arrastrar para cambiar el ancho (doble clic: restablecer)"><i /></div>
