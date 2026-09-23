@@ -54,16 +54,18 @@ export function Declaraciones({ data, durationSec }: { data: DeclaracionesData; 
       <Chrome hideTemp hideLogo />
 
       <img className="dc-photo dc-el" src={data.photo_url} alt="" />
-      <div className="dc-idcard dc-idcard-name dc-el">{data.name.toUpperCase()}</div>
-      <div className="dc-idcard dc-idcard-role dc-el">{data.role.toUpperCase()}</div>
-      <div className="dc-idcard dc-idcard-place dc-el">{data.place.toUpperCase()}</div>
+      <div className="dc-idblock dc-el">
+        <div className="dc-idcard dc-idcard-name">{data.name.toUpperCase()}</div>
+        <div className="dc-idcard dc-idcard-role">{data.role.toUpperCase()}</div>
+        <div className="dc-idcard dc-idcard-place">{data.place.toUpperCase()}</div>
+      </div>
 
       <div className="dc-quote dc-el"><div className="dc-cita" ref={quoteRef}>{data.quote.slice(0, typed)}</div></div>
       <div className="dc-qmark dc-el">&ldquo;</div>
 
       {data.headline && <div className="dc-titbar dc-el">{data.headline}</div>}
       {data.interview_program && (
-        <div className="dc-epa dc-el">Entrevista completa en <b>{data.interview_program}</b></div>
+        <div className="dc-epa dc-el">{data.interview_program}</div>
       )}
 
       {data.audio_url && <audio src={data.audio_url} autoPlay muted={!WANT_AUDIO} />}
@@ -74,10 +76,10 @@ export function Declaraciones({ data, durationSec }: { data: DeclaracionesData; 
 // Vertical: foto + ficha arriba, la cita a todo el ancho debajo y el titular y "Entrevista completa" al pie.
 const CSS_V = `
 .dc.v .dc-photo{left:60px;top:200px;width:380px;height:380px}
-.dc.v .dc-idcard{left:470px;width:550px}
-.dc.v .dc-idcard-name{top:200px;font-size:44px}
-.dc.v .dc-idcard-role{top:392px;font-size:38px}
-.dc.v .dc-idcard-place{top:472px;font-size:34px}
+.dc.v .dc-idblock{left:470px;top:200px;width:550px}
+.dc.v .dc-idcard-name{font-size:44px}
+.dc.v .dc-idcard-role{font-size:38px;margin-top:110px}
+.dc.v .dc-idcard-place{font-size:34px;margin-top:10px}
 .dc.v .dc-quote{left:60px;top:640px;width:960px;height:830px;padding:100px 56px 50px}
 .dc.v .dc-qmark{left:80px;top:590px}
 .dc.v .dc-titbar{left:60px;top:1500px;width:960px;height:140px;font-size:40px}
@@ -91,10 +93,11 @@ const CSS = `
 
 .dc-photo{position:absolute;left:210px;top:105px;width:330px;height:330px;z-index:14;
   border-radius:14px;object-fit:cover;background:#cfd3da;box-shadow:0 12px 26px rgba(0,0,0,.25)}
-.dc-idcard{position:absolute;left:210px;width:330px;text-align:center;z-index:14}
-.dc-idcard-name{top:445px;background:#0b1f52;color:#fff;font-weight:800;font-size:40px;line-height:1.05;padding:18px 14px;border-radius:12px}
-.dc-idcard-role{top:595px;background:#fff;color:#0b2b6b;font-weight:800;font-size:38px;padding:12px 14px;border-radius:12px}
-.dc-idcard-place{top:667px;background:#fff;color:#0b2b6b;font-weight:800;font-size:34px;line-height:1.08;padding:12px 14px;border-radius:12px}
+.dc-idblock{position:absolute;left:210px;top:445px;width:330px;display:flex;flex-direction:column;z-index:14}
+.dc-idcard{text-align:center;box-sizing:border-box}
+.dc-idcard-name{background:#0b1f52;color:#fff;font-weight:800;font-size:40px;line-height:1.05;padding:18px 14px;border-radius:12px}
+.dc-idcard-role{background:#fff;color:#0b2b6b;font-weight:800;font-size:38px;line-height:1.15;padding:12px 14px;border-radius:12px;margin-top:72px}
+.dc-idcard-place{background:#fff;color:#0b2b6b;font-weight:800;font-size:34px;line-height:1.08;padding:12px 14px;border-radius:12px;margin-top:8px}
 
 .dc-quote{position:absolute;left:600px;top:105px;width:1270px;height:650px;z-index:13;
   background:#3b82f6;border-radius:34px;box-shadow:0 18px 36px rgba(0,0,0,.3);
@@ -107,7 +110,6 @@ const CSS = `
 .dc-titbar{position:absolute;left:600px;top:779px;width:1030px;height:104px;z-index:14;background:#fff;
   border-radius:16px;box-sizing:border-box;padding:12px 28px;display:flex;align-items:center;overflow:hidden;
   color:#0b2b6b;font-weight:800;font-size:34px;line-height:1.08;box-shadow:0 10px 22px rgba(0,0,0,.22)}
-.dc-epa b{margin-left:.3em}
 .dc-epa{position:absolute;left:1650px;top:779px;width:222px;height:104px;z-index:14;background:#fff;
   border-radius:16px;box-sizing:border-box;padding:12px 20px;display:flex;align-items:center;overflow:hidden;
   color:#0b2b6b;font-weight:800;font-size:28px;line-height:1.12;box-shadow:0 10px 22px rgba(0,0,0,.22)}

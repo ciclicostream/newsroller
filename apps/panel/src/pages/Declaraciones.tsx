@@ -124,7 +124,7 @@ export function Declaraciones() {
       <div className="page-head pm-head">
         <div>
           <h1>Declaraciones</h1>
-          <p>Foto, nombre, cargo, lugar y cita son obligatorios. Titular y "Entrevista completa en…" son opcionales.</p>
+          <p>Foto, nombre, cargo, lugar y cita son obligatorios. Titular y card inferior derecha son opcionales.</p>
         </div>
       </div>
 
@@ -167,8 +167,8 @@ export function Declaraciones() {
           </div>
 
           <div className="field">
-            <label>Entrevista completa en… (opcional)</label>
-            <input value={program} onChange={(e) => setProgram(e.target.value)} list="programas" placeholder="Elegí o escribí un programa" />
+            <label>Card inferior derecha (opcional)</label>
+            <input value={program} onChange={(e) => setProgram(e.target.value)} list="programas" placeholder="Texto libre, ej: Entrevista en EPA!" />
             <datalist id="programas">
               {DECLARACIONES_PROGRAMAS.map((p) => <option key={p} value={p} />)}
             </datalist>
