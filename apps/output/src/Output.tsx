@@ -9,6 +9,7 @@ import offAir from "./assets/off-air.jpg";
 import { reportAiring, reportIncident, isLiveOutput } from "./lib/telemetry";
 import { IS_VERTICAL, ORIENTATION, fitScale, stageStyle, supportsVertical } from "./lib/orientation";
 import { useForcePlay } from "./lib/autoplay";
+import { useAudioUnlock } from "./lib/audioUnlock";
 
 // Sonido de la música de fondo: como todo lo demás, muteada salvo ?audio=1 (lo controla vMix/OBS).
 const WANT_AUDIO = typeof window !== "undefined" && new URLSearchParams(window.location.search).has("audio");
@@ -271,6 +272,7 @@ export function Output() {
 
   useEffect(() => { if (!isSession) setSessionAudio(false); }, [isSession]);
   const musicRef = useRef<HTMLAudioElement>(null);
+  const { locked: audioLocked, unlocked: audioUnlocked, unlock: unlockAudio } = useAudioUnlock();
   useEffect(() => {
     const el = musicRef.current;
     if (!el || !musicTrack) return;
@@ -287,7 +289,7 @@ export function Output() {
     };
     raf = requestAnimationFrame(step);
     return () => cancelAnimationFrame(raf);
-  }, [wantMusic, currentHasAudio, musicTrack?.url]);
+  }, [wantMusic, currentHasAudio, musicTrack?.url, audioUnlocked]);
 
   // Corte manual de emisión: muestra la placa de "fuera del aire" a pantalla
   // completa, sin ticker ni rotación, hasta que se reanuda desde el Monitor.
@@ -304,6 +306,12 @@ export function Output() {
   return (
     <div className="viewport">
       <div className="stage" style={stageStyle(scale)}>
+        {audioLocked && (
+          <button type="button" onClick={unlockAudio}
+            style={{ position: "absolute", left: "50%", top: "50%", transform: "translate(-50%,-50%)", zIndex: 9999, padding: "28px 56px", fontSize: 44, fontWeight: 800, borderRadius: 24, border: "none", background: "#fff", color: "#0b2b6b", boxShadow: "0 12px 40px rgba(0,0,0,.4)", cursor: "pointer" }}>
+            Tocá para activar el sonido
+          </button>
+        )}
         {/* Música de fondo continua: sin capa visual, se controla toda por volumen (fadeout/fadein). */}
         {musicTrack && <audio key={musicTrack.url} ref={musicRef} src={musicTrack.url} loop muted={!WANT_AUDIO} data-nr-skip />}
         {/* Fondo (para bloques con chrome estándar; plantillas y contenidos tipados traen su propio fondo) */}
