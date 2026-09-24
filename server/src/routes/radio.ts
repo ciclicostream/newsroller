@@ -40,7 +40,7 @@ const cleanState = (b: Record<string, unknown>): RadioState | null => {
   }
   const cam = b.cam === "full" || b.cam === "pip" ? b.cam : "off";
   const duck = Math.max(0, Math.min(100, Math.round(Number(b.duck ?? 25)) || 0));
-  return { tx: b.tx === true, pad: b.tx === true ? p : null, cam: b.tx === true ? cam : "off", mic: b.mic === true, duck, at: Date.now() };
+  return { tx: b.tx === true, pad: b.tx === true ? p : null, cam: b.tx === true ? cam : "off", mic: b.mic === true, duck, music: b.music === true, at: Date.now() };
 };
 
 // Sockets: el Host (panel, con su token de sesión) y los outputs receptores (con la clave del link).

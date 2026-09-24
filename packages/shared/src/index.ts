@@ -572,9 +572,10 @@ export interface RadioState {
   cam: "off" | "full" | "pip"; // cámara del Host: apagada, pantalla completa o recuadro
   mic: boolean; // micrófono abierto (el output baja el clip)
   duck: number; // % de volumen del clip mientras el micrófono está abierto
+  music: boolean; // música de fondo (el tema activo de Ajustes → Música) encendida en Stream
   at: number; // ms, momento de la última actualización
 }
-export const RADIO_STATE_DEFAULT: RadioState = { tx: false, pad: null, cam: "off", mic: false, duck: 25, at: 0 };
+export const RADIO_STATE_DEFAULT: RadioState = { tx: false, pad: null, cam: "off", mic: false, duck: 25, music: false, at: 0 };
 
 export interface ClientToServerEvents {
   "radio:host-join": (token: string, ack?: (ok: boolean) => void) => void;

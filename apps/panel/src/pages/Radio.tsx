@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Mic, MicOff, Square, Play, Power, Search, Tv, Volume2, VolumeX, RectangleHorizontal, RectangleVertical,
-  LayoutGrid, RadioTower, X, Camera as CameraIcon, CameraOff, PictureInPicture2, Maximize, Link2, Copy, Check, ExternalLink,
+  LayoutGrid, RadioTower, X, Camera as CameraIcon, CameraOff, PictureInPicture2, Maximize, Link2, Copy, Check, ExternalLink, Music,
 } from "lucide-react";
 import type { Camera, ContentItem } from "@newsroller/shared";
 import { useMonitorAudio } from "../lib/monitorAudio";
 import { useMonitorVertical } from "../lib/monitorOrientation";
+import { useStoredFlag } from "../lib/storedFlag";
+import { settingsApi } from "../lib/settings";
 import { OUTPUT_FRAME_BASE } from "../lib/parrilla";
 import { sessions as sessionsApi, type SessionRow } from "../lib/sessions";
 import { contentItems as contentItemsApi } from "../lib/content-items";
@@ -163,6 +165,8 @@ export function Radio() {
   const [cfg, setCfg] = useState<RadioConfig | null>(null);
   const [viewers, setViewers] = useState(0); // outputs del estudio conectados al enlace
   const [showLink, setShowLink] = useState(false);
+  const [musicOn, toggleMusic] = useStoredFlag("nr.radio.music"); // música de fondo de Stream (el tema se elige en Ajustes → Música)
+  const [hasTrack, setHasTrack] = useState(true);
   const [linkErr, setLinkErr] = useState<string | null>(null);
   const linkRef = useRef<RadioLink | null>(null);
 
@@ -178,6 +182,7 @@ export function Radio() {
   // Enlace WebRTC con el output del estudio: mic y cámara viajan directo; el estado va por el server.
   useEffect(() => {
     let dead = false; let l: RadioLink | null = null;
+    settingsApi.get().then((s) => setHasTrack(!!s.music?.tracks.some((t) => t.id === s.music?.activeId))).catch(() => {});
     radioApi.config().then((c) => { if (dead) return; setCfg(c); l = createRadioLink(c, setViewers); linkRef.current = l; }).catch(() => { if (!dead) setLinkErr("Sin conexión con el servidor de Stream."); });
     return () => { dead = true; l?.close(); linkRef.current = null; };
   }, []);
@@ -215,10 +220,10 @@ export function Radio() {
     const pad = live && cur && cur.kind !== "cam" ? { kind: cur.kind, id: cur.id } : null;
     const camMode = !live ? "off" : active === CAM_KEY ? "full" : camPip && cam.on ? "pip" : "off";
     const t = setTimeout(() => {
-      radioApi.setState({ tx: live, pad, cam: camMode, mic: mic.on, duck }).then(() => setLinkErr(null)).catch((e) => setLinkErr(e instanceof Error ? e.message : "No se pudo avisar al output."));
+      radioApi.setState({ tx: live, pad, cam: camMode, mic: mic.on, duck, music: musicOn }).then(() => setLinkErr(null)).catch((e) => setLinkErr(e instanceof Error ? e.message : "No se pudo avisar al output."));
     }, 120);
     return () => clearTimeout(t);
-  }, [cfg, live, cur?.key, active, camPip, cam.on, mic.on, duck]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [cfg, live, cur?.key, active, camPip, cam.on, mic.on, duck, musicOn]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Transmisión: la abre el locutor al sentarse y la corta al terminar el programa.
   function startTx() { const t = Date.now(); setTxStart(t); writeTx(t); setLastRun(null); }
@@ -324,6 +329,11 @@ export function Radio() {
         {/* Monitor */}
         <div className="pv-card rd-card rd-moncard">
           <CardHead icon={Tv} title="Monitor">
+            <button type="button" className={"pv-snd" + (musicOn ? " on" : "")} onClick={toggleMusic} disabled={!hasTrack} aria-pressed={musicOn}
+              aria-label={musicOn ? "Apagar la música de fondo" : "Encender la música de fondo"}
+              title={!hasTrack ? "Elegí un tema en Ajustes → Música primero" : musicOn ? "Apagar la música de fondo" : "Encender la música de fondo (se apaga sola con contenido con audio y baja con el micrófono)"}>
+              <Music size={14} />
+            </button>
             <button type="button" className={"pv-snd" + (showLink ? " on" : "")} onClick={() => setShowLink((v) => !v)} aria-pressed={showLink}
               aria-label="Enlace para OBS o vMix" title="Enlace del output para OBS / vMix">
               <Link2 size={14} />

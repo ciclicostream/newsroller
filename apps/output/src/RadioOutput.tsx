@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { io, type Socket } from "socket.io-client";
-import { RADIO_STATE_DEFAULT, type RadioState } from "@newsroller/shared";
+import { MUSIC_DEFAULT, RADIO_STATE_DEFAULT, type MusicSettings, type RadioState } from "@newsroller/shared";
 import { API_BASE } from "./lib/scene";
 import { IS_VERTICAL, fitScale, stageStyle } from "./lib/orientation";
 import { useAudioUnlock } from "./lib/audioUnlock";
@@ -20,6 +20,9 @@ export function RadioOutput() {
   const [rtc, setRtc] = useState<"idle" | "connecting" | "connected">("idle");
   const [camLive, setCamLive] = useState(false);
   const [denied, setDenied] = useState(false);
+  const [music, setMusic] = useState<MusicSettings>(MUSIC_DEFAULT); // Ajustes → Música (tema activo)
+  const musicRef = useRef<HTMLAudioElement>(null);
+  const clipAudioRef = useRef(false); // el contenido al aire trae audio propio: la música se apaga
   const camRef = useRef<HTMLVideoElement>(null);
   const micRef = useRef<HTMLAudioElement>(null);
   const frameRef = useRef<HTMLIFrameElement>(null);
@@ -79,6 +82,11 @@ export function RadioOutput() {
       fetch(`${API_BASE}/api/radio/ice?key=${encodeURIComponent(KEY)}`).then((r) => r.json()).then((d) => { if (d?.iceServers) ice = d.iceServers; }).catch(() => {});
     });
     socket.on("radio:state", (s: RadioState) => setState(s));
+    // Música de fondo: el tema activo se elige en Ajustes → Música (mismo dato que usa el aire principal).
+    const loadMusic = () => fetch(`${API_BASE}/api/settings`).then((r) => r.json()).then((s) => { if (!closed) setMusic((s?.music as MusicSettings) ?? MUSIC_DEFAULT); }).catch(() => {});
+    void loadMusic();
+    const musicT = setInterval(loadMusic, 30_000);
+    socket.on("settings:update", (s: Record<string, unknown>) => setMusic((s?.music as MusicSettings) ?? MUSIC_DEFAULT));
     socket.on("radio:signal", async ({ from, data }: { from: string; data: any }) => {
       try {
         if (data?.sdp) {
@@ -95,7 +103,7 @@ export function RadioOutput() {
       } catch { /* el Host reintenta al reconectarse */ }
     });
 
-    return () => { closed = true; clearInterval(pollT); closePc(); socket.disconnect(); };
+    return () => { closed = true; clearInterval(pollT); clearInterval(musicT); closePc(); socket.disconnect(); };
   }, []);
 
   // Contenido al aire: el mismo output de los monitores del panel (?preview=<id> o ?session=<id>), en un iframe del mismo origen.
@@ -116,7 +124,13 @@ export function RadioOutput() {
       try {
         const doc = frameRef.current?.contentDocument;
         if (!doc) return;
-        doc.querySelectorAll<HTMLMediaElement>("video, audio").forEach((m) => { if (Math.abs(m.volume - v) > 0.01) m.volume = v; });
+        let audible = false;
+        doc.querySelectorAll<HTMLMediaElement>("video, audio").forEach((m) => {
+          if (Math.abs(m.volume - v) > 0.01) m.volume = v;
+          if (!m.paused && !m.muted && !m.hasAttribute("data-nr-skip")) audible = true;
+        });
+        if (doc.querySelector("iframe")) audible = true; // reproductor de YouTube (shorts, promos, video)
+        clipAudioRef.current = audible;
         doc.querySelectorAll<HTMLIFrameElement>("iframe").forEach((f) => f.contentWindow?.postMessage(JSON.stringify({ event: "command", func: "setVolume", args: [Math.round(v * 100)] }), "*"));
       } catch { /* iframe todavía sin cargar */ }
     }, 400);
@@ -124,6 +138,30 @@ export function RadioOutput() {
   }, []);
 
   useEffect(() => { if (unlocked) void micRef.current?.play().catch(() => {}); }, [unlocked]);
+
+  // Música de fondo: suena con la transmisión abierta y el botón encendido; se apaga (fade) si el contenido trae audio
+  // propio y baja con el micrófono abierto, igual que el clip.
+  const track = music.tracks.find((t) => t.id === music.activeId) ?? null;
+  const wantMusic = state.tx && state.music && !!track;
+  useEffect(() => {
+    const el = musicRef.current;
+    if (!el || !track) return;
+    if (wantMusic && el.paused) void el.play().catch(() => {});
+    if (!wantMusic && !el.paused && el.volume < 0.02) el.pause();
+    let raf = 0;
+    const step = () => {
+      const a = musicRef.current;
+      if (!a) return;
+      const s = stateRef.current;
+      const target = wantMusic && !clipAudioRef.current ? (s.mic ? s.duck / 100 : 1) : 0;
+      const next = a.volume + (target - a.volume) * 0.08;
+      a.volume = Math.max(0, Math.min(1, Math.abs(next - target) < 0.01 ? target : next));
+      if (!wantMusic && a.volume === 0 && !a.paused) a.pause();
+      raf = requestAnimationFrame(step);
+    };
+    raf = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(raf);
+  }, [wantMusic, track?.url, unlocked]);
 
   const showCam = state.tx && state.cam !== "off" && camLive;
   return (
@@ -142,6 +180,7 @@ export function RadioOutput() {
             : { display: "none" }} />
         {/* El micrófono del Host sólo suena con la transmisión abierta. */}
         <audio ref={micRef} autoPlay muted={!state.tx} data-nr-skip />
+        {track && <audio key={track.url} ref={musicRef} src={track.url} loop data-nr-skip />}
 
         {locked && (
           <button onClick={unlock} style={{ position: "absolute", left: 40, bottom: 40, zIndex: 50, font: "700 34px Inter,system-ui,sans-serif", padding: "18px 30px", borderRadius: 14, border: 0, background: "#EE220C", color: "#fff" }}>
