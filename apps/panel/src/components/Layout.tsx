@@ -10,6 +10,7 @@ import {
   Settings,
   LogOut,
   ListMusic,
+  AudioLines,
 } from "lucide-react";
 import { ROLE_LABEL, type Perm } from "@newsroller/shared";
 import { useAuth } from "../auth/AuthProvider";
@@ -24,9 +25,10 @@ interface NavDef {
   label: string;
   icon: ReactNode;
   perm: Perm;
+  cls?: string;
 }
 
-// Orden simétrico alrededor de Emisión (que se dibuja aparte, al centro y en rojo):
+// Orden simétrico alrededor de Copiloto (que se dibuja aparte, al centro):
 // izquierda Contenido/Sesiones/Fuentes, derecha Plantillas/Cámaras/Reportes, y Ajustes
 // separado por una rayita porque no es parte de la simetría.
 const NAV_LEFT: NavDef[] = [
@@ -35,6 +37,7 @@ const NAV_LEFT: NavDef[] = [
   { to: "/fuentes", label: "Fuentes", icon: <Radio size={18} />, perm: "fuentes" },
 ];
 const NAV_RIGHT: NavDef[] = [
+  { to: "/stream", label: "Stream", icon: <AudioLines size={18} />, perm: "stream", cls: "nav-stream" },
   { to: "/plantillas", label: "Plantillas", icon: <LayoutTemplate size={18} />, perm: "plantillas_ver" },
   { to: "/camaras", label: "Cámaras", icon: <Video size={18} />, perm: "camaras" },
   { to: "/reportes", label: "Reportes", icon: <BarChart3 size={18} />, perm: "reportes" },
@@ -65,22 +68,22 @@ export function Layout({ children }: { children: ReactNode }) {
             </NavLink>
           ))}
 
-          {/* Emisión (antes "Programación"): al centro, destacada en rojo — es el aire en vivo. */}
+          {/* Copiloto (antes "Emisión"): al centro, con el mismo estilo que los demás. */}
           {canDo("programar") && (
-            <NavLink to="/" end className={({ isActive }) => "nav-item nav-emision" + (isActive ? " active" : "")}>
-              <ListVideo size={18} /> Emisión
+            <NavLink to="/" end className={({ isActive }) => "nav-item" + (isActive ? " active" : "")}>
+              <ListVideo size={18} /> Copiloto
             </NavLink>
           )}
 
           {NAV_RIGHT.filter((n) => canDo(n.perm)).map((n) => (
-            <NavLink key={n.to} to={n.to} className={({ isActive }) => "nav-item" + (isActive ? " active" : "")}>
+            <NavLink key={n.to} to={n.to} className={({ isActive }) => "nav-item" + (n.cls ? " " + n.cls : "") + (isActive ? " active" : "")}>
               {n.icon}
               {n.label}
             </NavLink>
           ))}
 
-          {canDo("ajustes") && <span className="nav-sep" aria-hidden="true" />}
-          {canDo("ajustes") && (
+          {canDo("ajustes_medios") && <span className="nav-sep" aria-hidden="true" />}
+          {canDo("ajustes_medios") && (
             <NavLink to="/ajustes" className={({ isActive }) => "nav-item" + (isActive ? " active" : "")}>
               <Settings size={18} /> Ajustes
             </NavLink>

@@ -47,6 +47,13 @@ export const env = {
   youtubeChannelHandle: str("YOUTUBE_CHANNEL_HANDLE", "esciclico").replace(/^@/, ""),
   youtubeSyncMs: num("YOUTUBE_SYNC_MS", 30 * 60_000),
 
+  // Stream (radio manual): clave que lleva el link del output (?radio=1&key=...) y servidores ICE de WebRTC.
+  // Sin RADIO_KEY se genera una al arrancar (el link cambia en cada reinicio: definila en producción).
+  radioKey: str("RADIO_KEY"),
+  radioTurnUrls: str("RADIO_TURN_URLS").split(",").map((u) => u.trim()).filter(Boolean),
+  radioTurnUsername: str("RADIO_TURN_USERNAME"),
+  radioTurnCredential: str("RADIO_TURN_CREDENTIAL"),
+
   // Emails que se promueven a rol admin automáticamente al arrancar (bootstrap).
   adminEmails: str("ADMIN_EMAILS")
     .split(",")

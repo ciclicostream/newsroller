@@ -144,11 +144,13 @@ export function settingsRouter(io: IO): Router {
   });
 
   // Guardar preferencias (sólo editores/admins). Valida y clampa cada clave conocida.
-  r.put("/settings", requireAuth, requirePerm("ajustes"), async (req, res) => {
+  r.put("/settings", requireAuth, requirePerm("ajustes_medios"), async (req, res) => {
     const body = (req.body ?? {}) as Record<string, unknown>;
     const updates: Partial<Record<SettingsKey, SettingsValue>> = {};
     for (const key of Object.keys(DEFAULTS) as SettingsKey[]) {
       if (!(key in body)) continue;
+      // La música de fondo la toca también el Host (ajustes_medios); el resto de las preferencias pide "ajustes".
+      if (key !== "music" && !can(req.user!.role, "ajustes")) return res.status(403).json({ error: "no tenés permiso para cambiar esta preferencia", code: "forbidden" });
       if (key === "idleMinutes" && !can(req.user!.role, "config_sistema")) return res.status(403).json({ error: "sólo el Master cambia los tiempos de inactividad", code: "forbidden" });
       const val = coerce(key, body[key]);
       if (val == null) return res.status(400).json({ error: `valor inválido para ${key}` });

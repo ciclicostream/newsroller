@@ -191,7 +191,7 @@ export async function buildReport(range: Range, viewerIsMaster: boolean) {
   const mediaTotal = mediaRota.length;
 
   // ---- 4. Personas (programadores y generadores) ----
-  const staff = profiles.filter((p) => (p.role === "programador" || p.role === "generador") && !hidden(p.id));
+  const staff = profiles.filter((p) => (p.role === "programador" || p.role === "generador" || p.role === "host") && !hidden(p.id));
   const personas = staff.map((p) => {
     const mine = visibleActs.filter((a) => a.actor_id === p.id);
     const ses = sessions.filter((s) => s.user_id === p.id);

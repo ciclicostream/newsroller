@@ -559,8 +559,27 @@ export interface ServerToClientEvents {
   "sources:status": (statuses: SourceStatus[]) => void;
   "settings:update": (settings: Record<string, unknown>) => void;
   "session:update": (s: { id: string; active: boolean; paused_at: string | null }) => void;
+  // Stream (radio manual): estado que el Host manda al output y señalización WebRTC panel <-> output.
+  "radio:state": (s: RadioState) => void;
+  "radio:viewer": (id: string) => void; // (al Host) se conectó un output receptor
+  "radio:viewer-left": (id: string) => void;
+  "radio:signal": (msg: { from: string; data: unknown }) => void;
 }
+// Estado de Stream (radio manual). Lo escribe el Host desde el panel; lo lee el output `?radio=1`.
+export interface RadioState {
+  tx: boolean; // transmisión abierta
+  pad: { kind: "item" | "session"; id: string } | null; // contenido al aire (en loop); null = placa de espera
+  cam: "off" | "full" | "pip"; // cámara del Host: apagada, pantalla completa o recuadro
+  mic: boolean; // micrófono abierto (el output baja el clip)
+  duck: number; // % de volumen del clip mientras el micrófono está abierto
+  at: number; // ms, momento de la última actualización
+}
+export const RADIO_STATE_DEFAULT: RadioState = { tx: false, pad: null, cam: "off", mic: false, duck: 25, at: 0 };
+
 export interface ClientToServerEvents {
+  "radio:host-join": (token: string, ack?: (ok: boolean) => void) => void;
+  "radio:viewer-join": (key: string, ack?: (ok: boolean) => void) => void;
+  "radio:signal": (msg: { to: string; data: unknown }) => void;
   // reservado para futuras acciones del panel (ej: forzar refetch)
   "data:request": (source: SourceId) => void;
 }
@@ -580,15 +599,16 @@ export function contentHasAudio(type: string, data: Record<string, any> = {}): b
 // ---- Roles y permisos ----
 // Cuatro perfiles con jerarquía. Los permisos se aplican en el SERVIDOR (requirePerm) y el panel sólo
 // los usa para mostrar/ocultar secciones.
-export type Role = "master" | "administrador" | "programador" | "generador";
-export const ROLES: Role[] = ["master", "administrador", "programador", "generador"];
+export type Role = "master" | "administrador" | "programador" | "generador" | "host";
+export const ROLES: Role[] = ["master", "administrador", "programador", "generador", "host"];
 export const ROLE_LABEL: Record<Role, string> = {
   master: "Master",
   administrador: "Administrador",
   programador: "Programador",
   generador: "Generador de contenidos",
+  host: "Host",
 };
-export const ROLE_RANK: Record<Role, number> = { master: 4, administrador: 3, programador: 2, generador: 1 };
+export const ROLE_RANK: Record<Role, number> = { master: 4, administrador: 3, programador: 2, host: 2, generador: 1 };
 
 export type Perm =
   | "programar" // Programación: armar la parrilla, enviar a vivo, cortar el aire
@@ -599,18 +619,23 @@ export type Perm =
   | "fuentes" // ver el estado de las fuentes de datos / APIs
   | "reportes"
   | "ajustes"
+  | "ajustes_medios" // Ajustes: Shorts, Música y Programas (todos los que tienen "ajustes" + el Host)
   | "perfiles" // invitar/editar/desactivar personas (salvo Master)
   | "eliminar_personas" // borrar personas
   | "vaciar_papelera" // borrar definitivamente (de la papelera)
   | "config_sistema" // configuración sensible del sistema (ej. tiempos de inactividad)
   | "sesiones" // ver/editar las sesiones (playlists propias) que le fueron asignadas
-  | "sesiones_admin"; // crear/borrar sesiones y asignar quién las gestiona
+  | "sesiones_admin" // crear/borrar sesiones y asignar quién las gestiona
+  | "stream"; // operar Stream (la radio manual: transmisión, botonera, micrófono y cámara)
 
 export const ROLE_PERMS: Record<Role, Perm[]> = {
-  master: ["programar", "contenidos", "plantillas_ver", "plantillas_editar", "camaras", "fuentes", "reportes", "ajustes", "perfiles", "eliminar_personas", "vaciar_papelera", "config_sistema", "sesiones", "sesiones_admin"],
-  administrador: ["programar", "contenidos", "plantillas_ver", "camaras", "reportes", "ajustes", "perfiles", "vaciar_papelera", "sesiones", "sesiones_admin"],
-  programador: ["programar", "contenidos", "camaras", "fuentes", "ajustes", "sesiones"],
+  master: ["programar", "contenidos", "plantillas_ver", "plantillas_editar", "camaras", "fuentes", "reportes", "ajustes", "ajustes_medios", "perfiles", "eliminar_personas", "vaciar_papelera", "config_sistema", "sesiones", "sesiones_admin", "stream"],
+  administrador: ["programar", "contenidos", "plantillas_ver", "camaras", "reportes", "ajustes", "ajustes_medios", "perfiles", "vaciar_papelera", "sesiones", "sesiones_admin", "stream"],
+  programador: ["programar", "contenidos", "camaras", "fuentes", "ajustes", "ajustes_medios", "sesiones", "stream"],
   generador: ["contenidos", "sesiones"],
+  // Host: como un Programador pero SIN programar (no usa Copiloto) y con Ajustes acotados a Shorts, Música y Programas
+  // (sin Banco, íconos del clima, plataformas ni newsticker). Opera Stream y prepara contenidos.
+  host: ["contenidos", "camaras", "fuentes", "ajustes_medios", "sesiones", "stream"],
 };
 export const can = (role: Role | null | undefined, perm: Perm): boolean => !!role && ROLE_PERMS[role].includes(perm);
 
@@ -627,15 +652,16 @@ export function normalizeRole(raw: unknown): Role {
 // programadores y generadores (nunca a un Master).
 export function assignableRoles(actor: Role): Role[] {
   if (actor === "master") return ROLES;
-  if (actor === "administrador") return ["administrador", "programador", "generador"];
+  if (actor === "administrador") return ["administrador", "programador", "generador", "host"];
   return [];
 }
 
 // Minutos de inactividad tras los cuales se cierra la sesión (configurable por el Master en Ajustes).
-export const IDLE_MINUTES_DEFAULT: Record<Role, number> = { generador: 20, programador: 15, administrador: 10, master: 10 };
+export const IDLE_MINUTES_DEFAULT: Record<Role, number> = { generador: 20, host: 15, programador: 15, administrador: 10, master: 10 };
 
 // Adónde mandar a cada rol al entrar (primera sección a la que tiene acceso).
 export function homeFor(role: Role): string {
   if (can(role, "programar")) return "/";
+  if (can(role, "stream")) return "/stream";
   return "/contenido";
 }

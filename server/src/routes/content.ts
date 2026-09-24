@@ -151,7 +151,7 @@ export function contentRouter(): Router {
 
   // ---- Shorts de YouTube ----
   // Sincronizar con el canal (trae/actualiza shorts, preserva títulos editados).
-  r.post("/shorts/sync", requirePerm("ajustes"), async (_req, res) => {
+  r.post("/shorts/sync", requirePerm("ajustes_medios"), async (_req, res) => {
     try {
       const count = await syncShorts(sb());
       const { data } = await sb().from("shorts").select("*").order("published_at", { ascending: false });
@@ -167,7 +167,7 @@ export function contentRouter(): Router {
     res.json(data);
   });
 
-  r.patch("/shorts/:id", requirePerm("ajustes"), async (req, res) => {
+  r.patch("/shorts/:id", requirePerm("ajustes_medios"), async (req, res) => {
     const patch: Record<string, unknown> = {};
     for (const k of ["custom_title", "active", "sort"]) if (k in (req.body ?? {})) patch[k] = req.body[k];
     if (Object.keys(patch).length === 0) return res.status(400).json({ error: "nada para actualizar" });
@@ -177,7 +177,7 @@ export function contentRouter(): Router {
     res.json(data);
   });
 
-  r.delete("/shorts/:id", requirePerm("ajustes"), async (req, res) => {
+  r.delete("/shorts/:id", requirePerm("ajustes_medios"), async (req, res) => {
     const { error } = await sb().from("shorts").delete().eq("id", req.params.id);
     if (error) return res.status(500).json({ error: error.message });
     res.status(204).end();

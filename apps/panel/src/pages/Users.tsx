@@ -149,6 +149,7 @@ export function Users() {
           ["administrador", "Programa, contenidos, cámaras, reportes y ajustes; ve las plantillas; invita y desactiva personas (sin tocar al Master)."],
           ["programador", "Programa, gestiona contenidos, agrega cámaras y usa los ajustes; ve el estado de las fuentes."],
           ["generador", "Solo genera contenidos (ve los de todos, edita los suyos) y gestiona su propio perfil."],
+          ["host", "Como un Programador pero sin programar (no usa Copiloto): opera Stream (la radio manual) y prepara contenidos, sesiones y cámaras. En Ajustes solo ve Shorts, Música y Programas."],
         ].map(([r, d]) => (
           <div key={r} style={{ display: "flex", gap: 10 }}>
             <ShieldCheck size={18} color="var(--accent)" style={{ flex: "none", marginTop: 2 }} />

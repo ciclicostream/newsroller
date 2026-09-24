@@ -70,13 +70,15 @@ export function Ajustes() {
             </span>
           </Link>
         )}
-        <Link to="/banco" className="tipo-card">
+        {can("ajustes") && (
+          <Link to="/banco" className="tipo-card">
           <span className="tipo-ic"><Images size={22} /></span>
           <span className="tipo-main">
             <span className="tipo-name">Banco</span>
             <span className="tipo-desc">Fondos, fotos, videos y logos</span>
           </span>
         </Link>
+        )}
         <Link to="/shorts" className="tipo-card">
           <span className="tipo-ic"><Youtube size={22} /></span>
           <span className="tipo-main">
@@ -84,13 +86,15 @@ export function Ajustes() {
             <span className="tipo-desc">Sincronizar shorts de YouTube</span>
           </span>
         </Link>
-        <Link to="/ajustes/clima" className="tipo-card">
+        {can("ajustes") && (
+          <Link to="/ajustes/clima" className="tipo-card">
           <span className="tipo-ic"><CloudSun size={22} /></span>
           <span className="tipo-main">
             <span className="tipo-name">Íconos del clima</span>
             <span className="tipo-desc">Imágenes grandes según el cielo</span>
           </span>
         </Link>
+        )}
         {can("reportes") && (
           <Link to="/ajustes/actividad" className="tipo-card">
             <span className="tipo-ic"><History size={22} /></span>
@@ -107,13 +111,15 @@ export function Ajustes() {
             <span className="tipo-desc">Temas para el canal de fondo</span>
           </span>
         </Link>
-        <Link to="/ajustes/plataformas" className="tipo-card">
+        {can("ajustes") && (
+          <Link to="/ajustes/plataformas" className="tipo-card">
           <span className="tipo-ic"><Clapperboard size={22} /></span>
           <span className="tipo-main">
             <span className="tipo-name">Plataformas</span>
             <span className="tipo-desc">Logos de streaming para series</span>
           </span>
         </Link>
+        )}
         <Link to="/programas" className="tipo-card">
           <span className="tipo-ic"><Tv size={22} /></span>
           <span className="tipo-main">
@@ -123,6 +129,7 @@ export function Ajustes() {
         </Link>
       </div>
 
+      {can("ajustes") && (
       <div className="card" style={{ padding: 20, marginTop: 18, maxWidth: 560 }}>
         <div style={{ display: "flex", gap: 10, alignItems: "center", marginBottom: 4 }}>
           <Rss size={18} />
@@ -162,6 +169,7 @@ export function Ajustes() {
           </>
         )}
       </div>
+      )}
 
       {idle && (
         <div className="card" style={{ padding: 20, marginTop: 18, maxWidth: 560 }}>

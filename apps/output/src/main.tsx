@@ -1,6 +1,7 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { Output } from "./Output";
+import { RadioOutput } from "./RadioOutput";
 import { Preview, DraftPreview } from "./Preview";
 import { ItemView } from "./templates/items";
 import { fitScale, stageStyle } from "./lib/orientation";
@@ -9,6 +10,7 @@ import "./styles.css";
 const params = new URLSearchParams(window.location.search);
 const preview = params.get("preview");
 const draft = params.get("draft"); // monitor de edición de los formularios del panel
+const radio = params.get("radio"); // Stream (radio manual): recibe mic/cámara del Host por WebRTC
 const demo = params.get("demo"); // vista local SIN Supabase (para revisar placas portadas)
 
 // Datos de ejemplo para el modo demo.
@@ -121,6 +123,6 @@ function DemoStage({ id }: { id: string }) {
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    {demo ? <DemoStage id={demo} /> : draft ? <DraftPreview /> : preview ? <Preview id={preview} /> : <Output />}
+    {radio ? <RadioOutput /> : demo ? <DemoStage id={demo} /> : draft ? <DraftPreview /> : preview ? <Preview id={preview} /> : <Output />}
   </React.StrictMode>,
 );

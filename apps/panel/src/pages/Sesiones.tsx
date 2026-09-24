@@ -185,7 +185,7 @@ function RenameInline({ name, onSave, onDone }: { name: string; onSave: (name: s
 function ManageInline({ session, people, onSave, onDone }: { session: SessionRow; people: UserRow[]; onSave: (userIds: string[]) => Promise<void>; onDone: () => void }) {
   const [selected, setSelected] = useState<Set<string>>(new Set(session.manager_ids));
   const [saving, setSaving] = useState(false);
-  const assignable = people.filter((p) => p.role === "programador" || p.role === "generador");
+  const assignable = people.filter((p) => p.role === "programador" || p.role === "generador" || p.role === "host");
 
   async function save() {
     setSaving(true);

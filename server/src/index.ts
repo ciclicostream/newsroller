@@ -24,6 +24,7 @@ import { contentItemsRouter } from "./routes/content-items.js";
 import { playlistRouter } from "./routes/playlist.js";
 import { parrillaRouter } from "./routes/parrilla.js";
 import { outputRouter } from "./routes/output.js";
+import { attachRadio, radioRouter } from "./routes/radio.js";
 import { templatesRouter } from "./routes/templates.js";
 import { settingsRouter, readAll as readAllSettings } from "./routes/settings.js";
 import { getStore } from "./db/store.js";
@@ -38,6 +39,7 @@ app.use(express.json());
 const http = createServer(app);
 const io = createIO(http);
 const registry = new Registry();
+attachRadio(io); // Stream: señalización WebRTC entre el panel del Host y el output `?radio=1`
 
 // Cada actualización de un poller se emite y se refresca el estado de fuentes.
 registry.setUpdateHandler((data) => {
@@ -70,6 +72,7 @@ app.use("/api/playlist", playlistRouter());
 app.use("/api/parrilla", parrillaRouter(io));
 app.use("/api/templates", templatesRouter());
 app.use("/api/output", outputRouter()); // público (sin auth) para vMix
+app.use("/api/radio", radioRouter(io)); // Stream (radio manual): panel autenticado; output con clave
 
 // En producción, servir los builds del front (mismo origen que la API y el socket).
 const appsDir = path.resolve(fileURLToPath(import.meta.url), "../../../apps");
