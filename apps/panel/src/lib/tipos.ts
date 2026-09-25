@@ -14,6 +14,8 @@ import {
   Newspaper,
   Youtube,
   Video,
+  ListChecks,
+  Tv,
   type LucideIcon,
 } from "lucide-react";
 
@@ -23,6 +25,7 @@ export interface TipoDef {
   desc: string;
   Icon: LucideIcon;
   ready?: boolean; // formulario implementado
+  hidden?: boolean; // no tiene card propia en el submenú (vive dentro de otra, ej. Lista dentro de Informes)
 }
 
 // Placas que el editor carga a mano (banco → parrilla → aire).
@@ -36,7 +39,9 @@ export const TIPOS: TipoDef[] = [
   { type: "cartelera", label: "Cartelera", desc: "Estreno / obra con ficha", Icon: Clapperboard, ready: true },
   { type: "declaraciones", label: "Declaraciones", desc: "Cita textual + foto", Icon: Quote, ready: true },
   { type: "shorts", label: "Shorts", desc: "1 o 2 shorts verticales del canal", Icon: Youtube, ready: true },
-  { type: "informe", label: "Informe Cíclico", desc: "Hasta 10 tarjetas en secuencia", Icon: ListOrdered, ready: true },
+  { type: "informe", label: "Informes", desc: "Carrusel de slides o lista con foco", Icon: ListOrdered, ready: true },
+  { type: "lista", label: "Lista", desc: "Lista con foco (dentro de Informes)", Icon: ListChecks, ready: true, hidden: true },
+  { type: "retro", label: "Retro", desc: "Programa viejo con imagen o video", Icon: Tv, ready: true },
   { type: "publicidad", label: "Publicidad", desc: "Full o vertical (genera reporte)", Icon: Megaphone, ready: true },
   { type: "video_full", label: "Video Full", desc: "Video a pantalla completa", Icon: MonitorPlay, ready: true },
   { type: "promos", label: "Promos / Avances", desc: "Pill + card + video 9:16 o 4:3", Icon: Sparkles, ready: true },

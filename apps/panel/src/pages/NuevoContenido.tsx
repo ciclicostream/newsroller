@@ -17,6 +17,8 @@ import { ShortsPlaca } from "./ShortsPlaca";
 import { CamarasPlaca } from "./CamarasPlaca";
 import { VideoFullPlaca } from "./VideoFullPlaca";
 import { InformePlaca } from "./InformePlaca";
+import { ListaPlaca } from "./ListaPlaca";
+import { RetroPlaca } from "./RetroPlaca";
 import { PublicidadPlaca } from "./PublicidadPlaca";
 import { PromosPlaca } from "./PromosPlaca";
 
@@ -59,13 +61,15 @@ export function ContenidoNav({ active }: { active: string }) {
 
   return (
       <nav className="tpl-subnav" aria-label="Plantillas">
-        {TIPOS.map((t) => {
-          const air = inGrid.has(t.type);
+        {TIPOS.filter((t) => !t.hidden).map((t) => {
+          // Informes reúne al Carrusel y a la Lista: se ilumina si cualquiera de los dos está en la parrilla o en edición.
+          const isInformes = t.type === "informe";
+          const air = inGrid.has(t.type) || (isInformes && inGrid.has("lista"));
           return (
             <Link
               key={t.type}
               to={`/contenido/${t.type}`}
-              className={"tpl-chip" + (t.type === active ? " active" : "") + (air ? " on-air" : "")}
+              className={"tpl-chip" + (t.type === active || (isInformes && active === "lista") ? " active" : "") + (air ? " on-air" : "")}
               title={t.desc}
             >
               <span className="tpl-chip-ic"><t.Icon size={16} /></span>
@@ -109,6 +113,8 @@ function TemplateForm({ type }: { type: string }) {
   if (type === "camaras") return <CamarasPlaca />;
   if (type === "video_full") return <VideoFullPlaca />;
   if (type === "informe") return <InformePlaca />;
+  if (type === "lista") return <ListaPlaca />;
+  if (type === "retro") return <RetroPlaca />;
   if (type === "publicidad") return <PublicidadPlaca />;
   if (type === "promos") return <PromosPlaca />;
   const def = TIPO_BY_KEY[type];

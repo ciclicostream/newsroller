@@ -49,6 +49,53 @@ const DEMOS: Record<string, { type: string; data: Record<string, any>; dur?: num
       ],
     },
   },
+  lista_albumes: {
+    type: "lista", dur: 57,
+    data: {
+      title: "Los 10 álbumes más escuchados del año", numbered: true, sec_per_item: 5,
+      items: [
+        { title: "Costanera", subtitle: "Marea Alta", value: "4,8 M", text: "Disco debut de la banda, grabado en vivo en doce tomas.", image_url: "https://picsum.photos/seed/a1/600/600" },
+        { title: "Cuarto Menguante", subtitle: "Lía Ferrer", value: "4,3 M", text: "Once canciones de cámara con arreglos de cuerdas.", image_url: "https://picsum.photos/seed/a2/600/600" },
+        { title: "Papel Moneda", subtitle: "Los Hijos del Sur", value: "3,9 M", text: "El regreso del trío después de seis años sin editar." },
+        { title: "Ruido Blanco", subtitle: "Tomás Ibarra", value: "3,5 M", text: "Electrónica de dormitorio que llegó a los festivales." },
+        { title: "Diciembre", subtitle: "Cielo Arriba", value: "3,2 M", text: "Un disco de verano pensado para escuchar de corrido." },
+        { title: "Fuego Lento", subtitle: "Renata Quiroga", value: "2,9 M" },
+        { title: "Sur Profundo", subtitle: "Bandurria", value: "2,6 M" },
+        { title: "La Última Fila", subtitle: "Mateo Salas", value: "2,4 M" },
+        { title: "Aguas Bajas", subtitle: "Perla Norte", value: "2,1 M" },
+        { title: "Trasnoche", subtitle: "Los Ferroviarios", value: "1,9 M" },
+      ],
+    },
+  },
+  lista_mujeres: {
+    type: "lista", dur: 27,
+    data: {
+      title: "5 mujeres que hicieron historia en la Argentina", numbered: false, sec_per_item: 5,
+      items: [
+        { title: "Juana Azurduy", subtitle: "Jefa militar", value: "1780–1862", text: "Comandó tropas en la guerra de la independencia en el Alto Perú." },
+        { title: "Cecilia Grierson", subtitle: "Primera médica argentina", value: "1889", text: "Se recibió en la Universidad de Buenos Aires y fundó la primera escuela de enfermería." },
+        { title: "Alfonsina Storni", subtitle: "Poeta y docente", value: "1892–1938", text: "Una de las voces centrales de la poesía argentina del siglo XX." },
+        { title: "Julieta Lanteri", subtitle: "Sufragista", value: "1873–1932", text: "En 1911 fue la primera mujer en votar en la Argentina." },
+        { title: "Eva Perón", subtitle: "Dirigente política", value: "1919–1952", text: "Impulsó la ley del voto femenino, sancionada en 1947." },
+      ],
+    },
+  },
+  retro: {
+    type: "retro", dur: 15,
+    data: {
+      media_url: "https://picsum.photos/seed/retro/1200/900", media_kind: "image", chip: "PROGRAMA", year: "Años 90",
+      title: "Videomatch", subtitle: "Programa de televisión",
+      text: "Ciclo de entretenimiento que marcó la televisión de la década. Combinaba humor, juegos y bloques deportivos, y se volvió un clásico de la pantalla argentina.",
+    },
+  },
+  retro_afiche: {
+    type: "retro", dur: 15,
+    data: {
+      media_url: "https://picsum.photos/seed/afiche/800/1200", media_kind: "image", chip: "PROGRAMA", year: "1985",
+      title: "Un título de programa bastante largo que ocupa dos renglones", subtitle: "Ciclo de humor",
+      text: "Descripción de prueba para ver cómo se acomoda un afiche vertical con bastante texto en la ficha, que se corta solo si no entra.",
+    },
+  },
   ultima_hora: {
     type: "ultima_hora",
     data: { text: 'Abogados de Cristina presentaron una "prueba trascendente" para refutar la condena.', media_url: null, media_kind: null },

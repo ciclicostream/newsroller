@@ -221,6 +221,8 @@ export type ContentItemType =
   | "declaraciones"
   | "shorts"
   | "informe"
+  | "lista"
+  | "retro"
   | "publicidad"
   | "video_full"
   | "promos"
@@ -449,6 +451,36 @@ export interface InformeData {
   sec_per_slide?: number; // default 5
 }
 
+// Datos del tipo "lista" (vive en Informes): lista completa con foco. El foco pasa de un ítem al siguiente
+// cada `sec_per_item` segundos. Todos los campos del ítem son opcionales salvo el título.
+export interface ListaItem {
+  title: string;
+  subtitle?: string; // artista, profesión, lugar (máx 60)
+  value?: string; // dato destacado: reproducciones, año, puntaje (máx 16)
+  text?: string; // descripción, se ve en el foco (máx 140)
+  image_url?: string | null; // cuadrada; sin ella se muestra un color con las iniciales
+  audio_url?: string | null; // preview copiado al bucket "media"; suena mientras el ítem tiene el foco
+}
+export interface ListaData {
+  title: string; // máx 90
+  kicker?: string; // texto de la pill, por defecto "LISTA"
+  numbered?: boolean; // por defecto true: el número es el ranking (en rojo). Sin números el nombre va en rojo
+  sec_per_item?: number; // por defecto 5
+  items: ListaItem[]; // 3 a 10
+}
+export const LISTA_MAX_ITEMS = 10;
+
+// Datos del tipo "retro": programa (o afiche/tapa) viejo. Imagen o video obligatorio + ficha.
+export interface RetroData {
+  media_url: string;
+  media_kind: "image" | "video";
+  chip?: string; // etiqueta, por defecto "PROGRAMA" (vacía = sin etiqueta)
+  year?: string; // texto libre: 1990, Años 90, 1978–83 (máx 14)
+  title: string; // máx 70
+  subtitle?: string; // máx 50
+  text?: string; // descripción, máx 450
+}
+
 // Datos del tipo "publicidad": Full (16:9 sin overlay) o Vertical (9:16 +
 // marco estándar + logo/QR de marca opcionales). Única familia que genera reporte.
 export interface PublicidadData {
@@ -592,6 +624,7 @@ export function contentHasAudio(type: string, data: Record<string, any> = {}): b
   if (type === "camaras") return false; // las cámaras nunca llevan audio
   if (type === "shorts" || type === "promos") return true; // siempre video de YouTube
   if (type === "cartelera") return !!(data?.trailer_id || data?.short_id || data?.video_url); // trailer/short de YouTube o video propio
+  if (type === "lista") return Array.isArray(data?.items) && data.items.some((i: any) => i?.audio_url);
   if (type === "efemerides" && Array.isArray(data?.more) && data.more.some((m: any) => m?.media_kind === "video")) return true;
   const kind = data?.media_kind;
   return kind === "video" || kind === "youtube";

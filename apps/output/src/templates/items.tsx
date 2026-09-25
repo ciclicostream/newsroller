@@ -1,4 +1,4 @@
-import type { UltimaHoraData, PlacasData, DolarData, DolarPayload, CifrasData, EfemeridesData, CarteleraData, DeclaracionesData, ClimaData, ClimaPayload, ShortsData, CamarasData, VideoFullData, InformeData, PublicidadData, PromosData } from "@newsroller/shared";
+import type { UltimaHoraData, PlacasData, DolarData, DolarPayload, CifrasData, EfemeridesData, CarteleraData, DeclaracionesData, ClimaData, ClimaPayload, ShortsData, CamarasData, VideoFullData, InformeData, ListaData, RetroData, PublicidadData, PromosData } from "@newsroller/shared";
 import type { Camera } from "../lib/scene";
 import { UltimaHora } from "./UltimaHora";
 import { Placas } from "./Placas";
@@ -12,6 +12,8 @@ import { Shorts } from "./Shorts";
 import { Camaras } from "./Camaras";
 import { VideoFull } from "./VideoFull";
 import { Informe } from "./Informe";
+import { Lista } from "./Lista";
+import { Retro } from "./Retro";
 import { Publicidad } from "./Publicidad";
 import { Promos } from "./Promos";
 
@@ -60,6 +62,10 @@ export function ItemView({
       return <VideoFull data={data as VideoFullData} />;
     case "informe":
       return <Informe data={data as InformeData} durationSec={durationSec} />;
+    case "lista":
+      return <Lista data={data as ListaData} durationSec={durationSec} />;
+    case "retro":
+      return <Retro data={data as RetroData} durationSec={durationSec} />;
     case "publicidad":
       return <Publicidad id={id} data={data as PublicidadData} />;
     case "promos":

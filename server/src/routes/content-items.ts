@@ -15,6 +15,8 @@ const TYPES = new Set([
   "declaraciones",
   "shorts",
   "informe",
+  "lista",
+  "retro",
   "publicidad",
   "video_full",
   "promos",

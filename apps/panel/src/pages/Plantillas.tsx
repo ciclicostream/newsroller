@@ -100,7 +100,7 @@ function PlantillasEditor() {
       {err && <div className="alert error">{err}</div>}
 
       <div className="tipo-grid">
-        {TIPOS.map((t) => {
+        {TIPOS.filter((t) => !t.hidden).map((t) => {
           const s = stats(t.type);
           const usable = s.total > 0;
           return (

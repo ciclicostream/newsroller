@@ -4,6 +4,7 @@ import { getSupabase } from "../db/supabase.js";
 import { requireAuth, requirePerm } from "../auth/middleware.js";
 import { syncShorts, searchUploads } from "../content/youtube.js";
 import { efemeridesDeWikipedia } from "../content/wikipedia.js";
+import { searchMusic, importRemote } from "../content/music.js";
 import { logActivity } from "../activity.js";
 import { registerFile } from "../media.js";
 import { env } from "../config/env.js";
@@ -203,6 +204,32 @@ export function contentRouter(): Router {
       res.json(results);
     } catch (e) {
       res.status(502).json({ error: e instanceof Error ? e.message : "error buscando" });
+    }
+  });
+
+  // ---- Audio de Listas: buscar un tema (Deezer, respaldo iTunes) e importar su preview al bucket "media" ----
+  r.get("/music-search", requirePerm("contenidos"), async (req, res) => {
+    const q = typeof req.query.q === "string" ? req.query.q : "";
+    try {
+      res.json(await searchMusic(q));
+    } catch (e) {
+      res.status(502).json({ error: e instanceof Error ? e.message : "error buscando" });
+    }
+  });
+
+  // Copia el preview (o la tapa) al bucket "media": el link original vence. Devuelve la URL pública propia.
+  r.post("/music-import", requirePerm("contenidos"), async (req, res) => {
+    const { url, kind } = req.body ?? {};
+    if (typeof url !== "string" || (kind !== "audio" && kind !== "image")) return res.status(400).json({ error: "faltan datos" });
+    try {
+      const { buffer, contentType, ext } = await importRemote(url, kind);
+      const path = `music/${Date.now()}-${crypto.randomUUID()}.${ext}`;
+      const { error } = await sb().storage.from("media").upload(path, buffer, { contentType, upsert: false });
+      if (error) return res.status(500).json({ error: error.message });
+      await registerFile(sb(), { bucket: "media", path, name: `${kind === "audio" ? "preview" : "tapa"}.${ext}`, mime: contentType, size: buffer.length, uploaded_by: req.user!.id, source: "placa" });
+      res.json({ url: publicUrl("media", path) });
+    } catch (e) {
+      res.status(502).json({ error: e instanceof Error ? e.message : "no se pudo importar" });
     }
   });
 

@@ -7,7 +7,7 @@ export const ORIENTATION: "horizontal" | "vertical" = IS_VERTICAL ? "vertical" :
 
 // Qué contenidos tienen versión vertical. Se va ampliando a medida que se aprueba el diseño de cada placa.
 // Lo que no la tiene se saltea en la rotación del output vertical (cámaras: nunca; Video Full y Publicidad Full: sólo con versión vertical).
-const VERTICAL_READY = new Set(["placas", "ultima_hora", "shorts", "promos", "declaraciones", "dolar", "cifras", "clima", "efemerides", "informe", "cartelera"]);
+const VERTICAL_READY = new Set(["placas", "ultima_hora", "shorts", "promos", "declaraciones", "dolar", "cifras", "clima", "efemerides", "informe", "cartelera", "lista", "retro"]);
 export function supportsVertical(type: string, data: Record<string, any> | null | undefined): boolean {
   if (type === "publicidad") return (data?.format ?? "vertical") === "vertical" || !!data?.vertical_url || !!data?.vertical_yt;
   if (type === "video_full") return !!data?.vertical_url || !!data?.vertical_yt;

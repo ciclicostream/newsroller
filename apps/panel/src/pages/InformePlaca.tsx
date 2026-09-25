@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { PreviewMonitor } from "../components/PreviewMonitor";
+import { InformesSwitch } from "../components/InformesSwitch";
 import { Plus, Trash2, Check, X, Loader2, ListOrdered, Pencil } from "lucide-react";
 import type { ContentItem, InformeData } from "@newsroller/shared";
 import { contentItems } from "../lib/content-items";
@@ -93,10 +94,12 @@ export function InformePlaca() {
     <>
       <div className="page-head pm-head">
         <div>
-          <h1>Informe Cíclico</h1>
+          <h1>Informes</h1>
           <p>Carrusel de hasta {MAX_SLIDES} slides (imágenes 4:5) con título fijo mientras rotan solas.</p>
         </div>
       </div>
+
+      <InformesSwitch active="informe" />
 
       {err && <div className="alert error">{err}</div>}
       {msg && <div className="alert">{msg}</div>}
