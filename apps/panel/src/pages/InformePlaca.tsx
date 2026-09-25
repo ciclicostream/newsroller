@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { PreviewMonitor } from "../components/PreviewMonitor";
-import { InformesSwitch } from "../components/InformesSwitch";
+import { InformesSwitch } from "../components/PlacaSwitch";
 import { Plus, Trash2, Check, X, Loader2, ListOrdered, Pencil } from "lucide-react";
 import type { ContentItem, InformeData } from "@newsroller/shared";
 import { contentItems } from "../lib/content-items";

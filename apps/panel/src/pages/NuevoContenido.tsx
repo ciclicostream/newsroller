@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { Construction, Trash2 } from "lucide-react";
 import type { ContentItem } from "@newsroller/shared";
-import { TIPOS, TIPO_BY_KEY } from "../lib/tipos";
+import { TIPOS, TIPO_BY_KEY, CARD_OF } from "../lib/tipos";
 import { contentItems } from "../lib/content-items";
 import { parrilla } from "../lib/parrilla";
 import { UltimaHora } from "./UltimaHora";
@@ -62,14 +62,15 @@ export function ContenidoNav({ active }: { active: string }) {
   return (
       <nav className="tpl-subnav" aria-label="Plantillas">
         {TIPOS.filter((t) => !t.hidden).map((t) => {
-          // Informes reúne al Carrusel y a la Lista: se ilumina si cualquiera de los dos está en la parrilla o en edición.
-          const isInformes = t.type === "informe";
-          const air = inGrid.has(t.type) || (isInformes && inGrid.has("lista"));
+          // Una card puede reunir varios tipos (Informes: Carrusel y Lista; Efemérides: Efemérides y Retro):
+          // se ilumina si cualquiera de ellos está en la parrilla o en edición.
+          const kids = Object.keys(CARD_OF).filter((k) => CARD_OF[k] === t.type);
+          const air = inGrid.has(t.type) || kids.some((k) => inGrid.has(k));
           return (
             <Link
               key={t.type}
               to={`/contenido/${t.type}`}
-              className={"tpl-chip" + (t.type === active || (isInformes && active === "lista") ? " active" : "") + (air ? " on-air" : "")}
+              className={"tpl-chip" + (t.type === active || CARD_OF[active] === t.type ? " active" : "") + (air ? " on-air" : "")}
               title={t.desc}
             >
               <span className="tpl-chip-ic"><t.Icon size={16} /></span>

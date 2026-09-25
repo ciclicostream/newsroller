@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { PreviewMonitor } from "../components/PreviewMonitor";
+import { EfemeridesSwitch } from "../components/PlacaSwitch";
 import { Plus, Trash2, Check, X, Loader2, Tv, Pencil } from "lucide-react";
 import type { ContentItem, RetroData } from "@newsroller/shared";
 import { contentItems } from "../lib/content-items";
@@ -118,10 +119,12 @@ export function RetroPlaca() {
     <>
       <div className="page-head pm-head">
         <div>
-          <h1>Retro</h1>
-          <p>Un programa viejo: imagen o video con año, título y descripción.</p>
+          <h1>Efemérides</h1>
+          <p>Retro: un programa viejo, con imagen o video, año, título y descripción.</p>
         </div>
       </div>
+
+      <EfemeridesSwitch active="retro" />
 
       {err && <div className="alert error">{err}</div>}
       {msg && <div className="alert">{msg}</div>}

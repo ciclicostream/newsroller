@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { PreviewMonitor } from "../components/PreviewMonitor";
+import { EfemeridesSwitch } from "../components/PlacaSwitch";
 import { Plus, Trash2, Check, X, Loader2, CalendarDays, Pencil, Globe, ChevronLeft, ChevronRight, Image as ImageIcon } from "lucide-react";
 import type { ContentItem, EfemeridesData, EfemeridesEntry } from "@newsroller/shared";
 import { formatEfemeridesDate } from "@newsroller/shared";
@@ -200,6 +201,8 @@ export function Efemerides() {
           <p>"Un día como hoy": título, cuerpo y foto/video son obligatorios. La fecha puede ser exacta, sólo mes o sólo año.</p>
         </div>
       </div>
+
+      <EfemeridesSwitch active="efemerides" />
 
       {err && <div className="alert error">{err}</div>}
       {msg && <div className="alert">{msg}</div>}

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { PreviewMonitor } from "../components/PreviewMonitor";
-import { InformesSwitch } from "../components/InformesSwitch";
+import { InformesSwitch } from "../components/PlacaSwitch";
 import { Plus, Trash2, Check, X, Loader2, ListChecks, Pencil, ArrowUp, ArrowDown, Search, Play, Pause, Music } from "lucide-react";
 import type { ContentItem, ListaData, ListaItem } from "@newsroller/shared";
 import { LISTA_MAX_ITEMS } from "@newsroller/shared";
