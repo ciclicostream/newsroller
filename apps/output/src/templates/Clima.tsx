@@ -17,7 +17,7 @@ import { IS_VERTICAL } from "../lib/orientation";
 // editor puede reemplazarla desde Ajustes (settings.climaIcons). Si un slot no tiene ninguna, se usa
 // la del slot de reserva (ej. niebla → nublado).
 const DEFAULT_BIG = (k: ClimaSlotKey) => `${import.meta.env.BASE_URL}clima/big-${k}.png`;
-function resolveBig(key: ClimaSlotKey, custom: ClimaIconsConfig): string {
+export function resolveBig(key: ClimaSlotKey, custom: ClimaIconsConfig): string {
   let k: ClimaSlotKey | null = key;
   const seen = new Set<string>();
   while (k && !seen.has(k)) {
@@ -30,10 +30,23 @@ function resolveBig(key: ClimaSlotKey, custom: ClimaIconsConfig): string {
   return DEFAULT_BIG("nublado");
 }
 
-const ICON: Record<ClimaIconKey, string> = {
+export const CLIMA_ICON: Record<ClimaIconKey, string> = {
   soleado: icSoleado, nublado: icNublado, lluvia: icLluvia,
   llovizna: icLlovizna, nieve: icNieve, tormenta: icTormenta,
 };
+
+// Íconos BIG cargados en Ajustes: hasta saber cuáles hay no se muestra ninguno (si no, se ve primero el
+// predeterminado de fábrica y después el que cargó el editor). Lo usan las dos colecciones.
+export function useClimaIcons(): { custom: ClimaIconsConfig; loaded: boolean } {
+  const [custom, setCustom] = useState<ClimaIconsConfig>({});
+  const [loaded, setLoaded] = useState(false);
+  useEffect(() => {
+    let on = true;
+    fetch(`${API_BASE}/api/settings`).then((r) => r.json()).then((s) => { if (!on) return; setCustom(s?.climaIcons ?? {}); setLoaded(true); }).catch(() => on && setLoaded(true));
+    return () => { on = false; };
+  }, []);
+  return { custom, loaded };
+}
 
 const DIAS = ["DOM", "LUN", "MAR", "MIÉ", "JUE", "VIE", "SÁB"];
 
@@ -50,15 +63,7 @@ export function Clima({ data, live, durationSec }: { data: ClimaData; live?: Cli
 
   const [play, setPlay] = useState(false);
   const [exiting, setExiting] = useState(false);
-  const [custom, setCustom] = useState<ClimaIconsConfig>({});
-  // Los íconos BIG se cargan en Ajustes; hasta saber cuáles hay cargados no se muestra ninguno
-  // (si no, se ve primero el predeterminado de fábrica y después el que cargó el editor).
-  const [iconsLoaded, setIconsLoaded] = useState(false);
-  useEffect(() => {
-    let on = true;
-    fetch(`${API_BASE}/api/settings`).then((r) => r.json()).then((s) => { if (!on) return; setCustom(s?.climaIcons ?? {}); setIconsLoaded(true); }).catch(() => on && setIconsLoaded(true));
-    return () => { on = false; };
-  }, []);
+  const { custom, loaded: iconsLoaded } = useClimaIcons();
   useEffect(() => {
     const id = requestAnimationFrame(() => setPlay(true));
     return () => cancelAnimationFrame(id);
@@ -119,7 +124,7 @@ export function Clima({ data, live, durationSec }: { data: ClimaData; live?: Cli
         const label = i === 0 ? "HOY" : i === 1 ? "MAÑANA" : DIAS[new Date(d.date + "T12:00:00").getDay()];
         return (
           <div key={d.date} className={`cw-day cw-day-d${i + 1} cw-flip`}>
-            <img className="cw-day-ic" src={ICON[dKey]} alt="" />
+            <img className="cw-day-ic" src={CLIMA_ICON[dKey]} alt="" />
             <div className="cw-day-tmp">{d.max ?? "--"}°</div>
             <div className="cw-day-name">{label}</div>
           </div>

@@ -37,6 +37,9 @@ const DEMOS: Record<string, { type: string; data: Record<string, any>; dur?: num
     type: "cartelera", dur: 12,
     data: { kind: "teatro", photo_url: "https://picsum.photos/seed/teatro/1600/900", title: "¡Oh cabezas locas de las religiosas!", author: "Mía Micelli", cast: "Ana Luz Camps, Melina Del Valle Villar, Miranda Di Lorenzo, Agustín Gagliardi, Mía Miceli", venue: "Espacio Callejón", address: "Humahuaca 3759", city: "Almagro - CABA", days: "Sábados", time: "16:00 hs" },
   },
+  clima: { type: "clima", dur: 12, data: { city: "Buenos Aires" } },
+  clima_lluvia: { type: "clima", dur: 12, data: { city: "Posadas" } },
+  clima_largo: { type: "clima", dur: 12, data: { city: "San Fernando del Valle de Catamarca" } },
   dolar: {
     type: "dolar", dur: 12,
     data: { casas: ["oficial", "blue", "bolsa"] },
@@ -188,7 +191,9 @@ function DemoStage({ id }: { id: string }) {
   const [loop, setLoop] = React.useState(0);
   const [live, setLive] = React.useState<Record<string, unknown>>({});
   React.useEffect(() => {
-    fetch(`${API_DEMO}/api/data/dolar`).then((r) => r.json()).then((d) => setLive({ dolar: d?.payload })).catch(() => {});
+    for (const k of ["dolar", "clima"]) {
+      fetch(`${API_DEMO}/api/data/${k}`).then((r) => r.json()).then((d) => setLive((l) => ({ ...l, [k]: d?.payload }))).catch(() => {});
+    }
   }, []);
   React.useEffect(() => {
     const fit = () => setScale(fitScale());
