@@ -48,6 +48,12 @@ function Rain() {
 export function Clima({ data, live, durationSec }: { data: ClimaData; live?: ClimaPayload; durationSec?: number }) {
   const { cls } = useLife(durationSec, 1.1);
   const { custom, loaded } = useClimaIcons();
+  // Franja del estado: velocidad pareja y lenta (~45 px/s) sea cual sea el largo del texto (se mide la mitad del recorrido).
+  const trkRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = trkRef.current;
+    if (el) el.style.animationDuration = `${Math.max(20, Math.round(el.scrollWidth / 2 / 45))}s`;
+  });
   const c: ClimaCiudad | undefined = useMemo(() => live?.cities.find((x) => x.city === data.city) ?? live?.cities[0], [live, data.city]);
 
   if (!c) {
@@ -94,7 +100,7 @@ export function Clima({ data, live, durationSec }: { data: ClimaData; live?: Cli
             </div>
           </div>
         </div>
-        <div className="nmw-tk"><div className="nmw-trk">{items}{items}</div></div>
+        <div className="nmw-tk"><div className="nmw-trk" ref={trkRef}>{items}{items}</div></div>
         <div className="nmw-days">
           {days.map((d, i) => (
             <div key={d.date} className="nmw-d" style={{ ["--dl" as string]: `${1.25 + i * 0.15}s`, ["--xo" as string]: `${0.2 - i * 0.1}s` }}>
@@ -153,11 +159,13 @@ const CSS = `
 
 /* Franja del estado actual: del borde izquierdo de la card principal al borde derecho de la de datos.
    Mismo tratamiento que los tickers de la casa: barra blanca, sombra interna y extremos oscurecidos. */
-.nmw-tk{position:absolute;left:520px;top:570px;width:1304px;height:74px;border-radius:8px;overflow:hidden;display:flex;align-items:center;background:#fff;
-  box-shadow:inset 0 0 24px rgba(0,0,0,.28),inset 0 2px 6px rgba(0,0,0,.2),0 26px 50px -20px rgba(0,0,0,.8)}
-.nmw-tk::before,.nmw-tk::after{content:"";position:absolute;top:0;bottom:0;width:140px;z-index:2;pointer-events:none}
-.nmw-tk::before{left:0;background:linear-gradient(90deg,rgba(0,0,0,.5) 0%,rgba(0,0,0,.18) 45%,rgba(0,0,0,0) 100%)}
-.nmw-tk::after{right:0;background:linear-gradient(270deg,rgba(0,0,0,.5) 0%,rgba(0,0,0,.18) 45%,rgba(0,0,0,0) 100%)}
+.nmw-tk{position:absolute;left:520px;top:570px;width:1304px;height:74px;overflow:hidden;display:flex;align-items:center;background:#fff;
+  box-shadow:inset 0 0 24px rgba(0,0,0,.28),inset 0 2px 6px rgba(0,0,0,.2);
+  -webkit-mask-image:linear-gradient(90deg,transparent 0,#000 13%,#000 87%,transparent 100%);mask-image:linear-gradient(90deg,transparent 0,#000 13%,#000 87%,transparent 100%)}
+/* Extremos bien marcados: la barra se oscurece y a la vez se vuelve transparente hacia los bordes. */
+.nmw-tk::before,.nmw-tk::after{content:"";position:absolute;top:0;bottom:0;width:26%;z-index:2;pointer-events:none}
+.nmw-tk::before{left:0;background:linear-gradient(90deg,rgba(2,6,20,.95) 0%,rgba(2,6,20,.6) 35%,rgba(2,6,20,0) 100%)}
+.nmw-tk::after{right:0;background:linear-gradient(270deg,rgba(2,6,20,.95) 0%,rgba(2,6,20,.6) 35%,rgba(2,6,20,0) 100%)}
 .nmw-trk{display:flex;align-items:center;white-space:nowrap;will-change:transform;animation:nm-tick 40s linear infinite}
 .nmw-trk span{display:flex;align-items:center;gap:14px;padding:0 28px;font-family:var(--display);font-weight:800;font-stretch:112%;font-size:26px;letter-spacing:.24em;text-transform:uppercase;color:#0A1433}
 .nmw-trk span::after{content:"";width:6px;height:6px;border-radius:50%;background:rgba(10,20,51,.25);margin-left:14px}
