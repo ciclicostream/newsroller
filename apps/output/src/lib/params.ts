@@ -12,21 +12,19 @@ export function slugFromPath(): string {
   return slug && slug !== "index.html" && !slug.includes("/") ? slug : "";
 }
 
+// Link del canal (/output/<slug>): orientación, audio y la clave de Stream (para pasar a Stream cuando el Host
+// transmite). La colección no viene acá: es la de la suite activa.
 export interface LinkConfig {
-  target: "emision" | "sesion" | "stream";
-  session?: string | null;
-  key?: string | null;
   orientation: "horizontal" | "vertical";
   audio: boolean;
-  style?: string | null;
+  key?: string | null;
 }
 
-// Vuelca la configuración de un link con nombre sobre P, con los mismos nombres que usan los links viejos.
+// Vuelca la configuración del link sobre P, con los mismos nombres que usan los links viejos.
+// `?mute` (monitores del panel) gana sobre el audio del link: el monitor AIRE no debe sonar en el panel.
 export function applyLinkConfig(c: LinkConfig): void {
   if (c.orientation === "vertical") P.set("orientation", "vertical");
-  if (c.audio) P.set("audio", "1");
-  if (c.style) P.set("style", c.style);
-  if (c.target === "sesion" && c.session) P.set("session", c.session);
-  if (c.target === "stream" && c.key) { P.set("radio", "1"); P.set("key", c.key); }
-  P.set("link", "1"); // abierto por link con nombre (no es un link viejo)
+  if (c.audio && !P.has("mute")) P.set("audio", "1");
+  if (c.key) P.set("key", c.key);
+  P.set("canal", "1"); // salida del canal: Copiloto, o Stream mientras el Host transmite
 }

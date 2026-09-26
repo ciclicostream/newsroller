@@ -3,6 +3,7 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import { Output } from "./Output";
 import { RadioOutput } from "./RadioOutput";
+import { CanalOutput } from "./CanalOutput";
 import { Preview, DraftPreview } from "./Preview";
 import { ItemView } from "./collections";
 import { fitScale, stageStyle } from "./lib/orientation";
@@ -184,6 +185,6 @@ function DemoStage({ id }: { id: string }) {
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    {radio ? <RadioOutput /> : demo ? <DemoStage id={demo} /> : draft ? <DraftPreview /> : preview ? <Preview id={preview} /> : <Output />}
+    {P.has("canal") ? <CanalOutput /> : radio ? <RadioOutput /> : demo ? <DemoStage id={demo} /> : draft ? <DraftPreview /> : preview ? <Preview id={preview} /> : <Output />}
   </React.StrictMode>,
 );

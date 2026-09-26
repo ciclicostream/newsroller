@@ -127,21 +127,20 @@ Todos los contenidos tienen además una **Duración** (manual, en segundos). Los
 | | Versión vertical | Manual | Para el output 9:16 |
 | | Nombre | Automático, editable | Título de YouTube |
 
-## Suites y colecciones
-
-Una **suite** es un link de salida con nombre, por ejemplo `newsroll.somosciclico.com/output/clasicociclico`. Cada suite guarda qué emite (Emisión, una Sesión o Stream), la orientación (16:9 o 9:16), si lleva audio y la **colección de templates** (Clásicas, Modernas y las que se sumen). La dirección no muestra ninguna de esas variables: se ven y se cambian sólo desde el panel.
+## Suites y la salida del canal
 
 | Qué | Cómo funciona |
 |---|---|
-| Colecciones | Juegos completos de templates, cada uno en 16:9 y 9:16. En un mismo output no se mezclan. |
-| Habilitar colecciones | El Master elige cuáles se pueden usar, en Ajustes → Suites. |
-| Crear una suite | Desde el Generador de links (debajo del monitor en Emisión, en cada Sesión y en Stream). Sin nombre, el sistema le pone un código de 10 caracteres. |
-| Colección de una suite | La elige o la cambia un Administrador o el Master. Si la crea otro rol, sale con la colección por defecto. |
-| Cambiar la colección | En Ajustes → Suites. No cambia el link: el cambio entra en el próximo contenido de todos los outputs que usan esa suite, también el Stream. |
-| Otra opción | Crear una suite nueva (por ejemplo `navidad2026`) con otra colección y cargar ese link en OBS/vMix. |
-| Qué suite se opera | El monitor del Copiloto y el de Stream tienen un selector con las suites; muestran el contenido con la colección de la suite elegida. |
+| Colección | Juego completo de templates (Clásicas, Modernas y las que se sumen), cada uno en 16:9 y 9:16. En una salida no se mezclan. |
+| Suite | Un nombre con una colección, por ejemplo `clasica` o `navidad2026`. |
+| Suite activa | Siempre hay una sola. La salida del canal emite con su colección. El Programador y el Host ven su nombre en el monitor del Copiloto y en el de Stream, pero no la pueden cambiar. |
+| Quién maneja las suites | El Administrador y el Master, en Ajustes → Suites: crean suites, les cambian la colección y eligen cuál está activa. Activar otra suite o cambiarle la colección entra en el próximo contenido. |
+| Colecciones habilitadas | El Master elige cuáles se pueden usar en las suites. |
+| Salida del canal | Una sola señal: la parrilla del Copiloto y, mientras el Host tiene Stream abierto, el Stream. Al cerrar Stream vuelve sola al Copiloto. Las Sesiones salen sólo dentro de la parrilla. |
+| Links del canal | Dos, fijos: uno horizontal y uno vertical (`/output/ciclico` y `/output/ciclico-vertical`). Se cargan una vez en OBS/vMix y no se tocan: siempre usan la suite activa. |
+| Qué se puede cambiar de un link | En Ajustes → Suites: prender o apagar el audio, cambiarle el nombre o regenerarlo si se filtró. En los dos últimos casos el link viejo deja de emitir. |
 | Vistas previas | El monitor de cada formulario de Contenidos tiene un selector para ver la placa con cada colección habilitada. |
-| Links viejos | Los links con variables (`/output/?orientation=…`) se apagan en Ajustes → Suites cuando todos los OBS/vMix usan suites. |
+| Links viejos | Los links con variables (`/output/?orientation=…`, de sesiones o de Stream) se apagan en Ajustes → Suites cuando todos los OBS/vMix usan los links del canal. |
 
 ## Roles de usuarios
 
@@ -165,8 +164,9 @@ Cada persona entra al panel con un rol. El servidor controla los permisos: aunqu
 | Operar Stream (micrófono, cámara, botonera) | Sí | Sí | Sí | Sí | — |
 | Ver y editar sus sesiones asignadas | Sí | Sí | Sí | Sí | Sí |
 | Crear o borrar sesiones y asignar quién las maneja | Sí | Sí | — | — | — |
-| Crear suites (links de salida) | Sí | Sí | Sí | Sí | Sí (de sus sesiones) |
-| Elegir o cambiar la colección de una suite | Sí | Sí | — | — | — |
+| Ver la suite activa | Sí | Sí | Sí | Sí | — |
+| Crear suites, cambiarles la colección y activarlas | Sí | Sí | — | — | — |
+| Links del canal: audio, nombre y regenerar | Sí | Sí | — | — | — |
 | Habilitar colecciones de templates | Sí | — | — | — | — |
 | Cámaras | Sí | Sí | Sí | Sí | — |
 | Fuentes de datos (estado de las APIs) | Sí | — | Sí | Sí | — |

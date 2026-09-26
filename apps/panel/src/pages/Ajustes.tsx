@@ -75,7 +75,7 @@ export function Ajustes() {
             <span className="tipo-ic"><Palette size={22} /></span>
             <span className="tipo-main">
               <span className="tipo-name">Suites</span>
-              <span className="tipo-desc">Colección de templates de cada link de salida</span>
+              <span className="tipo-desc">Suite activa, colecciones y links del canal</span>
             </span>
           </Link>
         )}

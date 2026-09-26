@@ -1,11 +1,10 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { FilePlus2, Link2, Loader2, Pencil, Plus, Trash2, Users as UsersIcon } from "lucide-react";
+import { FilePlus2, Loader2, Pencil, Plus, Trash2, Users as UsersIcon } from "lucide-react";
 import { ROLE_LABEL } from "@newsroller/shared";
 import { useAuth } from "../auth/AuthProvider";
 import { api } from "../lib/api";
 import { sessions, type SessionRow } from "../lib/sessions";
-import { OutputLinksPicker } from "../components/OutputLinksPicker";
 import { toast } from "../lib/toast";
 
 interface UserRow { id: string; email: string | null; full_name: string | null; role: string }
@@ -114,7 +113,7 @@ function fmtDur(sec: number): string {
   return `${m}:${String(s).padStart(2, "0")}`;
 }
 
-type Expand = "links" | "rename" | "manage" | null;
+type Expand = "rename" | "manage" | null;
 
 function SessionCard({ s, isAdmin, mine, people, busy, onToggle, busyAvail, onSetAvailable, onRename, onSaveManagers, onRemove }: {
   s: SessionRow; isAdmin: boolean; mine: boolean; people: UserRow[]; busy: boolean;
@@ -148,7 +147,6 @@ function SessionCard({ s, isAdmin, mine, people, busy, onToggle, busyAvail, onSe
           <span className="sess-num" title="Contenidos"><FilePlus2 size={13} /> {s.item_count}</span>
           <span className="sess-num" title="Duración total">{fmtDur(s.total_duration_sec)} total</span>
           <span className="sess-sep" />
-          {canManage && <button className={"sess-icon" + (expand === "links" ? " on" : "")} onClick={(e) => stop(e, () => toggleExpand("links"))} title="Enlaces para transmitir"><Link2 size={16} /></button>}
           {canManage && (
             <button className={"sw-toggle" + (available ? " on" : "")} disabled={busyAvail} onClick={(e) => stop(e, onSetAvailable)} aria-pressed={available}
               title={available ? "Disponible en Contenidos de Emisión — click para sacarla" : "No aparece en Contenidos de Emisión — click para ofrecerla"} />
@@ -156,7 +154,6 @@ function SessionCard({ s, isAdmin, mine, people, busy, onToggle, busyAvail, onSe
           {isAdmin && <button className="sess-icon danger" onClick={(e) => stop(e, onRemove)} title="Borrar"><Trash2 size={16} /></button>}
         </div>
       </div>
-      {expand === "links" && canManage && <div style={{ marginTop: 12 }} onClick={(e) => e.stopPropagation()}><OutputLinksPicker target="sesion" sessionId={s.id} /></div>}
       {expand === "rename" && isAdmin && <RenameInline name={s.name} onSave={onRename} onDone={() => setExpand(null)} />}
       {expand === "manage" && isAdmin && <ManageInline session={s} people={people} onSave={onSaveManagers} onDone={() => setExpand(null)} />}
     </div>

@@ -11,7 +11,6 @@ import { contentItems as contentItemsApi } from "../lib/content-items";
 import { camerasApi, youtubeTitle } from "../lib/cameras";
 import { sessions, type SessionRow } from "../lib/sessions";
 import { OUTPUT_FRAME_BASE } from "../lib/parrilla";
-import { OutputLinksPicker } from "../components/OutputLinksPicker";
 import { AvailablePanel } from "../components/AvailablePanel";
 import { PlaylistRows } from "../components/PlaylistRows";
 import { toast } from "../lib/toast";
@@ -203,7 +202,6 @@ export function SesionEditor() {
             </div>
           </div>
 
-          <OutputLinksPicker title="Enlaces para transmitir esta sesión" target="sesion" sessionId={id} />
         </div>
       </div>
     </div>

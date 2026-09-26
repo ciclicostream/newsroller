@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
-import { DEFAULT_COLLECTION, TEMPLATE_COLLECTIONS, collectionById, type TemplateCollection } from "@newsroller/shared";
+import { DEFAULT_COLLECTION, TEMPLATE_COLLECTIONS, activeSuiteOf, collectionById, type Suite, type TemplateCollection } from "@newsroller/shared";
 import { settingsApi } from "./settings";
 
-// Colecciones habilitadas por el Master (Ajustes → Suites). La primera es la que reciben las suites nuevas por defecto.
+// Colecciones habilitadas por el Master (Ajustes → Suites).
 let cache: string[] | null = null;
 export function useEnabledCollections(): TemplateCollection[] {
   const [ids, setIds] = useState<string[]>(cache ?? [DEFAULT_COLLECTION]);
@@ -31,4 +31,17 @@ export function useMonitorCollection(): [string, (id: string) => void] {
     window.dispatchEvent(new Event(EVT));
   }, []);
   return [v, set];
+}
+
+// Suite activa (la que usa la salida del canal). El Programador y el Host ven sólo su nombre.
+export function useActiveSuite(): Suite | null {
+  const [suite, setSuite] = useState<Suite | null>(null);
+  useEffect(() => {
+    let on = true;
+    const load = () => settingsApi.get().then((s) => { if (on) setSuite(activeSuiteOf(s)); }).catch(() => {});
+    void load();
+    const t = setInterval(load, 30_000);
+    return () => { on = false; clearInterval(t); };
+  }, []);
+  return suite;
 }

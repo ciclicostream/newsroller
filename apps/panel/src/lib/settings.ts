@@ -1,5 +1,5 @@
 import { api } from "./api";
-import type { Plataforma, MusicSettings } from "@newsroller/shared";
+import type { Plataforma, MusicSettings, Suite } from "@newsroller/shared";
 
 export interface AppSettings {
   tickerSpeed: number; // segundos por vuelta del newsticker (mayor = más lento)
@@ -10,7 +10,9 @@ export interface AppSettings {
   climaIcons?: Record<string, string>; // íconos BIG del clima cargados en Ajustes ({slot: url})
   airPausedAt: string; // ISO del corte de emisión ("" = al aire); congela el reloj
   music?: MusicSettings; // música de fondo continua (Ajustes → Música + toggle en el Monitor de Emisión)
-  collections?: string[]; // colecciones de templates habilitadas por el Master (la primera: la de las suites nuevas)
+  collections?: string[]; // colecciones de templates habilitadas por el Master
+  suites?: Suite[]; // suites (nombre + colección)
+  activeSuite?: string; // id de la suite activa: la salida del canal emite con su colección
   legacyLinks?: boolean; // false = los links viejos con variables ya no emiten
 }
 

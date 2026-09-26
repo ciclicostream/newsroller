@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Mic, MicOff, Square, Play, Power, Search, Tv, Volume2, VolumeX, RectangleHorizontal, RectangleVertical,
-  LayoutGrid, RadioTower, X, Camera as CameraIcon, CameraOff, PictureInPicture2, Maximize, Link2, Music,
+  LayoutGrid, RadioTower, X, Camera as CameraIcon, CameraOff, PictureInPicture2, Maximize, Music,
 } from "lucide-react";
 import type { Camera, ContentItem } from "@newsroller/shared";
 import { useMonitorAudio } from "../lib/monitorAudio";
@@ -13,9 +13,7 @@ import { sessions as sessionsApi, type SessionRow } from "../lib/sessions";
 import { contentItems as contentItemsApi } from "../lib/content-items";
 import { camerasApi } from "../lib/cameras";
 import { createRadioLink, radioApi, type RadioConfig, type RadioLink } from "../lib/radioLink";
-import { OutputLinksPicker } from "../components/OutputLinksPicker";
-import { useOperatingSuite } from "../lib/suites";
-import { collectionLabel } from "../lib/collections";
+import { useActiveSuite } from "../lib/collections";
 import offAir from "../assets/off-air.jpg";
 import { CAT, CAT_ICON, CAT_ORDER, SESSION_COLOR, SESSION_ICON, TYPE_LABEL, catOf, iconOf, itemText } from "../lib/contentCatalog";
 
@@ -110,16 +108,6 @@ function CamVideo({ stream, className }: { stream: MediaStream; className?: stri
   return <video ref={r} className={className} autoPlay muted playsInline />;
 }
 
-// Enlace del output de Stream para OBS/vMix: link con nombre; la clave la pone el server (nunca va en la URL).
-function LinkBox({ cfg }: { cfg: RadioConfig | null }) {
-  return (
-    <div className="rd-linkbox">
-      <OutputLinksPicker target="stream" fixedAudio />
-      <p className="rd-linknote">Pegalo como Browser Source en OBS o como Web Browser Input en vMix (1920×1080, o 1080×1920 en vertical). No lo compartas: cualquiera con el link ve el Stream.{cfg && !cfg.turn ? " Sin servidor TURN configurado: funciona en la misma red o en redes abiertas; entre tu casa y el estudio puede fallar." : ""}</p>
-    </div>
-  );
-}
-
 function CardHead({ icon: I, title, children }: { icon: any; title: string; children?: React.ReactNode }) {
   return (
     <div className="rd-hd">
@@ -153,7 +141,6 @@ export function Radio() {
   const live = txStart != null;
   const [cfg, setCfg] = useState<RadioConfig | null>(null);
   const [viewers, setViewers] = useState(0); // outputs del estudio conectados al enlace
-  const [showLink, setShowLink] = useState(false);
   const [musicOn, toggleMusic] = useStoredFlag("nr.radio.music"); // música de fondo de Stream (el tema se elige en Ajustes → Música)
   const [hasTrack, setHasTrack] = useState(true);
   const [linkErr, setLinkErr] = useState<string | null>(null);
@@ -256,9 +243,9 @@ export function Radio() {
     return () => window.removeEventListener("keydown", onKey);
   }, [mic.toggle]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Suite de Stream que se está operando: el monitor la muestra con su colección de templates.
-  const { suites: streamSuites, suite: streamSuite, pick: pickStreamSuite } = useOperatingSuite("stream");
-  const orient = (monVertical ? "&orientation=vertical" : "") + (streamSuite ? `&style=${streamSuite.style}` : "");
+  // Suite activa: el Host ve con qué suite sale el canal (sólo el nombre; la cambia el Admin en Ajustes → Suites).
+  const activeSuite = useActiveSuite();
+  const orient = monVertical ? "&orientation=vertical" : "";
   const monUrl = cur && cur.kind !== "cam"
     ? cur.kind === "session"
       ? `${OUTPUT_FRAME_BASE}/output/?session=${cur.id}${monSound ? "&audio=1" : ""}${orient}`
@@ -325,15 +312,7 @@ export function Radio() {
               title={!hasTrack ? "Elegí un tema en Ajustes → Música primero" : musicOn ? "Apagar la música de fondo" : "Encender la música de fondo (se apaga sola con contenido con audio y baja con el micrófono)"}>
               <Music size={14} />
             </button>
-            {streamSuites.length > 0 && (
-              <select className="pv-suite" value={streamSuite?.slug ?? ""} onChange={(e) => pickStreamSuite(e.target.value)} title="Suite de Stream que estás operando" aria-label="Suite">
-                {streamSuites.map((l) => <option key={l.slug} value={l.slug}>{l.slug} · {collectionLabel(l.style)}</option>)}
-              </select>
-            )}
-            <button type="button" className={"pv-snd" + (showLink ? " on" : "")} onClick={() => setShowLink((v) => !v)} aria-pressed={showLink}
-              aria-label="Enlace para OBS o vMix" title="Enlace del output para OBS / vMix">
-              <Link2 size={14} />
-            </button>
+            {activeSuite && <span className="pv-suite" title="Suite con la que sale el canal">{activeSuite.name}</span>}
             <button type="button" className={"pv-snd" + (monSound ? " on" : "")} onClick={toggleMonSound} aria-pressed={monSound}
               aria-label={monSound ? "Silenciar el monitor" : "Escuchar el monitor"} title={monSound ? "Silenciar el monitor" : "Escuchar el monitor"}>
               {monSound ? <Volume2 size={14} /> : <VolumeX size={14} />}
@@ -343,7 +322,6 @@ export function Radio() {
               {monVertical ? <RectangleVertical size={14} /> : <RectangleHorizontal size={14} />}
             </button>
           </CardHead>
-          {showLink && <div className="pv-card rd-popover"><LinkBox cfg={cfg} /></div>}
           <div className={"pv-mon rd-mon" + (monVertical ? " v" : "")}>
             {cur?.kind === "cam" && cam.stream
               ? <CamVideo stream={cam.stream} className="rd-camfull" />

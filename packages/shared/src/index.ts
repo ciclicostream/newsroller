@@ -514,12 +514,10 @@ export interface PromosData {
   video_id: string; // id de YouTube
 }
 
-// ---- Colecciones de templates ----
-// Cada colección es un juego completo de templates, con versión 16:9 y 9:16; en un mismo output no se mezclan.
-// La colección es una variable de cada SUITE (link con nombre), como el audio o la orientación. El Master habilita
-// cuáles se pueden usar (Ajustes → Suites) y el Administrador elige la de cada suite. Para sumar una colección por
+// ---- Colecciones de templates y Suites ----
+// Colección: juego completo de templates, con versión 16:9 y 9:16 (en un output no se mezclan). Para sumar una por
 // programación: agregarla acá y registrar su renderizador en apps/output/src/collections. `ready: false` = sin
-// templates todavía (no se puede habilitar).
+// templates todavía (no se puede habilitar). El Master habilita cuáles se pueden usar (ajuste `collections`).
 export interface TemplateCollection { id: string; label: string; desc: string; ready: boolean }
 export const TEMPLATE_COLLECTIONS: TemplateCollection[] = [
   { id: "clasica", label: "Clásicas", desc: "Las templates de siempre: cards blancas sobre los fondos de cada sección.", ready: true },
@@ -528,20 +526,25 @@ export const TEMPLATE_COLLECTIONS: TemplateCollection[] = [
 export const DEFAULT_COLLECTION = "clasica";
 export const collectionById = (id: string | null | undefined): TemplateCollection | undefined => TEMPLATE_COLLECTIONS.find((c) => c.id === id);
 
-// ---- Suites: links de salida con nombre ----
-// Cada link es una SUITE: /output/<nombre> y su configuración (qué emite, orientación, audio y colección) guardada
-// en el server; se ve y se cambia sólo desde el panel. Cambiar la colección de una suite no cambia la URL y entra
-// en el próximo contenido de todos los outputs que la usan (también el Stream).
-export type OutputLinkTarget = "emision" | "sesion" | "stream";
+// Suite = nombre + colección. El Administrador o el Master las crean y activan en Ajustes → Suites. Siempre hay UNA
+// activa (ajuste `activeSuite`): la salida del canal emite con su colección, y el Programador y el Host ven su nombre.
+// Cambiar la suite activa o su colección entra en el próximo contenido.
+export interface Suite { id: string; name: string; style: string }
+export const SUITE_DEFAULT: Suite = { id: "clasica", name: "clasica", style: DEFAULT_COLLECTION };
+export const SUITE_NAME_RE = /^[a-z0-9][a-z0-9-]{1,39}$/; // 2 a 40: minúsculas, números y guiones
+export function activeSuiteOf(s: { suites?: unknown; activeSuite?: unknown } | null | undefined): Suite {
+  const list = Array.isArray(s?.suites) ? (s!.suites as Suite[]) : [];
+  return list.find((x) => x.id === s?.activeSuite) ?? list[0] ?? SUITE_DEFAULT;
+}
+
+// ---- Links del canal ----
+// La salida del canal es UNA sola señal (la parrilla del Copiloto; cuando el Host abre Stream, pasa a Stream) con dos
+// links fijos: uno horizontal y uno vertical, /output/<nombre>. No llevan colección: siempre usan la suite activa.
+// El Admin sólo puede prender o apagar el audio, cambiarles el nombre o regenerarlos si se filtran.
 export interface OutputLink {
-  slug: string;                            // nombre del link: /output/<slug>
-  label?: string | null;                   // descripción para el panel ("OBS estudio")
-  target: OutputLinkTarget;                // qué emite
-  session_id?: string | null;              // sólo target "sesion"
+  slug: string;
   orientation: "horizontal" | "vertical";
   audio: boolean;
-  style: string;                           // colección de templates de la suite
-  created_at?: string;
   updated_at?: string;
 }
 // 3 a 40 caracteres: minúsculas, números y guiones (sin guion al principio).
@@ -637,7 +640,7 @@ export interface ServerToClientEvents {
   "sources:status": (statuses: SourceStatus[]) => void;
   "settings:update": (settings: Record<string, unknown>) => void;
   "session:update": (s: { id: string; active: boolean; paused_at: string | null }) => void;
-  "link:update": (l: { slug: string }) => void; // cambió una suite: los outputs que la usan la vuelven a leer
+  "link:update": (l: { slug: string }) => void; // cambió un link del canal: los outputs que lo usan lo vuelven a leer
   // Stream (radio manual): estado que el Host manda al output y señalización WebRTC panel <-> output.
   "radio:state": (s: RadioState) => void;
   "radio:viewer": (id: string) => void; // (al Host) se conectó un output receptor
