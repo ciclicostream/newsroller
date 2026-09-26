@@ -13,7 +13,8 @@ import { boot } from "./boot";
 // (con el nombre viejo muestra el aviso de link inexistente).
 const valid = (s: unknown): s is string => typeof s === "string" && !!collectionById(s)?.ready;
 const LINK = boot.link;
-const PARAM = valid(P.get("style")) ? P.get("style")! : null;
+// Las vistas previas pueden pedir una colección todavía en preparación (para revisarla antes de habilitarla).
+const PARAM = collectionById(P.get("style")) ? P.get("style")! : null;
 
 let current: string = PARAM ?? (valid(boot.defaultCollection) ? boot.defaultCollection : DEFAULT_COLLECTION);
 const subs = new Set<(s: string) => void>();

@@ -5,6 +5,8 @@ import { useMonitorAudio } from "../lib/monitorAudio";
 import { api } from "../lib/api";
 import { OUTPUT_FRAME_BASE } from "../lib/parrilla";
 import { useEnabledCollections, useMonitorCollection } from "../lib/collections";
+import { TEMPLATE_COLLECTIONS } from "@newsroller/shared";
+import { useAuth } from "../auth/AuthProvider";
 
 // Monitor chico de edición: muestra en vivo cómo queda la placa con lo que se está
 // cargando en el formulario. Embebe el output (?draft=1) y le manda los datos por
@@ -23,7 +25,10 @@ export function PreviewMonitor({ type, data, dur, ready = true }: {
   const [sound, toggleSound] = useMonitorAudio();
   const [vertical, toggleVertical] = useMonitorVertical();
   // Colección con la que se ve la vista previa (entre las habilitadas; se recuerda en este navegador).
-  const cols = useEnabledCollections();
+  const enabledCols = useEnabledCollections();
+  // El Master también puede ver las colecciones que todavía no habilitó (para revisarlas antes).
+  const { can } = useAuth();
+  const cols = can("config_sistema") ? [...enabledCols, ...TEMPLATE_COLLECTIONS.filter((c) => !enabledCols.some((e) => e.id === c.id))] : enabledCols;
   const [colPref, setColPref] = useMonitorCollection();
   const col = cols.some((c) => c.id === colPref) ? colPref : cols[0]?.id ?? "";
   const [loaded, setLoaded] = useState(false); // el output avisó que está escuchando
@@ -95,7 +100,7 @@ export function PreviewMonitor({ type, data, dur, ready = true }: {
         <span className="pm-hd-r">
           {cols.length > 1 && (
             <select className="pm-col-sel" value={col} onChange={(e) => setColPref(e.target.value)} title="Colección de templates de la vista previa" aria-label="Colección">
-              {cols.map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}
+              {cols.map((c) => <option key={c.id} value={c.id}>{c.label}{enabledCols.some((e) => e.id === c.id) ? "" : " (en preparación)"}</option>)}
             </select>
           )}
           {saved && <button type="button" className="pm-back" onClick={() => setSelId(null)} title="Volver a lo que estoy cargando"><X size={12} /> Formulario</button>}

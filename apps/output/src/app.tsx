@@ -162,6 +162,8 @@ const DEMOS: Record<string, { type: string; data: Record<string, any>; dur?: num
   },
 };
 
+const DEMO_TIME = new Date().toISOString();
+
 function DemoStage({ id }: { id: string }) {
   const d = DEMOS[id] ?? DEMOS.ultima_hora;
   const DUR = d.dur ?? 8;
@@ -177,7 +179,7 @@ function DemoStage({ id }: { id: string }) {
   return (
     <div className="viewport">
       <div className="stage" style={stageStyle(scale)}>
-        <ItemView key={loop} type={d.type} data={d.data} durationSec={DUR} />
+        <ItemView key={loop} type={d.type} data={d.data} durationSec={DUR} createdAt={DEMO_TIME} updatedAt={DEMO_TIME} />
       </div>
     </div>
   );
