@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { P } from "../../lib/params";
 import { IS_VERTICAL } from "../../lib/orientation";
 
 // Base común de la colección "Modernas": fondo de tinta, paneles 3D con canto y reflejo, luces de entrada y salida,
@@ -42,6 +43,16 @@ export const NM_CSS = `
 @keyframes nm-lightUp{0%{opacity:0;filter:brightness(0)}45%{opacity:1;filter:brightness(2.4)}100%{opacity:1;filter:brightness(1)}}
 @keyframes nm-lightDown{0%{opacity:1;filter:brightness(1)}40%{opacity:1;filter:brightness(2.6)}100%{opacity:0;filter:brightness(3)}}
 @keyframes nm-sheen{0%{opacity:1;transform:translateX(-80%)}100%{opacity:1;transform:translateX(80%)}}
+
+/* Panel plano (de frente, sin canto): mismo material que la cara de los paneles 3D. */
+.nm-panel{position:absolute;border-radius:18px;overflow:hidden;
+  background:linear-gradient(155deg,rgba(26,46,104,.96) 0%,rgba(10,20,52,.97) 45%,rgba(6,12,34,.98) 100%);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.28),inset 0 0 0 1px rgba(127,162,255,.16),inset 0 -40px 80px -40px rgba(47,107,255,.25),0 50px 100px -30px rgba(0,0,0,.8)}
+.nm-panel.solid{background:linear-gradient(150deg,#4A82FF 0%,#2F6BFF 45%,#1C48C9 100%);box-shadow:inset 0 1px 0 rgba(255,255,255,.45),inset 0 0 0 1px rgba(255,255,255,.18),0 50px 100px -30px rgba(0,0,0,.8)}
+.nm-panel.paper{background:linear-gradient(160deg,#FFFFFF,#E6ECF8);color:#0A1433;box-shadow:inset 0 1px 0 #fff,0 0 0 1px rgba(255,255,255,.6),0 50px 100px -30px rgba(0,0,0,.8)}
+.nm-inner{position:absolute;inset:0;padding:44px 50px;display:flex;flex-direction:column;gap:18px}
+.nm-lab{font-family:var(--display);font-weight:700;font-stretch:115%;font-size:15px;letter-spacing:.28em;text-transform:uppercase;color:var(--mist)}
+.nm-caret{display:inline-block;width:.07em;height:.85em;margin-left:.04em;vertical-align:-.06em;animation:nm-blink .8s steps(1) infinite}
 
 /* Luces: columna de luz, halo y destello horizontal. */
 .nm-lights{position:absolute;inset:0;z-index:25;pointer-events:none;overflow:hidden}
@@ -190,3 +201,46 @@ export const horaCorta = (iso?: string): string => {
   const d = iso ? new Date(iso) : new Date();
   return Number.isNaN(d.getTime()) ? "" : `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
 };
+
+// Máquina de escribir: devuelve el texto escrito hasta ahora (arranca `startMs` después de montar o de cambiar el texto).
+export function useTypewriter(text: string, startMs: number, totalMs: number): string {
+  const [n, setN] = useState(0);
+  useEffect(() => {
+    setN(0);
+    const per = Math.max(12, Math.min(40, totalMs / Math.max(1, text.length)));
+    let iv: ReturnType<typeof setInterval> | undefined;
+    const t = setTimeout(() => { iv = setInterval(() => setN((k) => { if (k >= text.length) { clearInterval(iv); return k; } return k + 1; }), per); }, startMs);
+    return () => { clearTimeout(t); if (iv) clearInterval(iv); };
+  }, [text, startMs, totalMs]);
+  return text.slice(0, n);
+}
+
+// Cuenta 0→objetivo con ease-out, a partir de `delayMs`.
+// ?freeze (revisión de demos): los contadores muestran directo el valor final.
+const FREEZE = P.has("freeze");
+
+export function useCount(target: number, delayMs: number, ms = 1200): number {
+  const [v, setV] = useState(FREEZE ? target : 0);
+  useEffect(() => {
+    if (FREEZE) { setV(target); return; }
+    let raf = 0;
+    const t0 = performance.now() + delayMs;
+    const tick = (now: number) => {
+      const p = Math.min(1, Math.max(0, (now - t0) / ms));
+      setV(target * (1 - Math.pow(1 - p, 3)));
+      if (p < 1) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [target, delayMs, ms]);
+  return v;
+}
+
+// Punto de miles siempre (1.403) y coma decimal, con los decimales de `like` ("2,9" → 1 decimal).
+export function fmtNum(n: number, like = ""): string {
+  const m = /,(\d+)/.exec(like);
+  const dec = m ? Math.min(3, m[1]!.length) : 0;
+  const [int, frac] = n.toFixed(dec).split(".");
+  const g = int!.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+  return frac ? `${g},${frac}` : g;
+}

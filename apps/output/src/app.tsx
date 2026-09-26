@@ -37,6 +37,22 @@ const DEMOS: Record<string, { type: string; data: Record<string, any>; dur?: num
     type: "cartelera", dur: 12,
     data: { kind: "teatro", photo_url: "https://picsum.photos/seed/teatro/1600/900", title: "¡Oh cabezas locas de las religiosas!", author: "Mía Micelli", cast: "Ana Luz Camps, Melina Del Valle Villar, Miranda Di Lorenzo, Agustín Gagliardi, Mía Miceli", venue: "Espacio Callejón", address: "Humahuaca 3759", city: "Almagro - CABA", days: "Sábados", time: "16:00 hs" },
   },
+  dolar: {
+    type: "dolar", dur: 12,
+    data: { casas: ["oficial", "blue", "bolsa"] },
+  },
+  cifras: {
+    type: "cifras", dur: 12,
+    data: { mode: "manual", value: "2,9", valueNum: 2.9, suffix: "%", subtitle: "La inflación de la Ciudad **se aceleró** en julio", source: "IDECBA · IPCBA", sourceAuto: false, explanation: "Cortó cuatro meses de baja consecutiva. La suba de precios venía desacelerando desde marzo y en julio se dio vuelta.", icon: "TrendingUp" },
+  },
+  cifras_big: {
+    type: "cifras", dur: 12,
+    data: { mode: "manual", value: "600.000.000", valueNum: 600000000, prefix: "$", subtitle: "Cifra de prueba con muchos dígitos para ver el ancho", source: "Fuente de prueba", sourceAuto: false, explanation: "Sin ícono: la explicación ocupa todo el ancho de la tarjeta.", icon: null },
+  },
+  cifras_unit: {
+    type: "cifras", dur: 12,
+    data: { mode: "api", metric: "energia", value: "1.245", valueNum: 1245, prefix: "US$", suffix: "millones de dólares", subtitle: "Dato de prueba con unidad larga", source: "Fuente automática de prueba", sourceAuto: true, explanation: "La unidad larga va chica al lado del número.", icon: "Banknote" },
+  },
   efemerides_multi: {
     type: "efemerides",
     dur: 24,
@@ -163,12 +179,17 @@ const DEMOS: Record<string, { type: string; data: Record<string, any>; dur?: num
 };
 
 const DEMO_TIME = new Date().toISOString();
+const API_DEMO = (import.meta.env.VITE_API_URL as string | undefined) ?? "";
 
 function DemoStage({ id }: { id: string }) {
   const d = DEMOS[id] ?? DEMOS.ultima_hora;
   const DUR = d.dur ?? 8;
   const [scale, setScale] = React.useState(1);
   const [loop, setLoop] = React.useState(0);
+  const [live, setLive] = React.useState<Record<string, unknown>>({});
+  React.useEffect(() => {
+    fetch(`${API_DEMO}/api/data/dolar`).then((r) => r.json()).then((d) => setLive({ dolar: d?.payload })).catch(() => {});
+  }, []);
   React.useEffect(() => {
     const fit = () => setScale(fitScale());
     fit();
@@ -178,8 +199,10 @@ function DemoStage({ id }: { id: string }) {
   }, []);
   return (
     <div className="viewport">
+      {/* ?freeze: sólo para revisar demos: salta las animaciones de entrada y muestra la placa ya armada. */}
+      {P.has("freeze") && <style>{"*,*::before,*::after{animation-delay:0s!important;animation-duration:1ms!important;transition:none!important}"}</style>}
       <div className="stage" style={stageStyle(scale)}>
-        <ItemView key={loop} type={d.type} data={d.data} durationSec={DUR} createdAt={DEMO_TIME} updatedAt={DEMO_TIME} />
+        <ItemView key={loop} type={d.type} data={d.data} durationSec={DUR} createdAt={DEMO_TIME} updatedAt={DEMO_TIME} liveData={live} />
       </div>
     </div>
   );

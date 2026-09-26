@@ -72,7 +72,7 @@ const CSS = `
   background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);-webkit-backdrop-filter:blur(14px) saturate(1.3);backdrop-filter:blur(14px) saturate(1.3);
   box-shadow:0 10px 30px -12px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.18)}
 .nmc-pill b{font-weight:600;font-size:30px;letter-spacing:.01em}
-.nmc-pill span{font-weight:500;font-stretch:112%;font-size:17px;letter-spacing:.24em;color:#A9B6D6;text-transform:uppercase}
+.nmc-pill span{font-weight:500;font-stretch:112%;font-size:17px;letter-spacing:.24em;color:#A9B6D6;text-transform:uppercase;max-width:340px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .nmc-brand{padding:0 22px 0 12px}
 .nmc-brand img{width:36px;height:auto;display:block}
 .nmc-temp{animation:nmc-in .5s ease both}
