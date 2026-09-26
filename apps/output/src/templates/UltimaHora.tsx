@@ -18,6 +18,7 @@ function renderText(t: string): string {
 
 export function UltimaHora({ data }: { data: UltimaHoraData }) {
   const hasMedia = !!data.media_url;
+  const dev = !!data.developing;
   const [now, setNow] = useState(() => new Date());
   const [play, setPlay] = useState(false);
   const bajadaRef = useRef<HTMLDivElement>(null);
@@ -38,7 +39,8 @@ export function UltimaHora({ data }: { data: UltimaHoraData }) {
     const el = bajadaRef.current;
     if (!el) return;
     const base = IS_VERTICAL ? (hasMedia ? 56 : 68) : hasMedia ? 52 : 78;
-    const top = IS_VERTICAL ? (hasMedia ? 1310 : 760) : hasMedia ? 452 : 560;
+    // Con "Noticia en desarrollo" la bajada baja para dejar lugar a la tira (ver .uh.dev en el CSS).
+    const top = (IS_VERTICAL ? (hasMedia ? 1310 : 760) : hasMedia ? 452 : 560) + (dev ? (IS_VERTICAL ? 70 : hasMedia ? 64 : 58) : 0);
     const tickerTop = STAGE_H - 56 - 56; // bottom + alto del ticker
     const maxH = tickerTop - 28 - top;
     let px = base;
@@ -48,13 +50,13 @@ export function UltimaHora({ data }: { data: UltimaHoraData }) {
       px -= 2;
       el.style.fontSize = px + "px";
     }
-  }, [data.text, hasMedia]);
+  }, [data.text, hasMedia, dev]);
 
   const clock = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
   const fecha = `${now.getDate()} ${MESES[now.getMonth()]}`;
 
   return (
-    <div className={"uh" + (play ? " play" : "") + (hasMedia ? " has-media" : "") + (IS_VERTICAL ? " v" : "")} style={{ position: "absolute", inset: 0 }}>
+    <div className={"uh" + (play ? " play" : "") + (hasMedia ? " has-media" : "") + (dev ? " dev" : "") + (IS_VERTICAL ? " v" : "")} style={{ position: "absolute", inset: 0 }}>
       <style>{CSS + (IS_VERTICAL ? CSS_V : "")}</style>
       <div className="uh-bg" />
       <div className="uh-placa" />
@@ -73,6 +75,11 @@ export function UltimaHora({ data }: { data: UltimaHoraData }) {
       <div className="uh-clock">{clock} | {fecha}</div>
       <div className="uh-logo"><img src={ciclicoWhite} alt="Cíclico" /></div>
       <div className="uh-titulo">ÚLTIMA HORA</div>
+      {dev && (
+        <div className="uh-dev">
+          <div className="uh-dev-track">{Array.from({ length: 10 }).map((_, i) => <span key={i}>NOTICIA EN DESARROLLO</span>)}</div>
+        </div>
+      )}
       <div className="uh-bajada" ref={bajadaRef} dangerouslySetInnerHTML={{ __html: renderText(data.text) }} />
 
       <div className="uh-ticker">
@@ -98,6 +105,10 @@ const CSS_V = `
 .uh.has-media .uh-logo{top:1090px;left:90px;margin-left:0;width:72px}
 .uh.has-media .uh-titulo{top:1190px;left:90px;right:90px;text-align:left;font-size:96px}
 .uh.has-media .uh-bajada{top:1310px;left:90px;right:90px;text-align:left;font-size:56px}
+.uh.dev .uh-dev{top:520px;left:50%;margin-left:-280px}
+.uh.dev .uh-bajada{top:830px}
+.uh.dev.has-media .uh-dev{top:1300px;left:90px;margin-left:0}
+.uh.dev.has-media .uh-bajada{top:1380px}
 `;
 
 const CSS = `
@@ -124,6 +135,18 @@ const CSS = `
 .uh.has-media .uh-logo{top:214px;left:832px;margin-left:0;width:80px}
 .uh.has-media .uh-titulo{top:326px;left:830px;right:auto;text-align:left;font-size:104px}
 .uh.has-media .uh-bajada{top:452px;left:832px;right:110px;text-align:left;font-size:52px}
+
+/* "Noticia en desarrollo": tira con el mismo aspecto que los newsticker chicos de Cartelera
+   (alto 42, radio 8, texto 24px 800, corre en 14s y se desvanece hacia la derecha). */
+.uh-dev{position:absolute;z-index:16;width:560px;height:46px;overflow:hidden;display:flex;align-items:center;border-radius:8px;background:#2f6bff;
+  -webkit-mask-image:linear-gradient(90deg,#000 78%,transparent);mask-image:linear-gradient(90deg,#000 78%,transparent);opacity:0}
+.uh-dev-track{display:flex;white-space:nowrap;animation:uh-scroll 14s linear infinite}
+.uh-dev-track span{color:#fff;font-weight:800;font-size:24px;letter-spacing:.14em;padding:0 22px}
+.uh.dev .uh-dev{top:520px;left:50%;margin-left:-280px}
+.uh.dev .uh-bajada{top:618px}
+.uh.dev.has-media .uh-dev{top:448px;left:832px;margin-left:0}
+.uh.dev.has-media .uh-bajada{top:516px}
+.uh.play .uh-dev{animation:uh-fadeIn .5s ease .75s forwards}
 
 /* ticker */
 .uh-ticker{position:absolute;left:30px;right:30px;bottom:56px;height:56px;z-index:30;background:#fff;overflow:hidden;display:flex;align-items:center;box-shadow:inset 0 0 24px rgba(0,0,0,.28), inset 0 2px 6px rgba(0,0,0,.20);opacity:0}

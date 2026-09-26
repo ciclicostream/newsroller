@@ -108,6 +108,19 @@ const DEMOS: Record<string, { type: string; data: Record<string, any>; dur?: num
       media_kind: "image",
     },
   },
+  ultima_hora_dev: {
+    type: "ultima_hora",
+    data: { text: 'Corte de luz en el sur del AMBA: la distribuidora estima **reponer el servicio** en las próximas horas.', media_url: null, media_kind: null, developing: true },
+  },
+  ultima_hora_media_dev: {
+    type: "ultima_hora",
+    data: { text: 'Abogados de Cristina presentaron una **"prueba trascendente"** para refutar la condena.', media_url: "https://picsum.photos/seed/uh/640/640", media_kind: "image", developing: true },
+  },
+  obituario: {
+    type: "obituario", dur: 15,
+    data: { name: "Nombre Apellido", years: "1941 — 2026", role: "Locutor y periodista", photo_url: "https://picsum.photos/seed/obit/600/800",
+      text: "Texto de prueba: una semblanza breve de dos o tres líneas para ver cómo se acomoda en la placa." },
+  },
   declaraciones: {
     type: "declaraciones", dur: 15,
     data: { name: "Juan Pérez", role: "Ministro de Economía", place: "Casa Rosada", headline: "\"Vamos a bajar la inflación\"", quote: "Esta es una cita de prueba bastante larga para ver cómo queda la placa, con varias líneas de texto que ocupan bien la tarjeta azul y se escriben de a poco.", photo_url: "https://fffefldkgcylqfbvshet.supabase.co/storage/v1/object/public/media/1789625617327-6a1c6562-3dcf-4a08-a877-de6b667e2db0-piel-1---Avon.jpeg", interview_program: "EPA!" },

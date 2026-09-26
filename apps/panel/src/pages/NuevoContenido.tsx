@@ -19,6 +19,7 @@ import { VideoFullPlaca } from "./VideoFullPlaca";
 import { InformePlaca } from "./InformePlaca";
 import { ListaPlaca } from "./ListaPlaca";
 import { RetroPlaca } from "./RetroPlaca";
+import { ObituarioPlaca } from "./ObituarioPlaca";
 import { PublicidadPlaca } from "./PublicidadPlaca";
 import { PromosPlaca } from "./PromosPlaca";
 
@@ -116,6 +117,7 @@ function TemplateForm({ type }: { type: string }) {
   if (type === "informe") return <InformePlaca />;
   if (type === "lista") return <ListaPlaca />;
   if (type === "retro") return <RetroPlaca />;
+  if (type === "obituario") return <ObituarioPlaca />;
   if (type === "publicidad") return <PublicidadPlaca />;
   if (type === "promos") return <PromosPlaca />;
   const def = TIPO_BY_KEY[type];

@@ -69,7 +69,7 @@ export function Lista({ data, durationSec }: { data: ListaData; durationSec?: nu
 
       <div className="ls-panel fx-up">
         <div className="ls-left">
-          <div className="ls-pill fx-left">{data.kicker?.trim() || "LISTA"}</div>
+          {data.kicker?.trim() && <div className="ls-pill fx-left">{data.kicker.trim()}</div>}
           <h2 className="ls-title fx-left">{data.title}</h2>
           {cur && (
             <div className={"ls-zone ls-focus fx-left" + (numbered ? "" : " nonum")}>

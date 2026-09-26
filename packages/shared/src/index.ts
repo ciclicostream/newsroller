@@ -229,6 +229,7 @@ export type ContentItemType =
   | "camaras"
   | "clima"
   | "placas"
+  | "obituario"
   | (string & {});
 
 export interface ContentItem {
@@ -248,6 +249,16 @@ export interface UltimaHoraData {
   media_url?: string | null;          // foto o video opcional
   media_kind?: "image" | "video" | null;
   audio_url?: string | null;          // audio opcional (se reproduce mientras está al aire)
+  developing?: boolean;               // "Noticia en desarrollo": suma una tira que corre con ese texto
+}
+
+// Datos del tipo "obituario" (vive dentro de la card de Última Hora). Placa sobria, sin marco ni ticker.
+export interface ObituarioData {
+  name: string;       // nombre (obligatorio)
+  years: string;      // años de vida, texto libre: "1941 — 2026" (obligatorio)
+  role: string;       // oficio (obligatorio)
+  text?: string;      // semblanza breve, máx 300
+  photo_url: string;  // retrato (obligatorio); se muestra en blanco y negro
 }
 
 // Datos del tipo "placas" (noticia genérica: escrita a mano o traída de Cíclico).

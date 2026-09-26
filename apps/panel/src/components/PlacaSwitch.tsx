@@ -16,6 +16,14 @@ export function InformesSwitch({ active }: { active: "informe" | "lista" }) {
   ]} />;
 }
 
+// "Última Hora" también reúne el Obituario (despedida sobria, sin marco).
+export function UltimaHoraSwitch({ active }: { active: "ultima_hora" | "obituario" }) {
+  return <Switch active={active} tabs={[
+    { key: "ultima_hora", to: "/contenido/ultima_hora", label: "Última Hora" },
+    { key: "obituario", to: "/contenido/obituario", label: "Obituario" },
+  ]} />;
+}
+
 // "Efemérides" también es una sola card: adentro se elige Efemérides (un día como hoy) o Retro.
 export function EfemeridesSwitch({ active }: { active: "efemerides" | "retro" }) {
   return <Switch active={active} tabs={[

@@ -4,6 +4,7 @@ import { Plus, Trash2, Check, Loader2, Image as ImageIcon, Video, Music, X, Penc
 import type { ContentItem, UltimaHoraData } from "@newsroller/shared";
 import { contentItems } from "../lib/content-items";
 import { uploadMedia } from "../lib/content";
+import { UltimaHoraSwitch } from "../components/PlacaSwitch";
 
 const MAX = 200;
 
@@ -17,6 +18,7 @@ export function UltimaHora() {
   const [mediaUrl, setMediaUrl] = useState<string | null>(null);
   const [mediaKind, setMediaKind] = useState<"image" | "video" | null>(null);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  const [developing, setDeveloping] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [uploadingAudio, setUploadingAudio] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -71,7 +73,7 @@ export function UltimaHora() {
     if (!text.trim()) return setErr("El texto es obligatorio.");
     setSaving(true);
     try {
-      const data: UltimaHoraData = { text: text.trim().slice(0, MAX), media_url: mediaUrl, media_kind: mediaKind, audio_url: audioUrl };
+      const data: UltimaHoraData = { text: text.trim().slice(0, MAX), media_url: mediaUrl, media_kind: mediaKind, audio_url: audioUrl, ...(developing ? { developing: true } : {}) };
       if (editingId) {
         await contentItems.patch(editingId, { data, duration_sec: dur });
         setMsg("Cambios guardados.");
@@ -96,6 +98,7 @@ export function UltimaHora() {
     setMediaUrl(d.media_url ?? null);
     setMediaKind(d.media_kind ?? null);
     setAudioUrl(d.audio_url ?? null);
+    setDeveloping(!!d.developing);
     setErr(null); setMsg(null);
   }
   function cancelEdit() {
@@ -104,6 +107,7 @@ export function UltimaHora() {
     setDur(8);
     clearMedia();
     clearAudio();
+    setDeveloping(false);
   }
 
   async function remove(it: ContentItem) {
@@ -132,6 +136,8 @@ export function UltimaHora() {
         </div>
       </div>
 
+      <UltimaHoraSwitch active="ultima_hora" />
+
       {err && <div className="alert error">{err}</div>}
       {msg && <div className="alert">{msg}</div>}
 
@@ -153,6 +159,15 @@ export function UltimaHora() {
               required
             />
             <div style={{ fontSize: 12, color: "#6b7688", textAlign: "right", marginTop: 4 }}>{text.length}/{MAX}</div>
+          </div>
+
+          <div className="field">
+            <label>Tipo de noticia</label>
+            <div className="tabs" style={{ marginBottom: 0 }}>
+              <button type="button" className={"tab" + (!developing ? " active" : "")} onClick={() => setDeveloping(false)}>Última Hora</button>
+              <button type="button" className={"tab" + (developing ? " active" : "")} onClick={() => setDeveloping(true)}>Noticia en desarrollo</button>
+            </div>
+            <div style={{ fontSize: 12, color: "#6b7688", marginTop: 6 }}>"Noticia en desarrollo" suma una tira que corre con ese texto.</div>
           </div>
 
           <div className="field">
@@ -196,7 +211,7 @@ export function UltimaHora() {
         </form>
 
         <div className="pm-col">
-          <PreviewMonitor type="ultima_hora" data={{ text, media_url: mediaUrl, media_kind: mediaKind, audio_url: null }} dur={dur} ready={!!text.trim()} />
+          <PreviewMonitor type="ultima_hora" data={{ text, media_url: mediaUrl, media_kind: mediaKind, audio_url: null, developing }} dur={dur} ready={!!text.trim()} />
           {items.length === 0 && <div className="card" style={{ padding: 18, color: "#6b7688" }}>Todavía no hay placas de Última Hora.</div>}
           {items.map((it) => {
             const d = it.data as UltimaHoraData;
@@ -211,6 +226,7 @@ export function UltimaHora() {
                   </div>
                   <div style={{ fontSize: 12, color: "#6b7688", marginTop: 4, display: "flex", gap: 12 }}>
                     <span>{d.media_url ? (d.media_kind === "video" ? "con video" : "con foto") : "solo texto (full)"}</span>
+                    {d.developing && <span style={{ color: "#2f6bff", fontWeight: 600 }}>en desarrollo</span>}
                     <span>{it.duration_sec}s</span>
                   </div>
                 </div>

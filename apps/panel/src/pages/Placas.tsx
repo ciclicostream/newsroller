@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { PreviewMonitor } from "../components/PreviewMonitor";
-import { Plus, Trash2, Check, Loader2, Image as ImageIcon, Music, X, Download, Newspaper, Pencil } from "lucide-react";
+import { Plus, Trash2, Check, Loader2, Image as ImageIcon, Music, X, Download, Newspaper, Pencil, Video } from "lucide-react";
 import type { ContentItem, PlacasData } from "@newsroller/shared";
 import { contentItems } from "../lib/content-items";
 import { uploadMedia } from "../lib/content";
@@ -31,6 +31,7 @@ export function Placas() {
   const [body, setBody] = useState("");
   const [dur, setDur] = useState(10);
   const [mediaUrl, setMediaUrl] = useState<string | null>(null);
+  const [mediaKind, setMediaKind] = useState<"image" | "video" | null>(null);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadingAudio, setUploadingAudio] = useState(false);
@@ -52,6 +53,7 @@ export function Placas() {
     setUploading(true);
     try {
       setMediaUrl(await uploadMedia(file, "media"));
+      setMediaKind(file.type.startsWith("video/") ? "video" : "image");
     } catch (e) {
       setErr(e instanceof Error ? e.message : "error subiendo");
     } finally {
@@ -60,6 +62,7 @@ export function Placas() {
   }
   function clearMedia() {
     setMediaUrl(null);
+    setMediaKind(null);
     if (fileRef.current) fileRef.current.value = "";
   }
 
@@ -95,6 +98,7 @@ export function Placas() {
     setTitle(p.title.slice(0, T_MAX));
     setBody(p.excerpt.slice(0, B_MAX));
     setMediaUrl(p.image);
+    setMediaKind(p.image ? "image" : null);
     setImportOpen(false);
     setMsg("Nota traída de Cíclico. Revisá y guardá.");
   }
@@ -111,7 +115,7 @@ export function Placas() {
         body: body.trim().slice(0, B_MAX) || undefined,
         label: label.trim() || undefined,
         media_url: mediaUrl,
-        media_kind: mediaUrl ? "image" : null,
+        media_kind: mediaUrl ? (mediaKind ?? "image") : null,
         audio_url: audioUrl,
       };
       if (editingId) {
@@ -138,6 +142,7 @@ export function Placas() {
     setBody(d.body ?? "");
     setDur(it.duration_sec);
     setMediaUrl(d.media_url ?? null);
+    setMediaKind(d.media_url ? (d.media_kind ?? "image") : null);
     setAudioUrl(d.audio_url ?? null);
     setErr(null); setMsg(null);
   }
@@ -197,14 +202,16 @@ export function Placas() {
           </div>
 
           <div className="field">
-            <label>Foto (opcional)</label>
+            <label>Foto o video (opcional)</label>
             {mediaUrl ? (
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <img src={mediaUrl} alt="" style={{ width: 64, height: 40, objectFit: "cover", borderRadius: 6 }} />
+                {mediaKind === "video"
+                  ? <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 13 }}><Video size={16} /> video cargado</span>
+                  : <img src={mediaUrl} alt="" style={{ width: 64, height: 40, objectFit: "cover", borderRadius: 6 }} />}
                 <button type="button" className="btn" onClick={clearMedia}><X size={14} /> quitar</button>
               </div>
             ) : (
-              <input ref={fileRef} type="file" accept="image/*" onChange={onFile} disabled={uploading} />
+              <input ref={fileRef} type="file" accept="image/*,video/*" onChange={onFile} disabled={uploading} />
             )}
             {uploading && <div style={{ fontSize: 12, color: "#6b7688", marginTop: 4 }}><Loader2 size={13} className="spin" /> subiendo…</div>}
           </div>
@@ -235,20 +242,20 @@ export function Placas() {
         </form>
 
         <div className="pm-col">
-          <PreviewMonitor type="placas" data={{ title, body: body || undefined, label: label || undefined, media_url: mediaUrl, media_kind: mediaUrl ? "image" : null }} dur={dur} ready={!!title.trim()} />
+          <PreviewMonitor type="placas" data={{ title, body: body || undefined, label: label || undefined, media_url: mediaUrl, media_kind: mediaUrl ? (mediaKind ?? "image") : null }} dur={dur} ready={!!title.trim()} />
           {items.length === 0 && <div className="card" style={{ padding: 18, color: "#6b7688" }}>Todavía no hay placas.</div>}
           {items.map((it) => {
             const d = it.data as PlacasData;
             return (
               <div key={it.id} data-item={it.id} className="card" style={{ padding: 16, display: "flex", gap: 16, alignItems: "center" }}>
                 <div style={{ width: 90, height: 64, borderRadius: 8, background: "#0d2168", flex: "0 0 auto", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  {d.media_url ? <img src={d.media_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <Newspaper size={22} color="#fff" />}
+                  {d.media_url ? (d.media_kind === "video" ? <Video size={22} color="#fff" /> : <img src={d.media_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />) : <Newspaper size={22} color="#fff" />}
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   {d.label && <div style={{ fontSize: 11, color: "#6b7688", fontWeight: 700 }}>{d.label.toUpperCase()}</div>}
                   <div style={{ fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{(d.title ?? "").replace(/\*\*/g, "")}</div>
                   <div style={{ fontSize: 12, color: "#6b7688", marginTop: 4, display: "flex", gap: 12 }}>
-                    <span>{d.media_url ? "con foto" : "solo texto"}</span>
+                    <span>{d.media_url ? (d.media_kind === "video" ? "con video" : "con foto") : "solo texto"}</span>
                     <span>{it.duration_sec}s</span>
                   </div>
                 </div>
