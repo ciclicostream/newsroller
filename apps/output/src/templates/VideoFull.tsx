@@ -1,9 +1,10 @@
+import { P } from "../lib/params";
 import type { VideoFullData } from "@newsroller/shared";
 import { YouTubePlayer } from "./render";
 import { IS_VERTICAL } from "../lib/orientation";
 import { useForcePlay } from "../lib/autoplay";
 
-const WANT_AUDIO = typeof window !== "undefined" && new URLSearchParams(window.location.search).has("audio");
+const WANT_AUDIO = P.has("audio");
 
 // Placa Video Full: video, imagen o video de YouTube a pantalla completa, SIN
 // overlay (idéntico a Publicidad Full). A diferencia de Publicidad, NO genera

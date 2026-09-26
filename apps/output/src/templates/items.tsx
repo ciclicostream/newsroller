@@ -23,21 +23,20 @@ import { Obituario } from "./Obituario";
 // los tipos que necesitan un valor de API además de lo cargado a mano.
 // `cameras` = scene.cameras, para el tipo "camaras".
 // A medida que se portan más tipos, se agregan acá.
-export function ItemView({
-  id,
-  type,
-  data,
-  durationSec,
-  liveData,
-  cameras,
-}: {
+export interface ItemProps {
   id?: string;
   type: string;
   data: Record<string, any>;
   durationSec?: number;
   liveData?: Record<string, unknown>;
   cameras?: Camera[];
-}) {
+  // Cuándo se cargó y se editó el contenido (lo usan las templates que muestran la hora o la fecha).
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+// Colección "Clásicas": las templates de siempre.
+export function ClasicaItemView({ id, type, data, durationSec, liveData, cameras }: ItemProps) {
   switch (type) {
     case "ultima_hora":
       return <UltimaHora data={data as UltimaHoraData} />;

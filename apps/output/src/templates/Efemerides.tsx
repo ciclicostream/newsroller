@@ -1,3 +1,4 @@
+import { P } from "../lib/params";
 import { useEffect, useRef, useState } from "react";
 import type { EfemeridesData, EfemeridesEntry } from "@newsroller/shared";
 import { formatEfemeridesDate } from "@newsroller/shared";
@@ -7,7 +8,7 @@ import { useAutoFit } from "../lib/autofit";
 import { IS_VERTICAL } from "../lib/orientation";
 import { useForcePlay } from "../lib/autoplay";
 
-const WANT_AUDIO = typeof window !== "undefined" && new URLSearchParams(window.location.search).has("audio");
+const WANT_AUDIO = P.has("audio");
 
 const CUBE_MS = 900; // duración del giro entre efemérides
 const FALL_MS = 850; // duración de la caída de salida

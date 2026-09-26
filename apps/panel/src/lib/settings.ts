@@ -10,6 +10,8 @@ export interface AppSettings {
   climaIcons?: Record<string, string>; // íconos BIG del clima cargados en Ajustes ({slot: url})
   airPausedAt: string; // ISO del corte de emisión ("" = al aire); congela el reloj
   music?: MusicSettings; // música de fondo continua (Ajustes → Música + toggle en el Monitor de Emisión)
+  style?: string; // colección de templates activa (Ajustes → Estilos; sólo Administrador o Master)
+  legacyLinks?: boolean; // false = los links viejos con variables ya no emiten
 }
 
 export const settingsApi = {

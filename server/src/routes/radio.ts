@@ -17,6 +17,9 @@ const VIEWERS = "radio-viewers";
 const KEY = env.radioKey || randomBytes(12).toString("hex");
 if (!env.radioKey) console.warn(`[radio] RADIO_KEY sin definir: se generó una temporal (${KEY.slice(0, 4)}…). El link del output cambia en cada reinicio.`);
 
+// Clave del output de Stream: la usan los links con nombre (output-links) para no mostrarla en la URL.
+export const radioKey = (): string => KEY;
+
 let state: RadioState = { ...RADIO_STATE_DEFAULT };
 
 const keyOk = (k: unknown): boolean => {

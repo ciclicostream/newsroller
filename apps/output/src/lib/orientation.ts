@@ -1,6 +1,7 @@
+import { P } from "./params";
 // Orientación del output: horizontal (1920x1080, la de siempre) o vertical (1080x1920, ?orientation=vertical).
 // Es un dato de la URL: el output de OBS/vMix y los monitores del panel (iframes) eligen con el parámetro.
-export const IS_VERTICAL = typeof window !== "undefined" && new URLSearchParams(window.location.search).get("orientation") === "vertical";
+export const IS_VERTICAL = P.get("orientation") === "vertical";
 export const STAGE_W = IS_VERTICAL ? 1080 : 1920;
 export const STAGE_H = IS_VERTICAL ? 1920 : 1080;
 export const ORIENTATION: "horizontal" | "vertical" = IS_VERTICAL ? "vertical" : "horizontal";

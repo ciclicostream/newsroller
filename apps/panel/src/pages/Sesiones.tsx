@@ -156,7 +156,7 @@ function SessionCard({ s, isAdmin, mine, people, busy, onToggle, busyAvail, onSe
           {isAdmin && <button className="sess-icon danger" onClick={(e) => stop(e, onRemove)} title="Borrar"><Trash2 size={16} /></button>}
         </div>
       </div>
-      {expand === "links" && canManage && <div style={{ marginTop: 12 }} onClick={(e) => e.stopPropagation()}><OutputLinksPicker extraParams={{ session: s.id }} /></div>}
+      {expand === "links" && canManage && <div style={{ marginTop: 12 }} onClick={(e) => e.stopPropagation()}><OutputLinksPicker target="sesion" sessionId={s.id} /></div>}
       {expand === "rename" && isAdmin && <RenameInline name={s.name} onSave={onRename} onDone={() => setExpand(null)} />}
       {expand === "manage" && isAdmin && <ManageInline session={s} people={people} onSave={onSaveManagers} onDone={() => setExpand(null)} />}
     </div>

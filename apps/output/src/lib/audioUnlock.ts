@@ -1,6 +1,7 @@
+import { P } from "./params";
 import { useEffect, useState } from "react";
 
-const WANT_AUDIO = typeof window !== "undefined" && new URLSearchParams(window.location.search).has("audio");
+const WANT_AUDIO = P.has("audio");
 
 // Con ?audio=1 en un navegador común (PC/celular) el autoplay con sonido está bloqueado hasta que la
 // persona toca la página. En vMix/OBS el autoplay ya está permitido, así que ahí nunca queda "locked"

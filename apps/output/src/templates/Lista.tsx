@@ -1,3 +1,4 @@
+import { P } from "../lib/params";
 import { useEffect, useState } from "react";
 import type { ListaData, ListaItem } from "@newsroller/shared";
 import fondo from "../assets/fondo2.jpg";
@@ -5,7 +6,7 @@ import { Chrome } from "./Chrome";
 import { IS_VERTICAL } from "../lib/orientation";
 import { useForcePlay } from "../lib/autoplay";
 
-const WANT_AUDIO = typeof window !== "undefined" && new URLSearchParams(window.location.search).has("audio");
+const WANT_AUDIO = P.has("audio");
 
 const INTRO_MS = 1000; // el foco arranca en el 1º ítem y empieza a pasar cuando termina la entrada
 const EXIT_MS = 900; // la salida arranca este tiempo antes de que termine el bloque

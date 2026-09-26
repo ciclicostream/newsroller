@@ -1,3 +1,4 @@
+import { P } from "../lib/params";
 import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import Hls from "hls.js";
@@ -7,7 +8,7 @@ import { useForcePlay } from "../lib/autoplay";
 
 // Sonido: por defecto MUTEADO (así el autoplay nunca se bloquea en el navegador).
 // Para OBS/vMix, abrir el output con ?audio=1 → intenta activar el audio.
-const WANT_AUDIO = typeof window !== "undefined" && new URLSearchParams(window.location.search).has("audio");
+const WANT_AUDIO = P.has("audio");
 
 interface TemplateData {
   id: string;

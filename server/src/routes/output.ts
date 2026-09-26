@@ -5,6 +5,7 @@ import { liveContentItems } from "../db/contentItems.js";
 import { rateLimited } from "../util/rateLimit.js";
 import { outputIncident } from "../incidents.js";
 import { resolveSceneItems } from "../db/scene.js";
+import { resolveOutputLink } from "./output-links.js";
 
 // Escena pública para el output (vMix). Sin auth: sólo lectura de lo activo.
 export function outputRouter(): Router {
@@ -76,13 +77,22 @@ export function outputRouter(): Router {
     res.json({ active: session.active !== false, background, logos, items, data, cameras: cameras ?? [], updatedAt: new Date().toISOString() });
   });
 
+  // Link con nombre (/output/<slug>): el output pide acá su configuración. Público, como el resto del output.
+  r.get("/link/:slug", async (req, res) => {
+    if (rateLimited(`link:${req.ip}`, 60, 60_000)) return res.status(429).json({ error: "demasiados pedidos" });
+    const cfg = await resolveOutputLink(String(req.params.slug).toLowerCase());
+    if (!cfg) return res.status(404).json({ error: "link no encontrado" });
+    res.json(cfg);
+  });
+
   // Preview público de un contenido tipado del banco (para el MONITOR del panel).
   r.get("/item/:id", async (req, res) => {
     const sb = getSupabase();
     if (!sb) return res.status(404).json({ error: "sin base" });
-    const { data } = await sb.from("content_items").select("type, data, duration_sec").eq("id", req.params.id).maybeSingle();
+    // select("*"): así funciona aunque todavía no se haya corrido la migración 0024 (updated_at).
+    const { data } = await sb.from("content_items").select("*").eq("id", req.params.id).maybeSingle();
     if (!data) return res.status(404).json({ error: "no encontrado" });
-    res.json({ type: data.type, data: data.data, duration_sec: data.duration_sec });
+    res.json({ type: data.type, data: data.data, duration_sec: data.duration_sec, created_at: data.created_at, updated_at: data.updated_at ?? data.created_at });
   });
 
   // Registra una salida al aire de un contenido (cualquier tipo) para los reportes.

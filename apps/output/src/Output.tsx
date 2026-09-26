@@ -1,10 +1,11 @@
+import { P } from "./lib/params";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { io } from "socket.io-client";
 import { contentHasAudio, MUSIC_DEFAULT, type MusicSettings } from "@newsroller/shared";
 import { API_BASE, fetchScene, dataView, tickerText, type Block, type Scene } from "./lib/scene";
 import { TemplateView, templateHasVideo } from "./templates/render";
-import { ItemView } from "./templates/items";
+import { ItemView } from "./collections";
 import offAir from "./assets/off-air.jpg";
 import { reportAiring, reportIncident, isLiveOutput } from "./lib/telemetry";
 import { IS_VERTICAL, ORIENTATION, fitScale, stageStyle, supportsVertical } from "./lib/orientation";
@@ -12,17 +13,17 @@ import { useForcePlay } from "./lib/autoplay";
 import { useAudioUnlock } from "./lib/audioUnlock";
 
 // Sonido de la música de fondo: como todo lo demás, muteada salvo ?audio=1 (lo controla vMix/OBS).
-const WANT_AUDIO = typeof window !== "undefined" && new URLSearchParams(window.location.search).has("audio");
+const WANT_AUDIO = P.has("audio");
 
 // Sesión: si la URL trae ?session=<id>, este output pasa a reproducir esa playlist en vez del aire
 // principal. El resto (rotación, sonido, telemetría, recarga por antigüedad) funciona igual.
-const SESSION_ID = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("session") : null;
+const SESSION_ID = P.get("session");
 
 // Borrador: ?borrador=1 hace que el Monitor de Emisión (PREVIEW) rote la parrilla BORRADOR
 // (parrilla_draft, lo que todavía no se publicó) en vez del aire real — misma rotación, música y
 // todo, para probar antes de publicar. Nunca cuenta para reportes (ver isLiveOutput) ni respeta el
 // corte de emisión real (no tiene sentido: es sólo una previsualización).
-const DRAFT_AIR = typeof window !== "undefined" && new URLSearchParams(window.location.search).has("borrador");
+const DRAFT_AIR = P.has("borrador");
 
 // Contenidos reproducibles de una Sesión embebida: sólo los del banco (content_item; es lo único que se
 // puede cargar en una Sesión hoy) y, en vertical, sólo los que tengan versión 9:16.
@@ -362,7 +363,7 @@ export function Output() {
               transition={{ duration: 0.4 }}
               style={{ position: "absolute", inset: 0, zIndex: 5 }}
             >
-              <ItemView id={current.item!.id} type={current.item!.type} data={current.item!.data} durationSec={current.duration_sec} liveData={scene?.data} cameras={scene?.cameras ?? []} />
+              <ItemView id={current.item!.id} type={current.item!.type} data={current.item!.data} createdAt={current.item!.created_at} updatedAt={current.item!.updated_at} durationSec={current.duration_sec} liveData={scene?.data} cameras={scene?.cameras ?? []} />
             </motion.div>
           )}
           {current && !isCustom && (
@@ -449,7 +450,7 @@ function SessionRunner({ scene, blocks, sessionId, onDone, onAudioChange }: { sc
   }, [cur?.id, idx, sessionId]);
 
   if (!cur?.item) return null;
-  return <ItemView id={cur.item.id} type={cur.item.type} data={cur.item.data} durationSec={cur.duration_sec} liveData={scene.data} cameras={scene.cameras ?? []} />;
+  return <ItemView id={cur.item.id} type={cur.item.type} data={cur.item.data} createdAt={cur.item.created_at} updatedAt={cur.item.updated_at} durationSec={cur.duration_sec} liveData={scene.data} cameras={scene.cameras ?? []} />;
 }
 
 function AnimatedWords({ text, size }: { text: string; size: number }) {

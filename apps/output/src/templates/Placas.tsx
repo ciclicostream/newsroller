@@ -1,3 +1,4 @@
+import { P } from "../lib/params";
 import { useEffect, useRef, useState } from "react";
 import type { PlacasData } from "@newsroller/shared";
 import fondo from "../assets/fondo-placas.jpg";
@@ -6,7 +7,7 @@ import { useAutoFit } from "../lib/autofit";
 import { IS_VERTICAL } from "../lib/orientation";
 import { useForcePlay } from "../lib/autoplay";
 
-const WANT_AUDIO = typeof window !== "undefined" && new URLSearchParams(window.location.search).has("audio");
+const WANT_AUDIO = P.has("audio");
 
 function renderText(t: string): string {
   const esc = (t ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");

@@ -1,10 +1,11 @@
+import { P } from "../lib/params";
 import type { PublicidadData } from "@newsroller/shared";
 import fondo from "../assets/fondo2.jpg";
 import { Chrome } from "./Chrome";
 import { IS_VERTICAL } from "../lib/orientation";
 import { useForcePlay } from "../lib/autoplay";
 
-const WANT_AUDIO = typeof window !== "undefined" && new URLSearchParams(window.location.search).has("audio");
+const WANT_AUDIO = P.has("audio");
 
 // Placa Publicidad: Full (16:9, sin overlay) o Vertical (9:16 + marco estándar
 // + logo/QR de marca opcionales). Entrada y salida por CORTE. Única familia

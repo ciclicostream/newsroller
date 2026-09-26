@@ -51,7 +51,7 @@ export async function resolveSceneItems(sb: SupabaseClient, rows: Array<Record<s
       }
       case "content_item": {
         const ci = itemById.get(it.content_id);
-        if (ci) items.push({ ...base, item: { id: ci.id, type: ci.type, data: ci.data } });
+        if (ci) items.push({ ...base, item: { id: ci.id, type: ci.type, data: ci.data, created_at: ci.created_at, updated_at: ci.updated_at ?? ci.created_at } });
         break;
       }
       case "session": {

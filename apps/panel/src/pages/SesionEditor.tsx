@@ -203,7 +203,7 @@ export function SesionEditor() {
             </div>
           </div>
 
-          <OutputLinksPicker title="Enlaces para transmitir esta sesión" extraParams={{ session: id }} />
+          <OutputLinksPicker title="Enlaces para transmitir esta sesión" target="sesion" sessionId={id} />
         </div>
       </div>
     </div>

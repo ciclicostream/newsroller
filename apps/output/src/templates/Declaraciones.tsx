@@ -1,3 +1,4 @@
+import { P } from "../lib/params";
 import { useEffect, useRef, useState } from "react";
 import type { DeclaracionesData } from "@newsroller/shared";
 import fondo from "../assets/fondo2.jpg";
@@ -5,7 +6,7 @@ import { Chrome } from "./Chrome";
 import { useAutoFit } from "../lib/autofit";
 import { IS_VERTICAL } from "../lib/orientation";
 
-const WANT_AUDIO = typeof window !== "undefined" && new URLSearchParams(window.location.search).has("audio");
+const WANT_AUDIO = P.has("audio");
 
 // Placa Declaraciones: foto cuadrada + placas nombre/cargo/lugar a la izquierda;
 // cita en tarjeta azul (con comillas en placa navy separada, efecto máquina de

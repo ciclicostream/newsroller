@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { ROLES, ROLE_LABEL, IDLE_MINUTES_DEFAULT, type Role } from "@newsroller/shared";
-import { Users as UsersIcon, Youtube, Tv, Images, Rss, CloudSun, Clapperboard, History, Music } from "lucide-react";
+import { Users as UsersIcon, Youtube, Tv, Images, Rss, CloudSun, Clapperboard, History, Music, Palette } from "lucide-react";
 import { useAuth } from "../auth/AuthProvider";
 import { settingsApi } from "../lib/settings";
 
@@ -67,6 +67,15 @@ export function Ajustes() {
             <span className="tipo-main">
               <span className="tipo-name">Usuarios</span>
               <span className="tipo-desc">Altas, roles y accesos al panel</span>
+            </span>
+          </Link>
+        )}
+        {isAdmin && (
+          <Link to="/ajustes/estilos" className="tipo-card">
+            <span className="tipo-ic"><Palette size={22} /></span>
+            <span className="tipo-main">
+              <span className="tipo-name">Estilos</span>
+              <span className="tipo-desc">Clásicas o Modernas, para todos los outputs</span>
             </span>
           </Link>
         )}

@@ -1,10 +1,11 @@
+import { P } from "../lib/params";
 import { useEffect, useState } from "react";
 import type { RetroData } from "@newsroller/shared";
 import { Chrome } from "./Chrome";
 import { IS_VERTICAL } from "../lib/orientation";
 import { useForcePlay } from "../lib/autoplay";
 
-const WANT_AUDIO = typeof window !== "undefined" && new URLSearchParams(window.location.search).has("audio");
+const WANT_AUDIO = P.has("audio");
 const EXIT_MS = 900;
 
 // Tamaño máximo de la imagen/video dentro del marco (sin contar el borde crema), según orientación.

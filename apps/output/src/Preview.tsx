@@ -1,6 +1,7 @@
+import { P } from "./lib/params";
 import { Component, useEffect, useState, type ReactNode } from "react";
 import { API_BASE, fetchScene, type Scene } from "./lib/scene";
-import { ItemView } from "./templates/items";
+import { ItemView } from "./collections";
 import { IS_VERTICAL, fitScale, stageStyle, supportsVertical } from "./lib/orientation";
 
 // En la vista previa vertical, avisa cuando el contenido no tiene versión vertical (no saldría en el output vertical).
@@ -13,12 +14,12 @@ function NoVertical() {
 }
 
 // El panel pide sonido con ?audio=1 (botón del parlante); sin eso la vista previa va muda.
-const WANT_SOUND = typeof window !== "undefined" && new URLSearchParams(window.location.search).has("audio");
+const WANT_SOUND = P.has("audio");
 
 // Preview de un contenido tipado (MONITOR del panel). Renderiza una placa, con su animación,
 // y la reproduce en loop para que el operador la vea antes de mandarla al aire.
 export function Preview({ id }: { id: string }) {
-  const [item, setItem] = useState<{ type: string; data: Record<string, any>; duration_sec?: number } | null>(null);
+  const [item, setItem] = useState<{ type: string; data: Record<string, any>; duration_sec?: number; created_at?: string; updated_at?: string } | null>(null);
   const [scene, setScene] = useState<Scene | null>(null);
   const [scale, setScale] = useState(1);
   const [loop, setLoop] = useState(0);
@@ -58,7 +59,7 @@ export function Preview({ id }: { id: string }) {
   return (
     <div className="viewport">
       <div className="stage" style={stageStyle(scale)}>
-        {item ? <ItemView key={loop} type={item.type} data={item.data} durationSec={dur} liveData={scene?.data} cameras={scene?.cameras ?? []} /> : null}
+        {item ? <ItemView key={loop} type={item.type} data={item.data} createdAt={item.created_at} updatedAt={item.updated_at} durationSec={dur} liveData={scene?.data} cameras={scene?.cameras ?? []} /> : null}
         {IS_VERTICAL && item && !supportsVertical(item.type, item.data) && <NoVertical />}
       </div>
     </div>

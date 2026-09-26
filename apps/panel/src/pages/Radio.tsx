@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Mic, MicOff, Square, Play, Power, Search, Tv, Volume2, VolumeX, RectangleHorizontal, RectangleVertical,
-  LayoutGrid, RadioTower, X, Camera as CameraIcon, CameraOff, PictureInPicture2, Maximize, Link2, Copy, Check, ExternalLink, Music,
+  LayoutGrid, RadioTower, X, Camera as CameraIcon, CameraOff, PictureInPicture2, Maximize, Link2, Music,
 } from "lucide-react";
 import type { Camera, ContentItem } from "@newsroller/shared";
 import { useMonitorAudio } from "../lib/monitorAudio";
@@ -12,7 +12,8 @@ import { OUTPUT_FRAME_BASE } from "../lib/parrilla";
 import { sessions as sessionsApi, type SessionRow } from "../lib/sessions";
 import { contentItems as contentItemsApi } from "../lib/content-items";
 import { camerasApi } from "../lib/cameras";
-import { createRadioLink, radioApi, radioUrl, type RadioConfig, type RadioLink } from "../lib/radioLink";
+import { createRadioLink, radioApi, type RadioConfig, type RadioLink } from "../lib/radioLink";
+import { OutputLinksPicker } from "../components/OutputLinksPicker";
 import offAir from "../assets/off-air.jpg";
 import { CAT, CAT_ICON, CAT_ORDER, SESSION_COLOR, SESSION_ICON, TYPE_LABEL, catOf, iconOf, itemText } from "../lib/contentCatalog";
 
@@ -107,26 +108,12 @@ function CamVideo({ stream, className }: { stream: MediaStream; className?: stri
   return <video ref={r} className={className} autoPlay muted playsInline />;
 }
 
-// Enlace del output de Stream para OBS/vMix (lleva la clave que valida el server).
+// Enlace del output de Stream para OBS/vMix: link con nombre; la clave la pone el server (nunca va en la URL).
 function LinkBox({ cfg }: { cfg: RadioConfig | null }) {
-  const [vertical, setVertical] = useState(false);
-  const [copied, setCopied] = useState(false);
-  const url = cfg ? radioUrl(cfg.key, vertical) : "";
-  async function copy() {
-    try { await navigator.clipboard.writeText(url); setCopied(true); setTimeout(() => setCopied(false), 1500); } catch { /* el link queda visible igual */ }
-  }
   return (
     <div className="rd-linkbox">
-      <div className="rd-linkrow">
-        <div className="lp-seg">
-          <button className={!vertical ? "on" : ""} onClick={() => setVertical(false)}><RectangleHorizontal size={14} /> Horizontal</button>
-          <button className={vertical ? "on" : ""} onClick={() => setVertical(true)}><RectangleVertical size={14} /> Vertical</button>
-        </div>
-        <div className="lp-url" title={url}>{cfg ? url : "Cargando…"}</div>
-        {cfg && <a className="sess-icon" href={url} target="_blank" rel="noreferrer" title="Abrir"><ExternalLink size={14} /></a>}
-        {cfg && <button className="sess-icon" onClick={() => void copy()} title={copied ? "Copiado" : "Copiar"}>{copied ? <Check size={14} /> : <Copy size={14} />}</button>}
-      </div>
-      <p className="rd-linknote">Pegalo como Browser Source en OBS o como Web Browser Input en vMix (1920×1080, o 1080×1920 en vertical). Lleva una clave: no lo compartas.{cfg && !cfg.turn ? " Sin servidor TURN configurado: funciona en la misma red o en redes abiertas; entre tu casa y el estudio puede fallar." : ""}</p>
+      <OutputLinksPicker target="stream" fixedAudio />
+      <p className="rd-linknote">Pegalo como Browser Source en OBS o como Web Browser Input en vMix (1920×1080, o 1080×1920 en vertical). No lo compartas: cualquiera con el link ve el Stream.{cfg && !cfg.turn ? " Sin servidor TURN configurado: funciona en la misma red o en redes abiertas; entre tu casa y el estudio puede fallar." : ""}</p>
     </div>
   );
 }

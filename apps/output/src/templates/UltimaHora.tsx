@@ -1,10 +1,11 @@
+import { P } from "../lib/params";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { UltimaHoraData } from "@newsroller/shared";
 import ciclicoWhite from "../assets/ciclico-white.png";
 import { IS_VERTICAL, STAGE_H } from "../lib/orientation";
 import { useForcePlay } from "../lib/autoplay";
 
-const WANT_AUDIO = typeof window !== "undefined" && new URLSearchParams(window.location.search).has("audio");
+const WANT_AUDIO = P.has("audio");
 const MESES = ["ENE", "FEB", "MAR", "ABR", "MAY", "JUN", "JUL", "AGO", "SEP", "OCT", "NOV", "DIC"];
 
 // Escapa HTML y aplica **negrita** (markdown mínimo).

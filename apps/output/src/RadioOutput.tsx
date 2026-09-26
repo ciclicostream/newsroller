@@ -1,3 +1,4 @@
+import { P } from "./lib/params";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { io, type Socket } from "socket.io-client";
 import { MUSIC_DEFAULT, RADIO_STATE_DEFAULT, type MusicSettings, type RadioState } from "@newsroller/shared";
@@ -9,7 +10,7 @@ import offAir from "./assets/off-air.jpg";
 // Output de Stream (radio manual): `/output/?radio=1&key=<clave>[&orientation=vertical][&audio=1]`.
 // Corre en el OBS/vMix del estudio. Emite lo que el Host toca en el panel (contenido en loop, o la placa de espera),
 // y recibe por WebRTC su micrófono y su cámara (pantalla completa o recuadro). No captura nada: sólo reproduce.
-const params = new URLSearchParams(window.location.search);
+const params = P;
 const KEY = params.get("key") ?? "";
 
 type Ice = { urls: string | string[]; username?: string; credential?: string }[];
@@ -113,7 +114,10 @@ export function RadioOutput() {
     p.set(state.pad.kind === "session" ? "session" : "preview", state.pad.id);
     p.set("audio", "1");
     if (IS_VERTICAL) p.set("orientation", "vertical");
-    return `${window.location.pathname}?${p.toString()}`;
+    // Mismo estilo que este output si el link lo fija; si no, el iframe sigue Ajustes → Estilos por su cuenta.
+    const style = P.get("style");
+    if (style) p.set("style", style);
+    return `${import.meta.env.BASE_URL}?${p.toString()}`;
   }, [state.tx, state.pad?.kind, state.pad?.id]);
 
   // Micrófono abierto: baja el volumen del clip (videos, audios y reproductores de YouTube del iframe).

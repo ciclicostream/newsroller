@@ -1,3 +1,4 @@
+import { P } from "./params";
 import { API_BASE } from "./scene";
 
 // Registros para los reportes. Sólo cuentan cuando el output corre "de verdad" (OBS/vMix): dentro de un
@@ -6,7 +7,7 @@ import { API_BASE } from "./scene";
 export const isLiveOutput = (): boolean =>
   typeof window !== "undefined" &&
   window.parent === window &&
-  !new URLSearchParams(window.location.search).has("borrador");
+  !P.has("borrador");
 
 const post = (path: string, body: unknown) =>
   fetch(`${API_BASE}${path}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body), keepalive: true }).catch(() => {});

@@ -24,6 +24,7 @@ import { contentItemsRouter } from "./routes/content-items.js";
 import { playlistRouter } from "./routes/playlist.js";
 import { parrillaRouter } from "./routes/parrilla.js";
 import { outputRouter } from "./routes/output.js";
+import { outputLinksRouter } from "./routes/output-links.js";
 import { attachRadio, radioRouter } from "./routes/radio.js";
 import { templatesRouter } from "./routes/templates.js";
 import { settingsRouter, readAll as readAllSettings } from "./routes/settings.js";
@@ -72,6 +73,7 @@ app.use("/api/playlist", playlistRouter());
 app.use("/api/parrilla", parrillaRouter(io));
 app.use("/api/templates", templatesRouter());
 app.use("/api/output", outputRouter()); // público (sin auth) para vMix
+app.use("/api/output-links", outputLinksRouter()); // links con nombre: administración desde el panel
 app.use("/api/radio", radioRouter(io)); // Stream (radio manual): panel autenticado; output con clave
 
 // En producción, servir los builds del front (mismo origen que la API y el socket).

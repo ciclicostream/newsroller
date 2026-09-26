@@ -15,7 +15,7 @@ export interface Block {
   placa?: { title: string; body: string | null; accent: string | null; image_url?: string | null; image_fit?: string | null };
   media?: { url: string; mime: string | null };
   data?: { source: string };
-  item?: { id: string; type: string; data: Record<string, any> };
+  item?: { id: string; type: string; data: Record<string, any>; created_at?: string; updated_at?: string };
   session?: { id: string; items: Block[] }; // Sesión embebida como contenido: sus propios bloques (sólo content_item)
   tpl?: {
     id: string;

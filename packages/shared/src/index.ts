@@ -514,6 +514,39 @@ export interface PromosData {
   video_id: string; // id de YouTube
 }
 
+// ---- Colecciones de templates (Ajustes → Estilos) ----
+// Cada colección es un juego completo de templates, con versión 16:9 y 9:16. Se elige UNA en Ajustes → Estilos
+// (sólo Administrador o Master) y vale para todos los outputs, el Stream y los monitores del panel: no se mezclan.
+// Un link con nombre puede fijar su propia colección. Para sumar una colección por programación: agregarla acá
+// y registrar su renderizador en apps/output/src/collections. `ready: false` = todavía no se puede elegir.
+export interface TemplateCollection { id: string; label: string; desc: string; ready: boolean }
+export const TEMPLATE_COLLECTIONS: TemplateCollection[] = [
+  { id: "clasica", label: "Clásicas", desc: "Las templates de siempre: cards blancas sobre los fondos de cada sección.", ready: true },
+  { id: "moderna", label: "Modernas", desc: "Paneles oscuros con profundidad, luces y transiciones propias por contenido.", ready: false },
+];
+export const DEFAULT_COLLECTION = "clasica";
+export const collectionById = (id: string | null | undefined): TemplateCollection | undefined => TEMPLATE_COLLECTIONS.find((c) => c.id === id);
+
+// ---- Links de salida con nombre ----
+// En vez de /output/?orientation=vertical&audio=1…, el link público es /output/<nombre> y la configuración
+// (qué emite, orientación, audio y estilo) queda guardada en el server: se ve y se cambia sólo desde el panel.
+export type OutputLinkTarget = "emision" | "sesion" | "stream";
+export interface OutputLink {
+  slug: string;                            // nombre del link: /output/<slug>
+  label?: string | null;                   // descripción para el panel ("OBS estudio")
+  target: OutputLinkTarget;                // qué emite
+  session_id?: string | null;              // sólo target "sesion"
+  orientation: "horizontal" | "vertical";
+  audio: boolean;
+  style: string | null;                    // colección fija; null = sigue la de Ajustes → Estilos
+  created_at?: string;
+  updated_at?: string;
+}
+// 3 a 40 caracteres: minúsculas, números y guiones (sin guion al principio).
+export const OUTPUT_LINK_SLUG_RE = /^[a-z0-9][a-z0-9-]{2,39}$/;
+// Nombres que chocan con archivos o carpetas del output.
+export const OUTPUT_LINK_RESERVED = ["assets", "clima", "output", "api", "index", "index.html", "favicon.ico", "socket.io"];
+
 // ---- Plantillas propias (editor visual) ----
 export type ElementType = "text" | "image" | "video" | "weather" | "data" | "logo" | "shape" | "camera";
 
