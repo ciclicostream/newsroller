@@ -56,6 +56,7 @@ function wmoDesc(code: number | null): string {
   if (code <= 67) return "Lluvia";
   if (code <= 77) return "Nieve";
   if (code <= 82) return "Chaparrones";
+  if (code <= 86) return "Nieve"; // chaparrones de nieve
   if (code <= 99) return "Tormenta";
   return "";
 }

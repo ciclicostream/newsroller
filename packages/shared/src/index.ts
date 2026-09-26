@@ -97,8 +97,9 @@ export interface ClimaPayload {
 export type ClimaIconKey = "soleado" | "nublado" | "llovizna" | "lluvia" | "nieve" | "tormenta";
 export function weatherIconKey(code: number | null): ClimaIconKey {
   if (code == null) return "nublado";
-  if (code <= 1) return "soleado";
-  if (code === 2 || code === 3 || code === 45 || code === 48) return "nublado";
+  // 1 y 2 = "Parcialmente nublado" (como lo describe la fuente): el ícono chico de nublado es sol con nube.
+  if (code === 0) return "soleado";
+  if (code === 1 || code === 2 || code === 3 || code === 45 || code === 48) return "nublado";
   if ([51, 53, 55, 56, 57].includes(code)) return "llovizna";
   if ([61, 63, 65, 66, 67, 80, 81, 82].includes(code)) return "lluvia";
   if ([71, 73, 75, 77, 85, 86].includes(code)) return "nieve";
@@ -115,10 +116,10 @@ export type ClimaSlotKey =
   | "nublado" | "nublado_noche" | "niebla" | "llovizna" | "lluvia" | "nieve" | "tormenta";
 
 export const CLIMA_SLOTS: { key: ClimaSlotKey; label: string; when: string; fallback: ClimaSlotKey | null; hasDefault: boolean }[] = [
-  { key: "soleado", label: "Soleado", when: "Cielo despejado de día (códigos 0-1)", fallback: null, hasDefault: true },
-  { key: "despejado_noche", label: "Despejado de noche", when: "Cielo despejado de noche (códigos 0-1)", fallback: "soleado", hasDefault: true },
-  { key: "parcial", label: "Parcialmente nublado", when: "Algo de nubes de día (código 2)", fallback: "nublado", hasDefault: true },
-  { key: "parcial_noche", label: "Parcialmente nublado de noche", when: "Algo de nubes de noche (código 2)", fallback: "nublado_noche", hasDefault: true },
+  { key: "soleado", label: "Soleado", when: "Cielo despejado de día (código 0)", fallback: null, hasDefault: true },
+  { key: "despejado_noche", label: "Despejado de noche", when: "Cielo despejado de noche (código 0)", fallback: "soleado", hasDefault: true },
+  { key: "parcial", label: "Parcialmente nublado", when: "Algo de nubes de día (códigos 1-2)", fallback: "nublado", hasDefault: true },
+  { key: "parcial_noche", label: "Parcialmente nublado de noche", when: "Algo de nubes de noche (códigos 1-2)", fallback: "nublado_noche", hasDefault: true },
   { key: "nublado", label: "Nublado", when: "Cubierto de día (código 3)", fallback: null, hasDefault: true },
   { key: "nublado_noche", label: "Nublado de noche", when: "Cubierto de noche (código 3)", fallback: "nublado", hasDefault: true },
   { key: "niebla", label: "Niebla", when: "Niebla o niebla escarchada (códigos 45, 48)", fallback: "nublado", hasDefault: false },
@@ -133,8 +134,10 @@ export const CLIMA_SLOT_KEYS = CLIMA_SLOTS.map((s) => s.key);
 export function climaSlotKey(code: number | null, isDay: boolean | null | undefined): ClimaSlotKey {
   const day = isDay !== false; // sin dato = de día
   if (code == null) return "nublado";
-  if (code <= 1) return day ? "soleado" : "despejado_noche";
-  if (code === 2) return day ? "parcial" : "parcial_noche";
+  // El 1 ("mayormente despejado") lo describimos como "Parcialmente nublado": lleva el ícono con nubes, no el
+  // despejado (si no, de noche aparecía sólo la luna con el texto "Parcialmente nublado").
+  if (code === 0) return day ? "soleado" : "despejado_noche";
+  if (code <= 2) return day ? "parcial" : "parcial_noche";
   if (code === 3) return day ? "nublado" : "nublado_noche";
   if (code === 45 || code === 48) return "niebla";
   if ([51, 53, 55, 56, 57].includes(code)) return "llovizna";
