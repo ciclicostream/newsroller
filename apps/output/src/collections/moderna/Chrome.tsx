@@ -10,13 +10,13 @@ import { Chrome as ClassicChrome } from "../../templates/Chrome";
 //  - abajo, el MISMO newsticker del marco clásico (templates/Chrome.tsx): barra blanca de extremo a extremo con los
 //    titulares de somosciclico.com en vivo, la categoría en rojo, la velocidad de Ajustes y la pieza QR de Somos Cíclico.
 // `alert` (contenido Ahora): la misma barra, repitiendo "AHORA" como el ticker de la Última Hora clásica.
-// `hideTemp`: sin la pill de temperatura (Declaraciones). El Obituario directamente no usa marco.
+// `hideTemp`: sin la pill de temperatura (Declaraciones); `hideClock`: sin hora (Cartelera con pieza lateral en 16:9). El Obituario directamente no usa marco.
 const MESES = ["ENE", "FEB", "MAR", "ABR", "MAY", "JUN", "JUL", "AGO", "SEP", "OCT", "NOV", "DIC"];
 const ROTATE_MS = 30_000;
 interface City { city: string; tempC: number | null }
 let citiesCache: City[] = [];
 
-export function ModernChrome({ alert = false, hideTemp = false }: { alert?: boolean; hideTemp?: boolean }) {
+export function ModernChrome({ alert = false, hideTemp = false, hideClock = false }: { alert?: boolean; hideTemp?: boolean; hideClock?: boolean }) {
   const [now, setNow] = useState(() => new Date());
   const [cities, setCities] = useState<City[]>(citiesCache);
 
@@ -49,7 +49,7 @@ export function ModernChrome({ alert = false, hideTemp = false }: { alert?: bool
       <div className="nmc-top">
         <div className="nmc-pill nmc-brand"><img src={ciclicoWhite} alt="Cíclico" /><span>Somos Cíclico</span></div>
         <div className="nmc-data">
-          <div className="nmc-pill nmc-cd"><b>{clock}</b><span>{fecha}</span></div>
+          {!hideClock && <div className="nmc-pill nmc-cd"><b>{clock}</b><span>{fecha}</span></div>}
           {cur && !hideTemp && <div className="nmc-pill nmc-temp" key={cur.city}><b>{cur.tempC}°</b><span>{cityName(cur)}</span></div>}
         </div>
       </div>

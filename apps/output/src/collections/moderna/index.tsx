@@ -1,4 +1,4 @@
-import type { CifrasData, ClimaData, ClimaPayload, DeclaracionesData, DolarData, DolarPayload, EfemeridesData, ObituarioData, PlacasData, RetroData, UltimaHoraData } from "@newsroller/shared";
+import type { CarteleraData, CifrasData, ClimaData, ClimaPayload, DeclaracionesData, DolarData, DolarPayload, EfemeridesData, ObituarioData, PlacasData, RetroData, UltimaHoraData } from "@newsroller/shared";
 import type { ItemProps } from "../../templates/items";
 import { Ahora } from "./Ahora";
 import { Obituario } from "./Obituario";
@@ -9,6 +9,7 @@ import { Efemerides } from "./Efemerides";
 import { Retro } from "./Retro";
 import { Clima } from "./Clima";
 import { Declaraciones } from "./Declaraciones";
+import { Cartelera } from "./Cartelera";
 
 // Colección "Modernas" (paneles con profundidad y luces), portada desde la maqueta aprobada.
 // Se suman de a una; mientras falten tipos no se puede habilitar (ready: false en TEMPLATE_COLLECTIONS).
@@ -32,6 +33,8 @@ export function ModernaItemView({ type, data, durationSec, createdAt, updatedAt,
       return <Clima data={data as ClimaData} live={liveData?.clima as ClimaPayload | undefined} durationSec={durationSec} />;
     case "declaraciones":
       return <Declaraciones data={data as DeclaracionesData} durationSec={durationSec} />;
+    case "cartelera":
+      return <Cartelera data={data as CarteleraData} durationSec={durationSec} />;
     default:
       return null;
   }

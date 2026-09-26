@@ -33,6 +33,10 @@ const DEMOS: Record<string, { type: string; data: Record<string, any>; dur?: num
     type: "cartelera", dur: 12,
     data: { kind: "evento", photo_url: "https://picsum.photos/seed/evento/1600/900", title: "Festival de Jazz en el Parque Centenario", author: "", cast: "", description: "Una tarde con bandas de jazz locales, feria de discos y food trucks. Entrada libre y gratuita para toda la familia.", venue: "Parque Centenario", address: "Av. Díaz Vélez 4821", city: "Caballito - CABA", days: "Sábado 27", time: "16:00 hs" },
   },
+  cartelera_teatro_video: {
+    type: "cartelera", dur: 12,
+    data: { kind: "teatro", ticker: "estreno", photo_url: "https://picsum.photos/seed/teatro/1600/900", title: "Los días quietos", author: "Laura Ferrer", cast: "Ana Quiroga, Pablo Salas y Mirta Ibarra", venue: "Teatro Sur", address: "Av. Corrientes 1500", city: "San Nicolás, CABA", days: "Jueves a domingo", time: "20 y 22:30 h", video_url: "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4" },
+  },
   cartelera_teatro: {
     type: "cartelera", dur: 12,
     data: { kind: "teatro", photo_url: "https://picsum.photos/seed/teatro/1600/900", title: "¡Oh cabezas locas de las religiosas!", author: "Mía Micelli", cast: "Ana Luz Camps, Melina Del Valle Villar, Miranda Di Lorenzo, Agustín Gagliardi, Mía Miceli", venue: "Espacio Callejón", address: "Humahuaca 3759", city: "Almagro - CABA", days: "Sábados", time: "16:00 hs" },
