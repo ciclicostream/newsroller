@@ -191,6 +191,16 @@ export function useFit(ref: React.RefObject<HTMLElement>, max: number, min: numb
   }, deps); // eslint-disable-line react-hooks/exhaustive-deps
 }
 
+// Como useFit, pero para textos sin caja de alto fijo: achica hasta que el alto del texto no pase de `limit` px.
+export function useFitMax(ref: React.RefObject<HTMLElement>, max: number, min: number, limit: number, deps: unknown[]): void {
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    let s = max;
+    el.style.fontSize = s + "px";
+    while (el.scrollHeight > limit && s > min) { s -= 2; el.style.fontSize = s + "px"; }
+  }, deps); // eslint-disable-line react-hooks/exhaustive-deps
+}
 const MESES_LARGO = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
 export const fechaLarga = (iso?: string): string => {
   if (!iso) return "";

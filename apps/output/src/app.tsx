@@ -162,6 +162,26 @@ const DEMOS: Record<string, { type: string; data: Record<string, any>; dur?: num
     type: "promos", dur: 15,
     data: { title: "AVANCE", body: "Texto de la promo de prueba: una bajada que explica de qué trata el avance.", format: "916", video_id: "zSWdZVtXT7E" },
   },
+  shorts_two: {
+    type: "shorts", dur: 15,
+    data: { count: 2, video1: "bxskJgShC38", video2: "bxskJgShC38", title: "Dos ideas para mejorar tu escritorio" },
+  },
+  promos_43: {
+    type: "promos", dur: 15,
+    data: { title: "Esta noche", body: "Un nuevo capítulo de EPA! a las 22, con invitados sorpresa y música en vivo.", format: "43", video_id: "zSWdZVtXT7E" },
+  },
+  informe: {
+    type: "informe", dur: 22,
+    data: { title: "Inflación en la Ciudad: qué pasó en julio", sec_per_slide: 5, slides: [1, 2, 3, 4, 5].map((k) => `https://picsum.photos/seed/inf${k}/1080/1350`) },
+  },
+  camaras: {
+    type: "camaras", dur: 15,
+    data: { camera_id: "demo", location: "Obelisco · CABA", ads: ["https://picsum.photos/seed/ad1/520/560", "https://picsum.photos/seed/ad2/520/560"] },
+  },
+  publicidad_sola: {
+    type: "publicidad", dur: 15,
+    data: { format: "vertical", media_url: "https://picsum.photos/seed/aviso/405/720", media_kind: "image" },
+  },
   shorts: {
     type: "shorts", dur: 15,
     data: { count: 1, video1: "bxskJgShC38", title: "Título del short de prueba que puede ser algo largo" },
