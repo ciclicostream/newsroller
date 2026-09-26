@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { io, type Socket } from "socket.io-client";
 import { MUSIC_DEFAULT, RADIO_STATE_DEFAULT, type MusicSettings, type RadioState } from "@newsroller/shared";
 import { API_BASE } from "./lib/scene";
+import { boot } from "./lib/boot";
 import { IS_VERTICAL, fitScale, stageStyle } from "./lib/orientation";
 import { useAudioUnlock } from "./lib/audioUnlock";
 import offAir from "./assets/off-air.jpg";
@@ -114,9 +115,9 @@ export function RadioOutput() {
     p.set(state.pad.kind === "session" ? "session" : "preview", state.pad.id);
     p.set("audio", "1");
     if (IS_VERTICAL) p.set("orientation", "vertical");
-    // Mismo estilo que este output si el link lo fija; si no, el iframe sigue Ajustes → Estilos por su cuenta.
-    const style = P.get("style");
-    if (style) p.set("style", style);
+    // El iframe sigue la misma suite: toma su colección y los cambios que se le hagan (en el próximo contenido).
+    if (boot.link) p.set("suite", boot.link.slug);
+    else if (P.get("style")) p.set("style", P.get("style")!);
     return `${import.meta.env.BASE_URL}?${p.toString()}`;
   }, [state.tx, state.pad?.kind, state.pad?.id]);
 

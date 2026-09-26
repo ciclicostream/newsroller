@@ -73,7 +73,7 @@ app.use("/api/playlist", playlistRouter());
 app.use("/api/parrilla", parrillaRouter(io));
 app.use("/api/templates", templatesRouter());
 app.use("/api/output", outputRouter()); // público (sin auth) para vMix
-app.use("/api/output-links", outputLinksRouter()); // links con nombre: administración desde el panel
+app.use("/api/output-links", outputLinksRouter(io)); // links con nombre: administración desde el panel
 app.use("/api/radio", radioRouter(io)); // Stream (radio manual): panel autenticado; output con clave
 
 // En producción, servir los builds del front (mismo origen que la API y el socket).

@@ -6,7 +6,7 @@ import { Login } from "./pages/Login";
 import { AjustesClima } from "./pages/AjustesClima";
 import { AjustesPlataformas } from "./pages/AjustesPlataformas";
 import { AjustesMusica } from "./pages/AjustesMusica";
-import { AjustesEstilos } from "./pages/AjustesEstilos";
+import { AjustesSuites } from "./pages/AjustesSuites";
 import { Perfil } from "./pages/Perfil";
 import { Papelera } from "./pages/Papelera";
 import { Actividad } from "./pages/Actividad";
@@ -55,7 +55,7 @@ export function App() {
       <Route path="/ajustes/actividad" element={<Protected perm="reportes"><Actividad /></Protected>} />
       <Route path="/ajustes/clima" element={<Protected perm="ajustes"><AjustesClima /></Protected>} />
       <Route path="/ajustes/plataformas" element={<Protected perm="ajustes"><AjustesPlataformas /></Protected>} />
-      <Route path="/ajustes/estilos" element={<Protected perm="perfiles"><AjustesEstilos /></Protected>} />
+      <Route path="/ajustes/suites" element={<Protected perm="perfiles"><AjustesSuites /></Protected>} />
       <Route path="/ajustes/musica" element={<Protected perm="ajustes_medios"><AjustesMusica /></Protected>} />
       <Route path="/perfil" element={<Protected><Perfil /></Protected>} />
       <Route path="/usuarios" element={<Protected perm="perfiles"><Users /></Protected>} />

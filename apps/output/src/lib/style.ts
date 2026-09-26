@@ -5,12 +5,16 @@ import { API_BASE } from "./scene";
 import { P } from "./params";
 import { boot } from "./boot";
 
-// Colección de templates activa. Si el link la fija (link con nombre o `style` en la URL de un monitor), queda fija;
-// si no, sigue Ajustes → Estilos y cambia en vivo (el próximo contenido ya sale con la nueva).
-const FIXED = collectionById(P.get("style")) ? P.get("style")! : null;
+// Colección de templates de este output:
+//  - Suite (link con nombre): la de la suite. Si en el panel le cambian la colección, se aplica sola en el
+//    próximo contenido; si le cambian qué emite, la orientación o el audio, el output se recarga.
+//  - Monitor o preview del panel con `style` en la URL: esa colección, fija.
+//  - Sin suite ni `style` (links viejos, monitores sin selector): la primera colección habilitada por el Master.
 const valid = (s: unknown): s is string => typeof s === "string" && !!collectionById(s)?.ready;
+const LINK = boot.link;
+const PARAM = !LINK && valid(P.get("style")) ? P.get("style")! : null;
 
-let current: string = FIXED ?? (valid(boot.style) ? boot.style : DEFAULT_COLLECTION);
+let current: string = LINK && valid(LINK.style) ? LINK.style! : PARAM ?? (valid(boot.defaultCollection) ? boot.defaultCollection : DEFAULT_COLLECTION);
 const subs = new Set<(s: string) => void>();
 let started = false;
 
@@ -20,13 +24,30 @@ function set(s: unknown): void {
   subs.forEach((f) => f(current));
 }
 
+async function refetchLink(): Promise<void> {
+  if (!LINK) return;
+  const cfg = await fetch(`${API_BASE}/api/output/link/${encodeURIComponent(LINK.slug)}`).then((r) => (r.ok ? r.json() : null)).catch(() => undefined);
+  if (cfg === undefined) return; // sin red: se reintenta en el próximo ciclo
+  // Borraron la suite o le cambiaron algo que se aplica al arrancar: recargar (el arranque muestra el aviso si ya no existe).
+  if (!cfg || cfg.target !== LINK.target || (cfg.session ?? null) !== (LINK.session ?? null) || cfg.orientation !== LINK.orientation || !!cfg.audio !== !!LINK.audio || (cfg.key ?? null) !== (LINK.key ?? null)) {
+    window.location.reload();
+    return;
+  }
+  set(cfg.style);
+}
+
 function start(): void {
-  if (started || FIXED) return;
+  if (started || PARAM) return;
   started = true;
-  const load = () => fetch(`${API_BASE}/api/settings`).then((r) => r.json()).then((d) => set(d?.style)).catch(() => {});
-  setInterval(load, 60_000); // respaldo por si se pierde el aviso del socket
   const socket = io(API_BASE || undefined, { transports: ["websocket", "polling"] });
-  socket.on("settings:update", (d: Record<string, unknown>) => set(d?.style));
+  if (LINK) {
+    socket.on("link:update", (l: { slug?: string }) => { if (l?.slug === LINK.slug) void refetchLink(); });
+    setInterval(() => void refetchLink(), 60_000); // respaldo por si se pierde el aviso del socket
+  } else {
+    const first = (d: Record<string, unknown> | null) => (Array.isArray(d?.collections) ? d!.collections[0] : undefined);
+    socket.on("settings:update", (d: Record<string, unknown>) => set(first(d)));
+    setInterval(() => { fetch(`${API_BASE}/api/settings`).then((r) => r.json()).then((d) => set(first(d))).catch(() => {}); }, 60_000);
+  }
 }
 
 export const currentStyle = (): string => current;
@@ -34,7 +55,7 @@ export const currentStyle = (): string => current;
 export function useStyle(): string {
   const [s, setS] = useState(current);
   useEffect(() => {
-    if (FIXED) return;
+    if (PARAM) return;
     start();
     subs.add(setS);
     setS(current);

@@ -27,14 +27,14 @@ const DEFAULTS = {
   // Música de fondo continua (Ajustes → Música): temas cargados, cuál está seleccionado y si
   // el canal está habilitado (el toggle vive en el Monitor de Emisión, no acá).
   music: MUSIC_DEFAULT as MusicSettings,
-  // Colección de templates activa (Ajustes → Estilos). Vale para todos los outputs, el Stream y los monitores.
-  style: DEFAULT_COLLECTION as string,
+  // Colecciones de templates habilitadas por el Master (Ajustes → Suites). Cada suite elige una de éstas.
+  collections: [DEFAULT_COLLECTION] as string[],
   // Links viejos con variables (/output/?orientation=…): se apagan cuando todos los outputs usan links con nombre.
   legacyLinks: true,
 };
 
 type SettingsKey = keyof typeof DEFAULTS;
-type SettingsValue = number | boolean | string | Record<string, string> | Record<string, number> | Plataforma[] | MusicSettings;
+type SettingsValue = number | boolean | string | string[] | Record<string, string> | Record<string, number> | Plataforma[] | MusicSettings;
 
 // Fallback en memoria cuando no hay Supabase (dev local sin credenciales).
 const memory: Record<string, unknown> = {};
@@ -46,7 +46,11 @@ function coerce(key: SettingsKey, raw: unknown): SettingsValue | null {
     // Segundos por vuelta: 20 (rápido) .. 240 (muy lento).
     return Math.round(Math.min(240, Math.max(20, n)));
   }
-  if (key === "style") return typeof raw === "string" && collectionById(raw)?.ready ? raw : null;
+  if (key === "collections") {
+    if (!Array.isArray(raw) || raw.length === 0 || raw.length > 20) return null;
+    const ids = [...new Set(raw)];
+    return ids.every((id) => typeof id === "string" && collectionById(id)?.ready) ? (ids as string[]) : null;
+  }
   if (key === "legacyLinks") return typeof raw === "boolean" ? raw : null;
   if (key === "onAir") {
     if (typeof raw === "boolean") return raw;
@@ -157,7 +161,8 @@ export function settingsRouter(io: IO): Router {
       if (!(key in body)) continue;
       // La música de fondo la toca también el Host (ajustes_medios); el resto de las preferencias pide "ajustes".
       if (key !== "music" && !can(req.user!.role, "ajustes")) return res.status(403).json({ error: "no tenés permiso para cambiar esta preferencia", code: "forbidden" });
-      if ((key === "style" || key === "legacyLinks") && !can(req.user!.role, "perfiles")) return res.status(403).json({ error: "sólo un Administrador o el Master cambian el estilo y los links", code: "forbidden" });
+      if (key === "collections" && !can(req.user!.role, "config_sistema")) return res.status(403).json({ error: "sólo el Master habilita colecciones", code: "forbidden" });
+      if (key === "legacyLinks" && !can(req.user!.role, "perfiles")) return res.status(403).json({ error: "sólo un Administrador o el Master apagan los links viejos", code: "forbidden" });
       if (key === "idleMinutes" && !can(req.user!.role, "config_sistema")) return res.status(403).json({ error: "sólo el Master cambia los tiempos de inactividad", code: "forbidden" });
       const val = coerce(key, body[key]);
       if (val == null) return res.status(400).json({ error: `valor inválido para ${key}` });

@@ -4,6 +4,7 @@ import { useMonitorVertical } from "../lib/monitorOrientation";
 import { useMonitorAudio } from "../lib/monitorAudio";
 import { api } from "../lib/api";
 import { OUTPUT_FRAME_BASE } from "../lib/parrilla";
+import { useEnabledCollections, useMonitorCollection } from "../lib/collections";
 
 // Monitor chico de edición: muestra en vivo cómo queda la placa con lo que se está
 // cargando en el formulario. Embebe el output (?draft=1) y le manda los datos por
@@ -21,6 +22,10 @@ export function PreviewMonitor({ type, data, dur, ready = true }: {
   const frame = useRef<HTMLIFrameElement>(null);
   const [sound, toggleSound] = useMonitorAudio();
   const [vertical, toggleVertical] = useMonitorVertical();
+  // Colección con la que se ve la vista previa (entre las habilitadas; se recuerda en este navegador).
+  const cols = useEnabledCollections();
+  const [colPref, setColPref] = useMonitorCollection();
+  const col = cols.some((c) => c.id === colPref) ? colPref : cols[0]?.id ?? "";
   const [loaded, setLoaded] = useState(false); // el output avisó que está escuchando
   const [selId, setSelId] = useState<string | null>(null);
   const [saved, setSaved] = useState<Saved | null>(null);
@@ -88,6 +93,11 @@ export function PreviewMonitor({ type, data, dur, ready = true }: {
       <div className="pm-hd">
         <span>{saved ? "Contenido guardado" : "Vista previa"}</span>
         <span className="pm-hd-r">
+          {cols.length > 1 && (
+            <select className="pm-col-sel" value={col} onChange={(e) => setColPref(e.target.value)} title="Colección de templates de la vista previa" aria-label="Colección">
+              {cols.map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}
+            </select>
+          )}
           {saved && <button type="button" className="pm-back" onClick={() => setSelId(null)} title="Volver a lo que estoy cargando"><X size={12} /> Formulario</button>}
           <button type="button" className={"pm-re pm-snd" + (vertical ? " on" : "")} title={vertical ? "Ver en 16:9 (horizontal)" : "Ver en 9:16 (vertical)"} aria-pressed={vertical} aria-label={vertical ? "Ver horizontal" : "Ver vertical"} onClick={toggleVertical}>
             {vertical ? <RectangleVertical size={13} /> : <RectangleHorizontal size={13} />}
@@ -102,7 +112,7 @@ export function PreviewMonitor({ type, data, dur, ready = true }: {
         </span>
       </div>
       <div className={"pm-screen" + (vertical ? " v" : "")}>
-        <iframe key={(sound ? "snd" : "mute") + (vertical ? "-v" : "")} ref={frame} src={`${OUTPUT_FRAME_BASE}/output/?draft=1${sound ? "&audio=1" : ""}${vertical ? "&orientation=vertical" : ""}`} title="Vista previa" tabIndex={-1} allow="autoplay; encrypted-media" />
+        <iframe key={(sound ? "snd" : "mute") + (vertical ? "-v" : "") + col} ref={frame} src={`${OUTPUT_FRAME_BASE}/output/?draft=1${sound ? "&audio=1" : ""}${vertical ? "&orientation=vertical" : ""}${col ? "&style=" + col : ""}`} title="Vista previa" tabIndex={-1} allow="autoplay; encrypted-media" />
         {!showReady && <div className="pm-ph">Completá los datos para ver la vista previa.</div>}
       </div>
     </div>
@@ -137,6 +147,7 @@ const CSS = `
 .pm{position:sticky;top:12px;z-index:5;width:100%;background:#fff;border:1px solid #e3e7ef;border-radius:14px;padding:10px 10px 12px;box-shadow:0 6px 20px rgba(20,30,60,.08),inset 0 2px 12px rgba(20,30,60,.05)}
 .pm-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;font-size:11px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:#7c869b}
 .pm-hd-r{display:inline-flex;align-items:center;gap:6px}
+.pm-col-sel{height:24px;border:1px solid #e3e7ef;border-radius:7px;background:#fff;color:#4a5468;font-size:11px;font-weight:600;padding:0 4px;text-transform:none;letter-spacing:0}
 .pm-back{border:1px solid #2f6bff;background:#e8efff;color:#2f6bff;border-radius:7px;padding:3px 8px;font:inherit;font-size:10.5px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;display:inline-flex;align-items:center;gap:4px;cursor:pointer}
 .pm-col>.card[data-item]{cursor:pointer}
 .pm-re{border:1px solid #e3e7ef;background:#fff;color:#7c869b;border-radius:7px;padding:4px 6px;display:inline-flex;cursor:pointer}

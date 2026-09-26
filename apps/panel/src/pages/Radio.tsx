@@ -14,6 +14,8 @@ import { contentItems as contentItemsApi } from "../lib/content-items";
 import { camerasApi } from "../lib/cameras";
 import { createRadioLink, radioApi, type RadioConfig, type RadioLink } from "../lib/radioLink";
 import { OutputLinksPicker } from "../components/OutputLinksPicker";
+import { useOperatingSuite } from "../lib/suites";
+import { collectionLabel } from "../lib/collections";
 import offAir from "../assets/off-air.jpg";
 import { CAT, CAT_ICON, CAT_ORDER, SESSION_COLOR, SESSION_ICON, TYPE_LABEL, catOf, iconOf, itemText } from "../lib/contentCatalog";
 
@@ -254,7 +256,9 @@ export function Radio() {
     return () => window.removeEventListener("keydown", onKey);
   }, [mic.toggle]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const orient = monVertical ? "&orientation=vertical" : "";
+  // Suite de Stream que se está operando: el monitor la muestra con su colección de templates.
+  const { suites: streamSuites, suite: streamSuite, pick: pickStreamSuite } = useOperatingSuite("stream");
+  const orient = (monVertical ? "&orientation=vertical" : "") + (streamSuite ? `&style=${streamSuite.style}` : "");
   const monUrl = cur && cur.kind !== "cam"
     ? cur.kind === "session"
       ? `${OUTPUT_FRAME_BASE}/output/?session=${cur.id}${monSound ? "&audio=1" : ""}${orient}`
@@ -321,6 +325,11 @@ export function Radio() {
               title={!hasTrack ? "Elegí un tema en Ajustes → Música primero" : musicOn ? "Apagar la música de fondo" : "Encender la música de fondo (se apaga sola con contenido con audio y baja con el micrófono)"}>
               <Music size={14} />
             </button>
+            {streamSuites.length > 0 && (
+              <select className="pv-suite" value={streamSuite?.slug ?? ""} onChange={(e) => pickStreamSuite(e.target.value)} title="Suite de Stream que estás operando" aria-label="Suite">
+                {streamSuites.map((l) => <option key={l.slug} value={l.slug}>{l.slug} · {collectionLabel(l.style)}</option>)}
+              </select>
+            )}
             <button type="button" className={"pv-snd" + (showLink ? " on" : "")} onClick={() => setShowLink((v) => !v)} aria-pressed={showLink}
               aria-label="Enlace para OBS o vMix" title="Enlace del output para OBS / vMix">
               <Link2 size={14} />

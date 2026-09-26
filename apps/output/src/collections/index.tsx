@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useRef, type ReactNode } from "react";
 import { DEFAULT_COLLECTION } from "@newsroller/shared";
 import { ClasicaItemView, type ItemProps } from "../templates/items";
 import { ModernaItemView } from "./moderna";
@@ -12,9 +12,14 @@ export const COLLECTIONS: Record<string, (p: ItemProps) => ReactNode> = {
   moderna: (p) => <ModernaItemView {...p} />,
 };
 
-// Punto único por donde pasan el aire, las sesiones, el Stream y los monitores: elige la colección activa.
+// Punto único por donde pasan el aire, las sesiones, el Stream y los monitores: elige la colección.
+// La colección queda fija mientras dura cada contenido: si la suite cambia de colección, el cambio
+// entra recién con el contenido siguiente (nunca redibuja una placa que ya está al aire).
 export function ItemView(p: ItemProps) {
   const style = useStyle();
-  const render = COLLECTIONS[style] ?? COLLECTIONS[DEFAULT_COLLECTION]!;
+  const key = `${p.id ?? ""}|${p.type}`;
+  const latch = useRef<{ key: string; style: string } | null>(null);
+  if (!latch.current || latch.current.key !== key) latch.current = { key, style };
+  const render = COLLECTIONS[latch.current.style] ?? COLLECTIONS[DEFAULT_COLLECTION]!;
   return <>{render(p)}</>;
 }

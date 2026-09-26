@@ -514,11 +514,12 @@ export interface PromosData {
   video_id: string; // id de YouTube
 }
 
-// ---- Colecciones de templates (Ajustes → Estilos) ----
-// Cada colección es un juego completo de templates, con versión 16:9 y 9:16. Se elige UNA en Ajustes → Estilos
-// (sólo Administrador o Master) y vale para todos los outputs, el Stream y los monitores del panel: no se mezclan.
-// Un link con nombre puede fijar su propia colección. Para sumar una colección por programación: agregarla acá
-// y registrar su renderizador en apps/output/src/collections. `ready: false` = todavía no se puede elegir.
+// ---- Colecciones de templates ----
+// Cada colección es un juego completo de templates, con versión 16:9 y 9:16; en un mismo output no se mezclan.
+// La colección es una variable de cada SUITE (link con nombre), como el audio o la orientación. El Master habilita
+// cuáles se pueden usar (Ajustes → Suites) y el Administrador elige la de cada suite. Para sumar una colección por
+// programación: agregarla acá y registrar su renderizador en apps/output/src/collections. `ready: false` = sin
+// templates todavía (no se puede habilitar).
 export interface TemplateCollection { id: string; label: string; desc: string; ready: boolean }
 export const TEMPLATE_COLLECTIONS: TemplateCollection[] = [
   { id: "clasica", label: "Clásicas", desc: "Las templates de siempre: cards blancas sobre los fondos de cada sección.", ready: true },
@@ -527,9 +528,10 @@ export const TEMPLATE_COLLECTIONS: TemplateCollection[] = [
 export const DEFAULT_COLLECTION = "clasica";
 export const collectionById = (id: string | null | undefined): TemplateCollection | undefined => TEMPLATE_COLLECTIONS.find((c) => c.id === id);
 
-// ---- Links de salida con nombre ----
-// En vez de /output/?orientation=vertical&audio=1…, el link público es /output/<nombre> y la configuración
-// (qué emite, orientación, audio y estilo) queda guardada en el server: se ve y se cambia sólo desde el panel.
+// ---- Suites: links de salida con nombre ----
+// Cada link es una SUITE: /output/<nombre> y su configuración (qué emite, orientación, audio y colección) guardada
+// en el server; se ve y se cambia sólo desde el panel. Cambiar la colección de una suite no cambia la URL y entra
+// en el próximo contenido de todos los outputs que la usan (también el Stream).
 export type OutputLinkTarget = "emision" | "sesion" | "stream";
 export interface OutputLink {
   slug: string;                            // nombre del link: /output/<slug>
@@ -538,7 +540,7 @@ export interface OutputLink {
   session_id?: string | null;              // sólo target "sesion"
   orientation: "horizontal" | "vertical";
   audio: boolean;
-  style: string | null;                    // colección fija; null = sigue la de Ajustes → Estilos
+  style: string;                           // colección de templates de la suite
   created_at?: string;
   updated_at?: string;
 }
@@ -635,6 +637,7 @@ export interface ServerToClientEvents {
   "sources:status": (statuses: SourceStatus[]) => void;
   "settings:update": (settings: Record<string, unknown>) => void;
   "session:update": (s: { id: string; active: boolean; paused_at: string | null }) => void;
+  "link:update": (l: { slug: string }) => void; // cambió una suite: los outputs que la usan la vuelven a leer
   // Stream (radio manual): estado que el Host manda al output y señalización WebRTC panel <-> output.
   "radio:state": (s: RadioState) => void;
   "radio:viewer": (id: string) => void; // (al Host) se conectó un output receptor

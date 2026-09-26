@@ -71,11 +71,11 @@ export function Ajustes() {
           </Link>
         )}
         {isAdmin && (
-          <Link to="/ajustes/estilos" className="tipo-card">
+          <Link to="/ajustes/suites" className="tipo-card">
             <span className="tipo-ic"><Palette size={22} /></span>
             <span className="tipo-main">
-              <span className="tipo-name">Estilos</span>
-              <span className="tipo-desc">Clásicas o Modernas, para todos los outputs</span>
+              <span className="tipo-name">Suites</span>
+              <span className="tipo-desc">Colección de templates de cada link de salida</span>
             </span>
           </Link>
         )}

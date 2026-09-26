@@ -1,11 +1,15 @@
 import { useEffect, useState } from "react";
 import { Check, Copy, ExternalLink, Link2, Loader2, Plus, RectangleHorizontal, RectangleVertical, Trash2, Volume2, VolumeX } from "lucide-react";
-import { TEMPLATE_COLLECTIONS, collectionById, type OutputLink, type OutputLinkTarget } from "@newsroller/shared";
+import { collectionById, type OutputLink, type OutputLinkTarget, type TemplateCollection } from "@newsroller/shared";
+import { useAuth } from "../auth/AuthProvider";
+import { useEnabledCollections } from "../lib/collections";
+import { notifySuitesChanged } from "../lib/suites";
 import { outputLinkUrl, outputLinksApi } from "../lib/outputLinks";
 
-// Generador de links de salida (debajo del monitor en Emisión, en cada Sesión y en Stream).
-// Arma links con nombre: /output/<nombre>, sin variables a la vista. Orientación, audio y estilo quedan
-// guardados en el server y se cambian desde acá sin tocar la URL que ya está cargada en OBS/vMix.
+// Generador de links de salida (debajo del monitor en Emisión, en cada Sesión y en Stream). Cada link es una SUITE:
+// /output/<nombre>, sin variables a la vista. Orientación, audio y colección quedan guardados en el server y se
+// cambian sin tocar la URL que ya está cargada en OBS/vMix. La colección la elige sólo un Administrador o el Master
+// (entre las habilitadas); para el resto, la suite nueva sale con la colección por defecto y se ve como dato.
 export function OutputLinksPicker({ title, target = "emision", sessionId, fixedAudio }: {
   title?: string;
   target?: OutputLinkTarget;
@@ -14,7 +18,10 @@ export function OutputLinksPicker({ title, target = "emision", sessionId, fixedA
 }) {
   const [vertical, setVertical] = useState(false);
   const [audio, setAudio] = useState(fixedAudio ?? false);
-  const [style, setStyle] = useState<string>(""); // "" = el de Ajustes → Estilos
+  const { can } = useAuth();
+  const canStyle = can("perfiles");
+  const enabled = useEnabledCollections();
+  const [style, setStyle] = useState<string>(""); // "" = la colección por defecto
   const [name, setName] = useState("");
   const [links, setLinks] = useState<OutputLink[] | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
@@ -22,7 +29,7 @@ export function OutputLinksPicker({ title, target = "emision", sessionId, fixedA
   const [copied, setCopied] = useState<string | null>(null);
 
   const mine = (l: OutputLink) => l.target === target && (target !== "sesion" || l.session_id === sessionId);
-  const load = () => outputLinksApi.list().then((all) => setLinks(all.filter(mine))).catch((e) => { setLinks([]); setErr(hint(e)); });
+  const load = () => outputLinksApi.list().then((all) => { setLinks(all.filter(mine)); notifySuitesChanged(); }).catch((e) => { setLinks([]); setErr(hint(e)); });
   useEffect(() => { void load(); }, [target, sessionId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function create() {
@@ -30,7 +37,7 @@ export function OutputLinksPicker({ title, target = "emision", sessionId, fixedA
     try {
       await outputLinksApi.create({
         slug: name.trim().toLowerCase() || undefined, target, session_id: target === "sesion" ? sessionId ?? null : null,
-        orientation: vertical ? "vertical" : "horizontal", audio: fixedAudio ?? audio, style: style || null,
+        orientation: vertical ? "vertical" : "horizontal", audio: fixedAudio ?? audio, ...(canStyle && style ? { style } : {}),
       });
       setName("");
       await load();
@@ -65,7 +72,7 @@ export function OutputLinksPicker({ title, target = "emision", sessionId, fixedA
         <Link2 size={15} className="lp-icon" />
         <Seg on={vertical} set={setVertical} off={<RectangleHorizontal size={15} />} onIcon={<RectangleVertical size={15} />} offTitle="Horizontal 16:9" onTitle="Vertical 9:16" />
         {fixedAudio == null && <Seg on={audio} set={setAudio} off={<VolumeX size={15} />} onIcon={<Volume2 size={15} />} offTitle="Sin audio" onTitle="Con audio" />}
-        <StyleSelect value={style} onChange={setStyle} />
+        {canStyle ? <StyleSelect value={style || enabled[0]?.id || ""} options={enabled} onChange={setStyle} /> : <span className="lp-col" title="Colección de la suite nueva">{enabled[0]?.label ?? ""}</span>}
         <input className="lp-name" value={name} onChange={(e) => setName(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "").slice(0, 40))} placeholder="nombre (opcional)" aria-label="Nombre del link" />
         <button className="sess-icon" onClick={() => void create()} disabled={busy != null} title="Crear link">{busy === "new" ? <Loader2 size={14} className="spin" /> : <Plus size={14} />}</button>
       </div>
@@ -77,7 +84,7 @@ export function OutputLinksPicker({ title, target = "emision", sessionId, fixedA
               <div className="lp-url" title={outputLinkUrl(l.slug)}>{outputLinkUrl(l.slug)}</div>
               <Seg on={l.orientation === "vertical"} set={(v) => void update(l, { orientation: v ? "vertical" : "horizontal" })} off={<RectangleHorizontal size={14} />} onIcon={<RectangleVertical size={14} />} offTitle="Horizontal 16:9" onTitle="Vertical 9:16" />
               {fixedAudio == null && <Seg on={l.audio} set={(v) => void update(l, { audio: v })} off={<VolumeX size={14} />} onIcon={<Volume2 size={14} />} offTitle="Sin audio" onTitle="Con audio" />}
-              <StyleSelect value={l.style ?? ""} onChange={(v) => void update(l, { style: v || null })} />
+              {canStyle ? <StyleSelect value={l.style} options={enabled} onChange={(v) => void update(l, { style: v })} /> : <span className="lp-col" title="Colección de la suite">{collectionById(l.style)?.label ?? l.style}</span>}
               <a className="sess-icon" href={outputLinkUrl(l.slug)} target="_blank" rel="noreferrer" title="Abrir"><ExternalLink size={14} /></a>
               <button className="sess-icon" onClick={() => void copy(l.slug)} title={copied === l.slug ? "Copiado" : "Copiar"}>{copied === l.slug ? <Check size={14} /> : <Copy size={14} />}</button>
               <button className="sess-icon" onClick={() => void remove(l)} disabled={busy === l.slug} title="Borrar">{busy === l.slug ? <Loader2 size={14} className="spin" /> : <Trash2 size={14} />}</button>
@@ -99,20 +106,17 @@ function Seg({ on, set, off, onIcon, offTitle, onTitle }: { on: boolean; set: (v
   );
 }
 
-// Estilo del link: el de Ajustes (por defecto) o una colección fija. Las que están en preparación no se eligen.
-function StyleSelect({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+// Colección de la suite, entre las habilitadas por el Master (sólo Administrador o Master).
+function StyleSelect({ value, options, onChange }: { value: string; options: TemplateCollection[]; onChange: (v: string) => void }) {
   return (
-    <select className="lp-style" value={value} onChange={(e) => onChange(e.target.value)} title="Estilo" aria-label="Estilo">
-      <option value="">Estilo de Ajustes</option>
-      {TEMPLATE_COLLECTIONS.map((c) => (
-        <option key={c.id} value={c.id} disabled={!c.ready && value !== c.id}>{c.label}{c.ready ? "" : " (en preparación)"}</option>
-      ))}
-      {value && !collectionById(value) && <option value={value}>{value}</option>}
+    <select className="lp-style" value={value} onChange={(e) => onChange(e.target.value)} title="Colección" aria-label="Colección">
+      {value && !options.some((c) => c.id === value) && <option value={value}>{collectionById(value)?.label ?? value} (no habilitada)</option>}
+      {options.map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}
     </select>
   );
 }
 
 function hint(e: unknown): string {
   const m = e instanceof Error ? e.message : String(e);
-  return /output_links|relation|does not exist|sin base/i.test(m) ? "Falta correr la migración 0024 en Supabase para guardar links con nombre." : m;
+  return /output_links|relation|does not exist|sin base/i.test(m) ? "Falta correr las migraciones 0024 y 0025 en Supabase para guardar suites." : m;
 }

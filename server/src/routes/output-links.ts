@@ -1,13 +1,17 @@
 import { randomBytes } from "node:crypto";
 import { Router } from "express";
-import { OUTPUT_LINK_RESERVED, OUTPUT_LINK_SLUG_RE, can, collectionById, type OutputLink, type OutputLinkTarget, type Perm, type Role } from "@newsroller/shared";
+import { DEFAULT_COLLECTION, OUTPUT_LINK_RESERVED, OUTPUT_LINK_SLUG_RE, can, collectionById, type OutputLink, type OutputLinkTarget, type Perm, type Role } from "@newsroller/shared";
 import { getSupabase } from "../db/supabase.js";
 import { requireAuth, requirePerm } from "../auth/middleware.js";
 import { logActivity } from "../activity.js";
 import { radioKey } from "./radio.js";
+import { readAll as readSettings } from "./settings.js";
+import type { IO } from "../realtime/socket.js";
 
-// Links de salida con nombre (/output/<slug>). La configuración (qué emite, orientación, audio y estilo)
+// Suites = links de salida con nombre (/output/<slug>). La configuración (qué emite, orientación, audio y colección)
 // vive en la tabla output_links: el link público no lleva variables y sólo se cambia desde el panel.
+// La colección de una suite la elige o la cambia sólo un Administrador o el Master, entre las habilitadas por el Master;
+// quien crea una suite sin ese permiso recibe la primera colección habilitada.
 const TARGETS: OutputLinkTarget[] = ["emision", "sesion", "stream"];
 const COLS = "slug, label, target, session_id, orientation, audio, style, created_at, updated_at";
 // Cada destino pide el permiso de la sección donde se genera: Emisión (Copiloto), Sesiones o Stream.
@@ -42,10 +46,9 @@ function parseBody(b: Record<string, unknown>, partial: boolean): { ok: Partial<
     out.orientation = o;
   }
   if ("audio" in b || !partial) out.audio = b.audio === true;
-  if ("style" in b) {
-    if (b.style == null || b.style === "") out.style = null;
-    else if (typeof b.style === "string" && collectionById(b.style)) out.style = b.style;
-    else return { error: "estilo inválido" };
+  if ("style" in b && b.style != null && b.style !== "") {
+    if (typeof b.style !== "string" || !collectionById(b.style)) return { error: "colección inválida" };
+    out.style = b.style;
   }
   if (out.target === "sesion" && !out.session_id && !partial) return { error: "falta la sesión" };
   return { ok: out };
@@ -70,7 +73,14 @@ export async function resolveOutputLink(slug: string): Promise<Record<string, un
 }
 
 // Administración desde el panel: quien opera Emisión, Sesiones o Stream.
-export function outputLinksRouter(): Router {
+// Colecciones que el Master habilitó (en orden: la primera es la que reciben las suites nuevas por defecto).
+async function enabledCollections(): Promise<string[]> {
+  const s = await readSettings();
+  const list = Array.isArray(s.collections) ? (s.collections as string[]).filter((id) => collectionById(id)?.ready) : [];
+  return list.length ? list : [DEFAULT_COLLECTION];
+}
+
+export function outputLinksRouter(io: IO): Router {
   const r = Router();
   r.use(requireAuth, requirePerm("programar", "sesiones", "stream"));
   const sb = () => getSupabase()!;
@@ -112,6 +122,12 @@ export function outputLinksRouter(): Router {
     if ("error" in parsed) return res.status(400).json({ error: parsed.error });
     if (!canTarget(req.user!.role, parsed.ok.target!)) return res.status(403).json({ error: "no tenés permiso para crear este tipo de link", code: "forbidden" });
     if (parsed.ok.target === "sesion" && !(await managesSession(req.user!.id, req.user!.role, parsed.ok.session_id))) return res.status(403).json({ error: "no gestionás esta sesión", code: "forbidden" });
+    const enabled = await enabledCollections();
+    if (parsed.ok.style && can(req.user!.role, "perfiles")) {
+      if (!enabled.includes(parsed.ok.style)) return res.status(400).json({ error: "esa colección no está habilitada" });
+    } else {
+      parsed.ok.style = enabled[0]!;
+    }
     const wanted = typeof body.slug === "string" ? body.slug.trim().toLowerCase() : "";
     const slug = wanted || randomSlug();
     const err = slugError(slug);
@@ -133,10 +149,15 @@ export function outputLinksRouter(): Router {
     const own = await loadOwned(req.params.slug, req.user!.id, req.user!.role);
     if (own === "missing") return res.status(404).json({ error: "link no encontrado" });
     if (own === "forbidden") return res.status(403).json({ error: "no tenés permiso para editar este link", code: "forbidden" });
+    if (parsed.ok.style) {
+      if (!can(req.user!.role, "perfiles")) return res.status(403).json({ error: "sólo un Administrador o el Master cambian la colección de una suite", code: "forbidden" });
+      if (!(await enabledCollections()).includes(parsed.ok.style)) return res.status(400).json({ error: "esa colección no está habilitada" });
+    }
     const { data, error } = await sb().from("output_links").update({ ...parsed.ok, updated_at: new Date().toISOString() }).eq("slug", req.params.slug).select(COLS).maybeSingle();
     if (error) return res.status(500).json({ error: error.message });
     if (!data) return res.status(404).json({ error: "link no encontrado" });
-    logActivity(req.user, { action: "links.editar", entity: "links", summary: `Editó el link /output/${req.params.slug}` });
+    logActivity(req.user, { action: "links.editar", entity: "links", summary: parsed.ok.style ? `Cambió la colección de la suite ${req.params.slug} a ${collectionById(parsed.ok.style)?.label ?? parsed.ok.style}` : `Editó la suite ${req.params.slug}` });
+    io.emit("link:update", { slug: req.params.slug }); // los outputs que usan esta suite la vuelven a leer
     res.json(data);
   });
 
@@ -147,7 +168,8 @@ export function outputLinksRouter(): Router {
     if (own === "forbidden") return res.status(403).json({ error: "no tenés permiso para borrar este link", code: "forbidden" });
     const { error } = await sb().from("output_links").delete().eq("slug", req.params.slug);
     if (error) return res.status(500).json({ error: error.message });
-    logActivity(req.user, { action: "links.borrar", entity: "links", summary: `Borró el link /output/${req.params.slug}` });
+    logActivity(req.user, { action: "links.borrar", entity: "links", summary: `Borró la suite ${req.params.slug}` });
+    io.emit("link:update", { slug: req.params.slug });
     res.status(204).end();
   });
 

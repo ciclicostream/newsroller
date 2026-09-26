@@ -512,6 +512,7 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 6px
 .pv-mon-card{padding:14px;box-shadow:0 4px 16px rgba(20,30,60,.05),inset 0 2px 14px rgba(20,30,60,.07)}
 .pv-mon-hd{display:flex;align-items:center;gap:8px;margin-bottom:10px}
 .pv-mon-hd .pv-ct{flex:1}
+.pv-suite{max-width:190px;height:30px;border:1px solid var(--ln);border-radius:9px;background:#fff;color:var(--tx);font-size:11px;font-weight:600;padding:0 6px}
 .pv-snd{border:1px solid var(--ln);background:#eef1f6;color:var(--dim);border-radius:9px;padding:6px 8px;display:inline-flex;cursor:pointer}
 .pv-snd:hover:not(:disabled){color:var(--tx);border-color:#c5cbd8}
 .pv-snd.on{background:var(--ac);border-color:var(--ac);color:#fff}
@@ -564,6 +565,7 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 6px
 .lp-list { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; }
 .lp-row { display: flex; align-items: center; gap: 8px; }
 .lp-err { margin-top: 8px; font-size: 12px; color: #c62410; }
+.lp-col { flex: none; font-size: 11px; font-weight: 600; color: var(--muted); background: var(--bg); border-radius: 8px; padding: 7px 10px; white-space: nowrap; }
 
 /* Sesiones: franja de acciones (segunda fila de la card) */
 .sess-card:hover { border-color: var(--accent); }

@@ -12,6 +12,8 @@ import { contentItems as contentItemsApi } from "../lib/content-items";
 import { settingsApi } from "../lib/settings";
 import { camerasApi, youtubeTitle } from "../lib/cameras";
 import { OutputLinksPicker } from "../components/OutputLinksPicker";
+import { useOperatingSuite } from "../lib/suites";
+import { collectionLabel } from "../lib/collections";
 import { AvailablePanel } from "../components/AvailablePanel";
 import { PlaylistRows } from "../components/PlaylistRows";
 import { TYPE_LABEL } from "../lib/contentCatalog";
@@ -245,15 +247,18 @@ export function Programacion() {
   const [monSound, toggleMonSound] = useMonitorAudio();
   const soundOn = monSound && mode !== "aire";
   const [monVertical, toggleMonVertical] = useMonitorVertical(); // 16:9 o 9:16
+  // Suite que se está operando: el monitor la muestra con su colección de templates.
+  const { suites, suite, pick: pickSuite } = useOperatingSuite("emision");
+  const styleQ = suite ? `&style=${suite.style}` : "";
   const monUrl = (() => {
-    const orient = monVertical ? "orientation=vertical" : "";
-    if (mode === "aire") return `${OUTPUT_FRAME_BASE}/output/${orient ? "?" + orient : ""}`;
+    const orient = (monVertical ? "orientation=vertical" : "") + styleQ;
+    if (mode === "aire") return `${OUTPUT_FRAME_BASE}/output/${orient ? "?" + orient.replace(/^&/, "") : ""}`;
     if (mode === "preview") {
-      const params = new URLSearchParams({ borrador: "1", ...(soundOn ? { audio: "1" } : {}), ...(orient ? { orientation: "vertical" } : {}) });
+      const params = new URLSearchParams({ borrador: "1", ...(soundOn ? { audio: "1" } : {}), ...(monVertical ? { orientation: "vertical" } : {}), ...(suite ? { style: suite.style } : {}) });
       return `${OUTPUT_FRAME_BASE}/output/?${params.toString()}`;
     }
     const ci = previewCi();
-    return ci ? `${OUTPUT_FRAME_BASE}/output/?preview=${ci.id}${soundOn ? "&audio=1" : ""}${orient ? "&" + orient : ""}` : null;
+    return ci ? `${OUTPUT_FRAME_BASE}/output/?preview=${ci.id}${soundOn ? "&audio=1" : ""}${monVertical ? "&orientation=vertical" : ""}${styleQ}` : null;
   })();
   // AIRE y PREVIEW cargan el output real (por telemetría postMessage sabemos si suena algo,
   // contenido propio o la música de fondo); CLIP es un contenido suelto sin telemetría.
@@ -309,6 +314,11 @@ export function Programacion() {
             <div className="pv-card pv-mon-card">
               <div className="pv-mon-hd">
                 <span className="pv-ct">Monitor</span>
+                <select className="pv-suite" value={suite?.slug ?? ""} onChange={(e) => pickSuite(e.target.value)} disabled={!suites.length}
+                  title="Suite que estás operando: el monitor la muestra con su colección" aria-label="Suite">
+                  {!suites.length && <option value="">Sin suites</option>}
+                  {suites.map((l) => <option key={l.slug} value={l.slug}>{l.slug} · {collectionLabel(l.style)}</option>)}
+                </select>
                 <div className="pv-seg">
                   {(["preview", "aire", "clip"] as const).map((m) => (
                     <button key={m} className={"pv-segb" + (mode === m ? " on " + m : "")} onClick={() => setMode(m)}>{m.toUpperCase()}</button>
