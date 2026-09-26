@@ -4,7 +4,7 @@
 
 Cada contenido se arma desde su formulario en **Contenidos**. Los campos **manuales** los carga el editor; los **automáticos** los completa el sistema (APIs, fecha de carga, ajustes).
 
-Todos los contenidos tienen además una **Duración** (manual, en segundos). Los videos salen mudos; se escuchan sólo en el link con `audio=1`.
+Todos los contenidos tienen además una **Duración** (manual, en segundos). Los videos salen mudos; se escuchan sólo en los links de salida que tienen el audio activado.
 
 | Contenido | Campo | Carga | Para qué |
 |---|---|---|---|
@@ -126,3 +126,50 @@ Todos los contenidos tienen además una **Duración** (manual, en segundos). Los
 | | Video o imagen | Manual | Pantalla completa |
 | | Versión vertical | Manual | Para el output 9:16 |
 | | Nombre | Automático, editable | Título de YouTube |
+
+## Roles de usuarios
+
+Cada persona entra al panel con un rol. El servidor controla los permisos: aunque alguien encuentre la dirección de una sección, si su rol no la tiene, no puede usarla.
+
+| Rol | Para qué es |
+|---|---|
+| **Master** | Control total del sistema, incluidas las opciones sensibles |
+| **Administrador** | Maneja el canal y el equipo, sin tocar lo sensible |
+| **Programador** | Arma y opera la programación diaria |
+| **Host** | Conduce el Stream y prepara contenidos |
+| **Generador de contenidos** | Carga contenidos y arma sus sesiones |
+
+### Qué puede hacer cada rol
+
+| Acción | Master | Administrador | Programador | Host | Generador |
+|---|---|---|---|---|---|
+| Crear y ver contenidos | Sí | Sí | Sí | Sí | Sí |
+| Editar o borrar contenidos de otros | Sí | Sí | Sí | Sí | — (sólo los propios) |
+| Programación (Copiloto): parrilla, enviar al aire, cortar | Sí | Sí | Sí | — | — |
+| Operar Stream (micrófono, cámara, botonera) | Sí | Sí | Sí | Sí | — |
+| Ver y editar sus sesiones asignadas | Sí | Sí | Sí | Sí | Sí |
+| Crear o borrar sesiones y asignar quién las maneja | Sí | Sí | — | — | — |
+| Crear y editar links de salida | Sí | Sí | Sí | Sí | Sí (de sus sesiones) |
+| Cámaras | Sí | Sí | Sí | Sí | — |
+| Fuentes de datos (estado de las APIs) | Sí | — | Sí | Sí | — |
+| Reportes y Actividad | Sí | Sí | — | — | — |
+| Ver plantillas | Sí | Sí | — | — | — |
+| Editar plantillas | Sí | — | — | — | — |
+| Ajustes: Shorts, Música y Programas | Sí | Sí | Sí | Sí | — |
+| Ajustes: Banco, íconos del clima, plataformas y newsticker | Sí | Sí | Sí | — | — |
+| Ajustes: Estilos (Clásicas o Modernas) y links viejos | Sí | Sí | — | — | — |
+| Usuarios: invitar, editar y desactivar | Sí | Sí (menos al Master) | — | — | — |
+| Borrar usuarios | Sí | — | — | — | — |
+| Vaciar la papelera (borrar para siempre) | Sí | Sí | — | — | — |
+| Tiempos de inactividad por rol | Sí | — | — | — | — |
+
+### Otras reglas
+
+| Regla | Detalle |
+|---|---|
+| Quién da cada rol | El Master asigna cualquier rol. El Administrador asigna Administrador, Programador, Host y Generador, nunca Master. |
+| Pantalla de inicio | Con Programación entra al Copiloto. El Host entra a Stream. El Generador entra a Contenidos. |
+| Cierre por inactividad | Por defecto: Generador 20 min, Host 15, Programador 15, Administrador 10, Master 10. Lo cambia sólo el Master. |
+| Contenido al aire | Nadie puede borrar un contenido mientras está al aire. |
+| Papelera | Lo borrado queda 30 días y se puede restaurar. |
+
