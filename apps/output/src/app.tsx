@@ -146,6 +146,10 @@ const DEMOS: Record<string, { type: string; data: Record<string, any>; dur?: num
     type: "declaraciones", dur: 15,
     data: { name: "Juan Pérez", role: "Ministro de Economía", place: "Casa Rosada", headline: "\"Vamos a bajar la inflación\"", quote: "Esta es una cita de prueba bastante larga para ver cómo queda la placa, con varias líneas de texto que ocupan bien la tarjeta azul y se escriben de a poco.", photo_url: "https://fffefldkgcylqfbvshet.supabase.co/storage/v1/object/public/media/1789625617327-6a1c6562-3dcf-4a08-a877-de6b667e2db0-piel-1---Avon.jpeg", interview_program: "EPA!" },
   },
+  declaraciones_min: {
+    type: "declaraciones", dur: 15,
+    data: { name: "Laura Méndez", role: "Meteoróloga", place: "Buenos Aires", quote: "Con las primeras lluvias de la primavera vuelve el riesgo de anegamientos. Pedimos que no se tire basura a la calle.", photo_url: "https://picsum.photos/seed/retrato/800/800" },
+  },
   publicidad_vertical: {
     type: "publicidad", dur: 15,
     data: { format: "vertical", media_url: "https://fffefldkgcylqfbvshet.supabase.co/storage/v1/object/public/media/1789625617327-6a1c6562-3dcf-4a08-a877-de6b667e2db0-piel-1---Avon.jpeg", media_kind: "image", logo_url: "https://fffefldkgcylqfbvshet.supabase.co/storage/v1/object/public/media/1789625617327-6a1c6562-3dcf-4a08-a877-de6b667e2db0-piel-1---Avon.jpeg", brand_qr_url: "https://fffefldkgcylqfbvshet.supabase.co/storage/v1/object/public/media/1789625617327-6a1c6562-3dcf-4a08-a877-de6b667e2db0-piel-1---Avon.jpeg" },
