@@ -19,7 +19,7 @@ import { Publicidad } from "./Publicidad";
 import { VideoFull } from "../../templates/VideoFull";
 
 // Colección "Modernas" (paneles con profundidad y luces), portada desde la maqueta aprobada.
-// Se suman de a una; mientras falten tipos no se puede habilitar (ready: false en TEMPLATE_COLLECTIONS).
+// Cubre todos los tipos; el Master la habilita en Ajustes → Suites y se usa eligiéndola en una suite.
 export function ModernaItemView({ id, type, cameras, data, durationSec, createdAt, updatedAt, liveData }: ItemProps) {
   switch (type) {
     case "ultima_hora":

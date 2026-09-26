@@ -100,7 +100,7 @@ export function PreviewMonitor({ type, data, dur, ready = true }: {
         <span className="pm-hd-r">
           {cols.length > 1 && (
             <select className="pm-col-sel" value={col} onChange={(e) => setColPref(e.target.value)} title="Colección de templates de la vista previa" aria-label="Colección">
-              {cols.map((c) => <option key={c.id} value={c.id}>{c.label}{enabledCols.some((e) => e.id === c.id) ? "" : " (en preparación)"}</option>)}
+              {cols.map((c) => <option key={c.id} value={c.id}>{c.label}{enabledCols.some((e) => e.id === c.id) ? "" : c.ready ? " (sin habilitar)" : " (en preparación)"}</option>)}
             </select>
           )}
           {saved && <button type="button" className="pm-back" onClick={() => setSelId(null)} title="Volver a lo que estoy cargando"><X size={12} /> Formulario</button>}

@@ -521,7 +521,7 @@ export interface PromosData {
 export interface TemplateCollection { id: string; label: string; desc: string; ready: boolean }
 export const TEMPLATE_COLLECTIONS: TemplateCollection[] = [
   { id: "clasica", label: "Clásicas", desc: "Las templates de siempre: cards blancas sobre los fondos de cada sección.", ready: true },
-  { id: "moderna", label: "Modernas", desc: "Paneles oscuros con profundidad, luces y transiciones propias por contenido.", ready: false },
+  { id: "moderna", label: "Modernas", desc: "Paneles oscuros con profundidad, luces y transiciones propias por contenido.", ready: true },
 ];
 export const DEFAULT_COLLECTION = "clasica";
 export const collectionById = (id: string | null | undefined): TemplateCollection | undefined => TEMPLATE_COLLECTIONS.find((c) => c.id === id);
