@@ -11,7 +11,7 @@ import { sessions as sessionsApi, type SessionRow } from "../lib/sessions";
 import { contentItems as contentItemsApi } from "../lib/content-items";
 import { settingsApi } from "../lib/settings";
 import { camerasApi, youtubeTitle } from "../lib/cameras";
-import { useActiveSuite } from "../lib/collections";
+import { collectionLabel, useActiveSuite } from "../lib/collections";
 import { outputLinksApi } from "../lib/outputLinks";
 import type { OutputLink } from "@newsroller/shared";
 import { AvailablePanel } from "../components/AvailablePanel";
@@ -312,7 +312,7 @@ export function Programacion() {
             <div className="pv-card pv-mon-card">
               <div className="pv-mon-hd">
                 <span className="pv-ct">Monitor</span>
-                {activeSuite && <span className="pv-suite" title="Suite con la que sale el canal">{activeSuite.name}</span>}
+                {activeSuite && <span className="pv-suite" title="Colección con la que sale el canal (Copiloto y Stream)">{collectionLabel(activeSuite.style)}</span>}
                 <div className="pv-seg">
                   {(["preview", "aire", "clip"] as const).map((m) => (
                     <button key={m} className={"pv-segb" + (mode === m ? " on " + m : "")} onClick={() => setMode(m)}>{m.toUpperCase()}</button>

@@ -21,6 +21,27 @@ if (!env.radioKey) console.warn(`[radio] RADIO_KEY sin definir: se generó una t
 export const radioKey = (): string => KEY;
 
 let state: RadioState = { ...RADIO_STATE_DEFAULT };
+// Último aviso del Host. Su panel reenvía el estado cada 5 s; si deja de hacerlo (cerró la pestaña, se colgó la
+// compu) el stream se corta solo y la salida del canal vuelve al Copiloto.
+let lastSeen = 0;
+const STALE_MS = 45_000;
+
+// El estado se guarda también en la base: un reinicio del server (cada deploy) no corta un stream en curso.
+const STORE_KEY = "radioState";
+async function persist(): Promise<void> {
+  const sb = getSupabase();
+  if (!sb) return;
+  const { error } = await sb.from("app_settings").upsert({ key: STORE_KEY, value: state }, { onConflict: "key" });
+  if (error) console.warn(`[radio] no se pudo guardar el estado: ${error.message}`);
+}
+async function restore(): Promise<void> {
+  const sb = getSupabase();
+  if (!sb) return;
+  const { data } = await sb.from("app_settings").select("value").eq("key", STORE_KEY).maybeSingle();
+  const saved = data?.value as RadioState | undefined;
+  if (saved?.tx) { state = { ...RADIO_STATE_DEFAULT, ...saved }; lastSeen = Date.now(); } // el Host tiene STALE_MS para volver a avisar
+}
+const same = (a: RadioState, b: RadioState) => JSON.stringify({ ...a, at: 0 }) === JSON.stringify({ ...b, at: 0 });
 
 const keyOk = (k: unknown): boolean => {
   if (typeof k !== "string" || k.length !== KEY.length) return false;
@@ -48,6 +69,14 @@ const cleanState = (b: Record<string, unknown>): RadioState | null => {
 
 // Sockets: el Host (panel, con su token de sesión) y los outputs receptores (con la clave del link).
 export function attachRadio(io: IO): void {
+  void restore().then(() => { if (state.tx) io.to(VIEWERS).emit("radio:state", state); }).catch(() => {});
+  setInterval(() => {
+    if (!state.tx || Date.now() - lastSeen < STALE_MS) return;
+    console.warn("[radio] el Host dejó de avisar: se corta el stream");
+    state = { ...RADIO_STATE_DEFAULT, at: Date.now() };
+    io.to(VIEWERS).emit("radio:state", state);
+    void persist();
+  }, 5_000).unref();
   io.on("connection", (socket: Socket) => {
     socket.on("radio:host-join", async (token: unknown, ack?: (ok: boolean) => void) => {
       const sb = getSupabase();
@@ -112,8 +141,10 @@ export function radioRouter(io: IO): Router {
   r.put("/state", requireAuth, requirePerm("stream"), (req, res) => {
     const next = cleanState((req.body ?? {}) as Record<string, unknown>);
     if (!next) return res.status(400).json({ error: "estado inválido" });
+    lastSeen = Date.now();
+    const changed = !same(state, next);
     state = next;
-    io.to(VIEWERS).emit("radio:state", state);
+    if (changed) { io.to(VIEWERS).emit("radio:state", state); void persist(); }
     res.json(state);
   });
 

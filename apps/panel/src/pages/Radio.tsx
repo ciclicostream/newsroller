@@ -3,7 +3,7 @@ import {
   Mic, MicOff, Square, Play, Power, Search, Tv, Volume2, VolumeX, RectangleHorizontal, RectangleVertical,
   LayoutGrid, RadioTower, X, Camera as CameraIcon, CameraOff, PictureInPicture2, Maximize, Music,
 } from "lucide-react";
-import type { Camera, ContentItem } from "@newsroller/shared";
+import type { Camera, ContentItem, RadioState } from "@newsroller/shared";
 import { useMonitorAudio } from "../lib/monitorAudio";
 import { useMonitorVertical } from "../lib/monitorOrientation";
 import { useStoredFlag } from "../lib/storedFlag";
@@ -13,7 +13,7 @@ import { sessions as sessionsApi, type SessionRow } from "../lib/sessions";
 import { contentItems as contentItemsApi } from "../lib/content-items";
 import { camerasApi } from "../lib/cameras";
 import { createRadioLink, radioApi, type RadioConfig, type RadioLink } from "../lib/radioLink";
-import { useActiveSuite } from "../lib/collections";
+import { collectionLabel, useActiveSuite } from "../lib/collections";
 import offAir from "../assets/off-air.jpg";
 import { CAT, CAT_ICON, CAT_ORDER, SESSION_COLOR, SESSION_ICON, TYPE_LABEL, catOf, iconOf, itemText } from "../lib/contentCatalog";
 
@@ -191,15 +191,27 @@ export function Radio() {
   const cur = active === CAM_KEY ? CAM_PAD : pads.find((p) => p.key === active) ?? null;
 
   // Le cuenta al output del estudio qué está al aire (contenido en loop o placa de espera), la cámara y el micrófono.
+  // Además lo reenvía cada 5 s: el server lo guarda en memoria y un reinicio (cada deploy) lo vuelve a "sin
+  // transmisión", con lo que la salida del canal volvía al Copiloto aunque el Host siguiera emitiendo.
+  const radioStateRef = useRef<Omit<RadioState, "at"> | null>(null);
+  const sendRadioState = () => {
+    const st = radioStateRef.current;
+    if (!st) return;
+    radioApi.setState(st).then(() => setLinkErr(null)).catch((e) => setLinkErr(e instanceof Error ? e.message : "No se pudo avisar al output."));
+  };
   useEffect(() => {
     if (!cfg) return;
     const pad = live && cur && cur.kind !== "cam" ? { kind: cur.kind, id: cur.id } : null;
     const camMode = !live ? "off" : active === CAM_KEY ? "full" : camPip && cam.on ? "pip" : "off";
-    const t = setTimeout(() => {
-      radioApi.setState({ tx: live, pad, cam: camMode, mic: mic.on, duck, music: musicOn }).then(() => setLinkErr(null)).catch((e) => setLinkErr(e instanceof Error ? e.message : "No se pudo avisar al output."));
-    }, 120);
+    radioStateRef.current = { tx: live, pad, cam: camMode, mic: mic.on, duck, music: musicOn };
+    const t = setTimeout(sendRadioState, 120);
     return () => clearTimeout(t);
   }, [cfg, live, cur?.key, active, camPip, cam.on, mic.on, duck, musicOn]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (!cfg) return;
+    const t = setInterval(sendRadioState, 5000);
+    return () => clearInterval(t);
+  }, [cfg]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Transmisión: la abre el locutor al sentarse y la corta al terminar el programa.
   function startTx() { const t = Date.now(); setTxStart(t); writeTx(t); setLastRun(null); }
@@ -275,10 +287,10 @@ export function Radio() {
           <CardHead icon={RadioTower} title="Al aire">
             <span className={"rd-tally " + state}><i />{state === "air" ? "AL AIRE" : state === "plate" ? "PLACA FIJA" : "CORTADA"}</span>
           </CardHead>
-          <div className="rd-nowname">{cur ? cur.label : live ? "Elegí un botón para poner al aire" : "Iniciá la transmisión"}</div>
+          <div className="rd-nowname">{cur ? cur.label : live ? "Elegí un botón para poner al aire" : "Activá el stream"}</div>
           <div className="rd-clocks">
             <div className="rd-clk g">
-              <span className="lb">transmisión</span>
+              <span className="lb">stream</span>
               <span className="dg">{fmt(txSec)}</span>
               <span className="ft">{live ? `desde las ${hhmm(txStart!)} hs` : lastRun != null ? `última: ${fmt(lastRun)}` : "sin abrir"}</span>
             </div>
@@ -289,11 +301,11 @@ export function Radio() {
             </div>
           </div>
           {!live ? (
-            <button type="button" className="rd-cta go" onClick={startTx}><Play size={16} /> Iniciar transmisión</button>
+            <button type="button" className="rd-cta go" onClick={startTx}><Play size={16} /> Activar stream</button>
           ) : (
             <div className="rd-ctas">
               <button type="button" className="rd-cta plate" onClick={stopClip} disabled={!cur} title="Dejar la placa fija (Esc)"><Square size={13} /> Placa fija</button>
-              <button type="button" className={"rd-cta cut" + (confirmCut ? " sure" : "")} onClick={cutTx}><Power size={14} /> {confirmCut ? "¿Cortar? Tocá de nuevo" : "Cortar transmisión"}</button>
+              <button type="button" className={"rd-cta cut" + (confirmCut ? " sure" : "")} onClick={cutTx}><Power size={14} /> {confirmCut ? "¿Cortar? Tocá de nuevo" : "Cortar stream"}</button>
             </div>
           )}
         </div>
@@ -306,7 +318,7 @@ export function Radio() {
               title={!hasTrack ? "Elegí un tema en Ajustes → Música primero" : musicOn ? "Apagar la música de fondo" : "Encender la música de fondo (se apaga sola con contenido con audio y baja con el micrófono)"}>
               <Music size={14} />
             </button>
-            {activeSuite && <span className="pv-suite" title="Suite con la que sale el canal">{activeSuite.name}</span>}
+            {activeSuite && <span className="pv-suite" title="Colección con la que sale el canal (Copiloto y Stream)">{collectionLabel(activeSuite.style)}</span>}
             <button type="button" className={"pv-snd" + (monSound ? " on" : "")} onClick={toggleMonSound} aria-pressed={monSound}
               aria-label={monSound ? "Silenciar el monitor" : "Escuchar el monitor"} title={monSound ? "Silenciar el monitor" : "Escuchar el monitor"}>
               {monSound ? <Volume2 size={14} /> : <VolumeX size={14} />}
@@ -361,7 +373,7 @@ export function Radio() {
               </button>
               <div className="rd-camrow">
                 <button type="button" className={"rd-camb" + (active === CAM_KEY ? " air" : "")} disabled={!cam.on || !live} onClick={pressCam} aria-pressed={active === CAM_KEY}
-                  title={!cam.on ? "Activá la cámara primero" : !live ? "Iniciá la transmisión" : "Poner al locutor a pantalla completa"}>
+                  title={!cam.on ? "Activá la cámara primero" : !live ? "Activá el stream" : "Poner al locutor a pantalla completa"}>
                   <Maximize size={14} />Completa
                 </button>
                 <button type="button" className={"rd-camb" + (camPip ? " on" : "")} disabled={!cam.on || active === CAM_KEY} onClick={() => setCamPip((v) => !v)} aria-pressed={camPip}
@@ -398,7 +410,7 @@ export function Radio() {
           {q && <button type="button" onClick={() => setQ("")} aria-label="Borrar búsqueda"><X size={14} /></button>}
         </label>
         </div>
-        {!live && <div className="rd-lock"><Power size={14} /> Iniciá la transmisión para poner contenidos al aire.</div>}
+        {!live && <div className="rd-lock"><Power size={14} /> Activá el stream para poner contenidos al aire.</div>}
         <div className="rd-pads">
           {loaded && shown.length === 0 && <div className="pv-empty" style={{ gridColumn: "1 / -1" }}>{pads.length ? "Ningún contenido coincide con la búsqueda." : 'Sin contenidos. Cargá desde "Contenido" o armá una Sesión.'}</div>}
           {shown.map((p) => {

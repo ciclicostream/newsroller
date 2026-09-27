@@ -1,8 +1,8 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import {
-  ROLES, ROLE_LABEL, IDLE_MINUTES_DEFAULT, MUSIC_DEFAULT, SUITE_DEFAULT, TEMPLATE_COLLECTIONS, activeSuiteOf,
-  type Camera, type MusicSettings, type Plataforma, type Role, type Short, type Suite,
+  ROLES, ROLE_LABEL, IDLE_MINUTES_DEFAULT, MUSIC_DEFAULT, DEFAULT_COLLECTION, TEMPLATE_COLLECTIONS, activeSuiteOf,
+  type Camera, type MusicSettings, type Plataforma, type Role, type Short,
 } from "@newsroller/shared";
 import { Users as UsersIcon, Youtube, Tv, Images, Rss, CloudSun, Clapperboard, History, Music, Palette, Video, Timer, ChevronRight, Hash } from "lucide-react";
 import { useAuth } from "../auth/AuthProvider";
@@ -80,7 +80,8 @@ export function Ajustes() {
     finally { setBusy(null); }
   }
 
-  const suites: Suite[] = settings?.suites?.length ? settings.suites : [SUITE_DEFAULT];
+  // Colecciones que el Master habilitó (más la activa, por si quedó una deshabilitada).
+  const enabledCollections = TEMPLATE_COLLECTIONS.filter((c) => c.ready && ((settings?.collections ?? [DEFAULT_COLLECTION]).includes(c.id) || c.id === activeSuiteOf(settings ?? {}).style));
   const activeSuite = settings ? activeSuiteOf(settings) : null;
   const music: MusicSettings = settings?.music ?? MUSIC_DEFAULT;
   const plataformas = (settings?.plataformas ?? []) as Plataforma[];
@@ -118,17 +119,17 @@ export function Ajustes() {
         )}
 
         {isAdmin && (
-          <AjCard to="/ajustes/suites" icon={<Palette size={22} />} name="Suites" desc="Suite activa, colecciones y links del canal">
+          <AjCard to="/ajustes/suites" icon={<Palette size={22} />} name="Colección" desc="Diseño del canal (Copiloto y Stream) y links para OBS/vMix">
             {activeSuite && (
               <>
-                <label className="aj-lbl">Suite activa</label>
-                <select value={activeSuite.id} disabled={busy === "suite"} onChange={(e) => {
-                  const next = suites.find((s) => s.id === e.target.value);
-                  if (next && confirm(`¿Activar la suite "${next.name}"? La salida del canal la usa desde el próximo contenido.`)) void update("suite", { activeSuite: next.id });
+                <label className="aj-lbl">Colección activa</label>
+                <select value={activeSuite.style} disabled={busy === "suite"} onChange={(e) => {
+                  const style = e.target.value;
+                  const label = TEMPLATE_COLLECTIONS.find((c) => c.id === style)?.label ?? style;
+                  if (confirm(`¿Pasar el canal a la colección ${label}? Cambia en Copiloto y en Stream desde el próximo contenido.`))
+                    void update("suite", { suites: [{ ...activeSuite, style }], activeSuite: activeSuite.id });
                 }}>
-                  {suites.map((s) => (
-                    <option key={s.id} value={s.id}>{s.name} · {TEMPLATE_COLLECTIONS.find((c) => c.id === s.style)?.label ?? s.style}</option>
-                  ))}
+                  {enabledCollections.map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}
                 </select>
               </>
             )}

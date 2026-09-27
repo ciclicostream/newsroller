@@ -1,18 +1,17 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Check, Copy, ExternalLink, Link2Off, Loader2, Plus, RectangleHorizontal, RectangleVertical, RefreshCw, Trash2, Volume2, VolumeX, X } from "lucide-react";
-import { DEFAULT_COLLECTION, SUITE_DEFAULT, SUITE_NAME_RE, TEMPLATE_COLLECTIONS, activeSuiteOf, collectionById, type OutputLink, type Suite } from "@newsroller/shared";
+import { ArrowLeft, Check, Copy, ExternalLink, Link2Off, Loader2, RectangleHorizontal, RectangleVertical, RefreshCw, Volume2, VolumeX, X } from "lucide-react";
+import { DEFAULT_COLLECTION, SUITE_DEFAULT, TEMPLATE_COLLECTIONS, activeSuiteOf, collectionById, type OutputLink, type Suite } from "@newsroller/shared";
 import { useAuth } from "../auth/AuthProvider";
 import { settingsApi } from "../lib/settings";
 import { outputLinkUrl, outputLinksApi } from "../lib/outputLinks";
 
-// Ajustes → Suites (Administrador y Master).
-//  - Colecciones: el Master habilita qué colecciones de templates se pueden usar.
-//  - Suites: nombre + colección. Siempre hay UNA activa: la salida del canal emite con su colección, y el
-//    Programador y el Host ven su nombre. Activar otra suite o cambiarle la colección entra en el próximo contenido.
-//  - Links del canal: uno horizontal y uno vertical, fijos. Siempre usan la suite activa; acá sólo se prende o
-//    apaga el audio, se les cambia el nombre o se regeneran si se filtran.
-const newId = () => Math.random().toString(36).slice(2, 10);
+// Ajustes → Colección (Administrador y Master; ruta /ajustes/suites).
+//  - Colección del canal: hay una sola suite y acá se elige su colección. Aplica a toda la salida del canal
+//    (Copiloto y Stream) desde el próximo contenido. Programador y Host ven la colección arriba del monitor.
+//  - Colecciones habilitadas: sólo el Master elige cuáles puede activar el Administrador.
+//  - Links del canal: uno horizontal y uno vertical, fijos; acá sólo se prende o apaga el audio, se les cambia
+//    el nombre o se regeneran si se filtran.
 
 export function AjustesSuites() {
   const { can } = useAuth();
@@ -22,8 +21,6 @@ export function AjustesSuites() {
   const [active, setActive] = useState<string>(SUITE_DEFAULT.id);
   const [legacy, setLegacy] = useState(true);
   const [links, setLinks] = useState<OutputLink[] | null>(null);
-  const [newName, setNewName] = useState("");
-  const [newStyle, setNewStyle] = useState<string>(DEFAULT_COLLECTION);
   const [editSlug, setEditSlug] = useState<Record<string, string>>({});
   const [copied, setCopied] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
@@ -52,28 +49,21 @@ export function AjustesSuites() {
   const toggleCollection = (id: string) => run("col:" + id, async () => {
     const next = enabled.includes(id) ? enabled.filter((x) => x !== id) : [...enabled, id];
     if (!next.length) throw new Error("Tiene que quedar al menos una colección habilitada.");
-    if (suites.some((s) => s.style === id) && !next.includes(id)) throw new Error("Hay suites que usan esta colección: cambiales la colección antes de deshabilitarla.");
+    if (current.style === id && !next.includes(id)) throw new Error("Es la colección activa: elegí otra antes de deshabilitarla.");
     apply(await settingsApi.update({ collections: next }));
   });
 
-  // --- Suites (Administrador y Master) ---
-  const saveSuites = (next: Suite[], ok?: string) => run("suites", async () => { apply(await settingsApi.update({ suites: next })); }, ok);
-  const createSuite = () => {
-    const name = newName.trim().toLowerCase();
-    if (!SUITE_NAME_RE.test(name)) { setErr("El nombre va de 2 a 40 caracteres: minúsculas, números y guiones."); return; }
-    if (suites.some((s) => s.name === name)) { setErr("Ya hay una suite con ese nombre."); return; }
-    void saveSuites([...suites, { id: newId(), name, style: enabled.includes(newStyle) ? newStyle : enabled[0]! }], `Suite ${name} creada. Activala cuando quieras que salga al aire.`);
-    setNewName("");
+  // --- Colección activa (Administrador y Master) ---
+  // Hay una sola suite: elegir la colección es cambiarle la colección y dejarla activa. Si quedaban suites viejas,
+  // se descartan. Aplica a toda la salida del canal (Copiloto y Stream) desde el próximo contenido.
+  const current = suites.find((x) => x.id === active) ?? suites[0] ?? SUITE_DEFAULT;
+  const setCollection = (style: string) => {
+    if (style === current.style) return;
+    const label = collectionById(style)?.label ?? style;
+    if (!confirm(`¿Pasar el canal a la colección ${label}? Cambia en Copiloto y en Stream desde el próximo contenido.`)) return;
+    void run("style:" + style, async () => { apply(await settingsApi.update({ suites: [{ ...current, style }], activeSuite: current.id })); },
+      `El canal pasa a ${label}: entra en el próximo contenido.`);
   };
-  const setStyleOf = (s: Suite, style: string) => saveSuites(suites.map((x) => (x.id === s.id ? { ...x, style } : x)),
-    s.id === active ? `${s.name} pasa a ${collectionById(style)?.label ?? style}: entra en el próximo contenido.` : `${s.name} pasa a ${collectionById(style)?.label ?? style}.`);
-  const removeSuite = (s: Suite) => {
-    if (s.id === active) return;
-    if (!confirm(`¿Borrar la suite ${s.name}?`)) return;
-    void saveSuites(suites.filter((x) => x.id !== s.id), `Suite ${s.name} borrada.`);
-  };
-  const activate = (s: Suite) => run("act:" + s.id, async () => { apply(await settingsApi.update({ activeSuite: s.id })); },
-    `${s.name} es la suite activa: el canal la toma en el próximo contenido.`);
 
   // --- Links del canal ---
   const setAudio = (l: OutputLink, audio: boolean) => run(l.slug, async () => { await outputLinksApi.update(l.slug, { audio }); await loadLinks(); });
@@ -99,7 +89,6 @@ export function AjustesSuites() {
     void run("legacy", async () => { apply(await settingsApi.update({ legacyLinks: next })); }, next ? "Los links viejos vuelven a funcionar." : "Los links viejos ya no emiten.");
   };
 
-  const colName = (id: string) => collectionById(id)?.label ?? id;
   const row: React.CSSProperties = { display: "flex", alignItems: "center", gap: 12, padding: "10px 12px", borderTop: "1px solid #eef1f6" };
   // width auto: el select/input global es 100% y aplastaba el nombre de la suite.
   const sel: React.CSSProperties = { height: 32, width: "auto", flex: "none", borderRadius: 8, border: "1px solid #e3e7ef", padding: "0 8px", background: "#fff" };
@@ -108,8 +97,8 @@ export function AjustesSuites() {
     <>
       <div className="page-head">
         <div>
-          <h1>Suites</h1>
-          <p>Una suite es un nombre con una colección de templates. Siempre hay una activa: la salida del canal emite con su colección, y el Programador y el Host ven su nombre. Activar otra suite o cambiarle la colección entra en el próximo contenido, sin tocar los links de OBS/vMix.</p>
+          <h1>Colección</h1>
+          <p>Con qué colección de templates sale el canal (Copiloto y Stream) y los links para OBS/vMix. El cambio entra en el próximo contenido, sin tocar los links.</p>
         </div>
         <Link to="/ajustes" className="btn"><ArrowLeft size={16} /> Ajustes</Link>
       </div>
@@ -118,33 +107,23 @@ export function AjustesSuites() {
       {msg && <div className="alert">{msg}</div>}
 
       <section className="card sec-card">
-        <div className="sec-card-hd"><h3>Suites</h3></div>
-        {suites.map((s) => {
-          const on = s.id === active;
+        <div className="sec-card-hd"><h3>Colección del canal</h3>
+        <p>El diseño con el que sale todo el canal: la parrilla del Copiloto y el Stream. El cambio entra en el próximo contenido.</p></div>
+        {enabled.map((id, i) => {
+          const c = collectionById(id);
+          const on = id === current.style;
           return (
-            <div key={s.id} style={{ ...row, borderTop: undefined, background: on ? "#f3f7ff" : undefined, borderRadius: 8 }}>
+            <div key={id} style={{ ...row, borderTop: i ? row.borderTop : undefined, background: on ? "#f3f7ff" : undefined, borderRadius: 8 }}>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontWeight: 700 }}>{s.name}{on && <span style={{ fontSize: 12, color: "#2f6bff", marginLeft: 8 }}>activa</span>}</div>
-                <div style={{ fontSize: 12, color: "#6b7688" }}>{colName(s.style)}</div>
+                <div style={{ fontWeight: 700 }}>{c?.label ?? id}</div>
+                <div style={{ fontSize: 13, color: "#6b7688" }}>{c?.desc}</div>
               </div>
-              <select value={s.style} disabled={busy != null} onChange={(e) => void setStyleOf(s, e.target.value)} style={sel} aria-label={`Colección de ${s.name}`}>
-                {!enabled.includes(s.style) && <option value={s.style}>{colName(s.style)} (no habilitada)</option>}
-                {enabled.map((id) => <option key={id} value={id}>{colName(id)}</option>)}
-              </select>
               {on
                 ? <span className="toggle-pill on"><Check size={14} /> Activa</span>
-                : <button type="button" className="toggle-pill" disabled={busy != null} onClick={() => void activate(s)}>{busy === "act:" + s.id ? <Loader2 size={14} className="spin" /> : null} Activar</button>}
-              <button type="button" className="btn" disabled={on || busy != null} onClick={() => removeSuite(s)} title={on ? "La suite activa no se puede borrar" : "Borrar"}><Trash2 size={15} /></button>
+                : <button type="button" className="toggle-pill" disabled={busy != null} onClick={() => setCollection(id)}>{busy === "style:" + id ? <Loader2 size={14} className="spin" /> : null} Activar</button>}
             </div>
           );
         })}
-        <div style={row}>
-          <input value={newName} onChange={(e) => setNewName(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "").slice(0, 40))} placeholder="nombre de la suite nueva (ej. navidad2026)" style={{ ...sel, flex: 1, minWidth: 0, padding: "0 10px" }} aria-label="Nombre de la suite nueva" />
-          <select value={newStyle} onChange={(e) => setNewStyle(e.target.value)} style={sel} aria-label="Colección de la suite nueva">
-            {enabled.map((id) => <option key={id} value={id}>{colName(id)}</option>)}
-          </select>
-          <button type="button" className="btn primary" disabled={!newName || busy != null} onClick={createSuite}><Plus size={15} /> Crear suite</button>
-        </div>
       </section>
 
       <section className="card sec-card">
@@ -167,9 +146,10 @@ export function AjustesSuites() {
         ))}
       </section>
 
+      {isMaster && (
       <section className="card sec-card">
         <div className="sec-card-hd"><h3>Colecciones habilitadas</h3>
-        <p>{isMaster ? "Elegí qué colecciones de templates se pueden usar en las suites." : "Las habilita el Master."}</p></div>
+        <p>Sólo el Master: qué colecciones puede elegir el Administrador como colección del canal.</p></div>
         {TEMPLATE_COLLECTIONS.map((c, i) => {
           const on = enabled.includes(c.id);
           return (
@@ -187,6 +167,7 @@ export function AjustesSuites() {
           );
         })}
       </section>
+      )}
 
       <div className="card sec-card" style={{ display: "flex", alignItems: "center", gap: 14 }}>
         <Link2Off size={20} style={{ flex: "none", color: "#6b7688" }} />
