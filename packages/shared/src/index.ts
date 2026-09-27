@@ -469,7 +469,7 @@ export interface CarteleraData {
   platform_name?: string;    // nombre guardado por si la plataforma se quita después
   seasons?: number;
   episodes?: number;
-  ticker?: "recomendada" | "estreno" | "clasico" | null; // newsticker chico encima del título
+  ticker?: "recomendada" | "estreno" | "clasico" | "produccion_argentina" | null; // newsticker chico encima del título
   poster_url?: string;       // póster (opcional) en el lugar lateral…
   short_id?: string;         // …o un short de Cíclico (id de YouTube, de la ingesta de Shorts)
   short_thumb?: string;      // tapa del short: queda a la vista cuando termina

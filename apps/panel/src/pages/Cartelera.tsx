@@ -32,7 +32,7 @@ export function Cartelera() {
   const [platformId, setPlatformId] = useState("");
   const [seasons, setSeasons] = useState("");
   const [episodes, setEpisodes] = useState("");
-  const [tickerKind, setTickerKind] = useState<"" | "recomendada" | "estreno" | "clasico">("");
+  const [tickerKind, setTickerKind] = useState<"" | "recomendada" | "estreno" | "clasico" | "produccion_argentina">("");
   const [side, setSide] = useState<"poster" | "short" | "none">("poster");
   const [shortId, setShortId] = useState("");
   const [plataformas, setPlataformas] = useState<Plataforma[]>(PLATAFORMAS_DEFAULT);
@@ -359,11 +359,12 @@ export function Cartelera() {
                 <div className="cfm-two">
                   <div className="field">
                     <label>Newsticker <i>(encima del título)</i></label>
-                    <select value={tickerKind} onChange={(e) => setTickerKind(e.target.value as "" | "recomendada" | "estreno" | "clasico")}>
+                    <select value={tickerKind} onChange={(e) => setTickerKind(e.target.value as "" | "recomendada" | "estreno" | "clasico" | "produccion_argentina")}>
                       <option value="">Nada</option>
                       <option value="recomendada">Recomendada</option>
                       <option value="estreno">Estreno</option>
                       <option value="clasico">Clásico</option>
+                      <option value="produccion_argentina">Producción Argentina</option>
                     </select>
                   </div>
                   <div className="field">
@@ -446,11 +447,12 @@ export function Cartelera() {
                 {kind === "teatro" && (
                   <div className="field">
                     <label>Newsticker <i>(encima del título)</i></label>
-                    <select value={tickerKind} onChange={(e) => setTickerKind(e.target.value as "" | "recomendada" | "estreno" | "clasico")}>
+                    <select value={tickerKind} onChange={(e) => setTickerKind(e.target.value as "" | "recomendada" | "estreno" | "clasico" | "produccion_argentina")}>
                       <option value="">Nada</option>
                       <option value="recomendada">Recomendada</option>
                       <option value="estreno">Estreno</option>
                       <option value="clasico">Clásico</option>
+                      <option value="produccion_argentina">Producción Argentina</option>
                     </select>
                   </div>
                 )}

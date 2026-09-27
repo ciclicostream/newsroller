@@ -55,7 +55,7 @@ export function Cartelera({ data, durationSec }: { data: CarteleraData; duration
   }, [data.title]);
   useFit(rowsRef, IS_VERTICAL ? 26 : 22, 14, [data.title, data.author, data.cast, data.genre, data.venue, data.address]);
 
-  const tickerWord = data.ticker === "estreno" ? "ESTRENO" : data.ticker === "recomendada" ? "RECOMENDADA" : data.ticker === "clasico" ? "CLÁSICO" : "";
+  const tickerWord = data.ticker === "estreno" ? "ESTRENO" : data.ticker === "recomendada" ? "RECOMENDADA" : data.ticker === "clasico" ? "CLÁSICO" : data.ticker === "produccion_argentina" ? "PRODUCCIÓN ARGENTINA" : "";
   const plat = data.is_series ? plataformas.find((p) => p.id === data.platform) : undefined;
   const platName = plat?.name ?? data.platform_name ?? "";
   const serieInfo = [
@@ -201,10 +201,11 @@ const CSS = `
 /* Título que pisa la pieza horizontal */
 .nmk-t{position:absolute;left:150px;top:600px;width:900px;display:flex;flex-direction:column;align-items:flex-start;gap:12px;transform:translateZ(90px)}
 .nmk-tk{position:relative;width:348px;height:42px;flex:none;overflow:hidden;border-radius:8px;background:#EE220C;
-  -webkit-mask-image:linear-gradient(90deg,#000 78%,transparent);mask-image:linear-gradient(90deg,#000 78%,transparent)}
-.nmk-tk.recomendada{background:#2f6bff}.nmk-tk.clasico{background:#a9741c}
-.nmk-trk{position:absolute;left:0;top:0;height:100%;display:flex;align-items:center;white-space:nowrap;animation:nm-tick 14s linear infinite}
-.nmk-trk span{font-family:var(--display);font-weight:800;font-size:24px;letter-spacing:.14em;color:#fff;padding:0 22px}
+  -webkit-mask-image:linear-gradient(90deg,#000 68%,transparent);mask-image:linear-gradient(90deg,#000 68%,transparent)}
+.nmk-tk.recomendada{background:#2f6bff}.nmk-tk.clasico{background:#a9741c}.nmk-tk.produccion_argentina{background:#3FB6E8}
+.nmk-tk::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(90deg,transparent 45%,rgba(0,0,0,.8) 100%)}
+.nmk-trk{position:absolute;left:0;top:0;height:100%;display:flex;align-items:center;white-space:nowrap;animation:nm-tick 24s linear infinite}
+.nmk-trk span{font-family:var(--display);font-weight:800;font-size:20px;letter-spacing:.14em;color:#fff;padding:0 22px}
 .in .nmk-tk{animation:nm-growX .6s cubic-bezier(.7,0,.2,1) 1s both;transform-origin:0 50%}
 .nmk-title{font-family:var(--display);font-weight:900;font-stretch:80%;font-size:112px;line-height:1.06;letter-spacing:-.01em;color:#fff;max-width:100%}
 .nmk-title span{background:var(--blue);box-decoration-break:clone;-webkit-box-decoration-break:clone;padding:0 .14em .02em;border-radius:6px;box-shadow:0 30px 50px -20px rgba(0,0,0,.7)}
@@ -218,10 +219,32 @@ const CSS = `
 .in .nmk-sin,.in .nmk-by,.in .nmk-cast{animation:nm-up .6s cubic-bezier(.2,.8,.2,1) 1.55s both}
 
 /* Ficha */
-.nmk-d{left:1450px;top:170px;width:374px;height:700px;opacity:0}
+.nmk-d{left:1450px;top:170px;width:374px;height:700px;opacity:0;overflow:visible}
 .nmk.nolat .nmk-d{left:1136px;width:688px}
 .in .nmk-d{animation:nmk-fromR .9s cubic-bezier(.16,.9,.2,1) .95s both}
 @keyframes nmk-fromR{from{opacity:0;transform:translateX(500px)}to{opacity:1;transform:none}}
+.nmk-d::after{content:"";position:absolute;left:0;top:0;width:60px;height:3px;border-radius:3px;
+  background:linear-gradient(90deg,transparent,rgba(160,190,255,.7) 35%,#fff 50%,rgba(160,190,255,.7) 65%,transparent);
+  filter:blur(2.5px);transform:translate(-50%,-50%);opacity:0;pointer-events:none}
+.in .nmk-d::after{animation:nmk-edge 26s linear 1.8s infinite}
+@keyframes nmk-edge{
+  0%{left:0%;top:0%;transform:translate(-50%,-50%) rotate(0deg);opacity:0}
+  2.5%{opacity:1}
+  23.75%{opacity:1}
+  25%{left:100%;top:0%;transform:translate(-50%,-50%) rotate(0deg);opacity:0}
+  25.1%{left:100%;top:0%;transform:translate(-50%,-50%) rotate(90deg);opacity:0}
+  27.5%{opacity:1}
+  48.75%{opacity:1}
+  50%{left:100%;top:100%;transform:translate(-50%,-50%) rotate(90deg);opacity:0}
+  50.1%{left:100%;top:100%;transform:translate(-50%,-50%) rotate(0deg);opacity:0}
+  52.5%{opacity:1}
+  73.75%{opacity:1}
+  75%{left:0%;top:100%;transform:translate(-50%,-50%) rotate(0deg);opacity:0}
+  75.1%{left:0%;top:100%;transform:translate(-50%,-50%) rotate(90deg);opacity:0}
+  77.5%{opacity:1}
+  98.75%{opacity:1}
+  100%{left:0%;top:0%;transform:translate(-50%,-50%) rotate(90deg);opacity:0}
+}
 .nmk-d .nm-inner{padding:38px 34px;gap:0}
 .nmk-pill{align-self:flex-start;margin-bottom:18px;font-family:var(--display);font-weight:800;font-stretch:112%;font-size:15px;letter-spacing:.3em;color:#fff;background:var(--red);padding:9px 16px 8px;border-radius:6px}
 .nmk-ft{flex:none;font-family:var(--display);font-weight:800;font-stretch:88%;font-size:42px;line-height:1.02;color:var(--paper);padding-bottom:18px;border-bottom:1px solid var(--line);margin-bottom:6px;
