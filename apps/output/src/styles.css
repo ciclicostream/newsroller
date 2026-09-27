@@ -19,12 +19,6 @@ body { font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Robo
 .chrome-logo img { height: 100%; }
 .chrome-clock { position: absolute; top: 44px; right: 48px; z-index: 20; font-size: 34px; font-weight: 500; font-variant-numeric: tabular-nums; color: #10151f; background: rgba(255,255,255,.7); padding: 4px 16px; border-radius: 10px; }
 
-.ticker { position: absolute; left: 0; right: 0; bottom: 0; height: 74px; background: #0f1420; display: flex; align-items: center; overflow: hidden; z-index: 30; }
-.ticker-tag { flex: none; background: #e8542f; color: #fff; font-size: 22px; font-weight: 500; letter-spacing: .04em; height: 100%; display: flex; align-items: center; padding: 0 26px; }
-.ticker-track { flex: 1; overflow: hidden; white-space: nowrap; }
-.ticker-track span { display: inline-block; padding-left: 100%; font-size: 26px; color: #eef2f8; animation: tk 40s linear infinite; }
-@keyframes tk { from { transform: translateX(0); } to { transform: translateX(-100%); } }
-
 /* Zona de contenido (entre chrome y ticker) */
 .content { position: absolute; top: 128px; left: 0; right: 0; bottom: 74px; z-index: 10; }
 

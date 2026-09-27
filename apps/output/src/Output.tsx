@@ -3,7 +3,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { io } from "socket.io-client";
 import { contentHasAudio, MUSIC_DEFAULT, type MusicSettings } from "@newsroller/shared";
-import { API_BASE, fetchScene, dataView, tickerText, type Block, type Scene } from "./lib/scene";
+import { API_BASE, fetchScene, dataView, type Block, type Scene } from "./lib/scene";
 import { TemplateView, templateHasVideo } from "./templates/render";
 import { ItemView } from "./collections";
 import offAir from "./assets/off-air.jpg";
@@ -421,17 +421,6 @@ export function Output() {
               </div>
             )}
             {!isCustom && <div className="chrome-clock">{clock}</div>}
-
-            {!isItem && <div className="ticker">
-              <div className="ticker-tag">CÍCLICO</div>
-              <div className="ticker-track">
-                {(() => {
-                  const txt = scene ? tickerText(scene.data) : "Cíclico";
-                  const durS = Math.max(60, Math.round(txt.length * 0.45));
-                  return <span style={{ animationDuration: `${durS}s` }}>{txt + "        "}</span>;
-                })()}
-              </div>
-            </div>}
           </>
         )}
       </div>
