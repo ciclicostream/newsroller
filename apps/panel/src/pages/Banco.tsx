@@ -79,6 +79,7 @@ export function Banco() {
         )}
       </div>
 
+      <section className="card sec-card">
       <div className="tabs">
         <button className={"tab" + (tab === "biblioteca" ? " active" : "")} onClick={() => setTab("biblioteca")}>Fotos, videos y logos</button>
         <button className={"tab" + (tab === "fondos" ? " active" : "")} onClick={() => setTab("fondos")}>Fondos</button>
@@ -92,6 +93,7 @@ export function Banco() {
         ? <div className="uploading"><Loader2 size={16} className="spin" /> Cargando…</div>
         : <Biblioteca data={data} reload={async () => { await load(); await loadTrash(); }} />)}
       {tab === "papelera" && <PapeleraBanco rows={trash} reload={async () => { await loadTrash(); await load(); }} canPurge={can("vaciar_papelera")} days={data?.trash_days ?? 30} />}
+      </section>
     </>
   );
 }

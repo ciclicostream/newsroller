@@ -54,7 +54,7 @@ export function Plantillas() {
   return (
     <>
       {readOnly && <div className="alert info" style={{ marginBottom: 14 }}>Vista de solo lectura: las plantillas las modifica el Master.</div>}
-      <fieldset disabled={readOnly} style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}>
+      <fieldset disabled={readOnly} style={{ border: 0, padding: 0, margin: "0 auto", minWidth: 0 }}>
         <PlantillasEditor />
       </fieldset>
     </>

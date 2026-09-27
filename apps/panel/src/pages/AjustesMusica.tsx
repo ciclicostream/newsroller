@@ -76,6 +76,7 @@ export function AjustesMusica() {
       {msg && <div className="alert">{msg}</div>}
       <input ref={fileRef} type="file" accept="audio/*" style={{ display: "none" }} onChange={onFile} />
 
+      <section className="card sec-card">
       {tracks == null ? (
         <div className="muted-note">Cargando…</div>
       ) : (
@@ -99,6 +100,7 @@ export function AjustesMusica() {
           </button>
         </>
       )}
+      </section>
     </>
   );
 }

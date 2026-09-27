@@ -47,19 +47,20 @@ export function Actividad() {
         <Link to="/ajustes" className="btn"><ArrowLeft size={16} /> Ajustes</Link>
       </div>
 
+      {note && <div className="alert info">{note}</div>}
+
+      <section className="card sec-card">
       <div style={{ display: "flex", gap: 10, marginBottom: 14, flexWrap: "wrap" }}>
         <select value={actor} onChange={(e) => setActor(e.target.value)} style={{ width: 240 }}>
           <option value="">Todas las personas</option>
           {people.map((p) => <option key={p.id} value={p.id}>{p.full_name || p.email}</option>)}
         </select>
-        <div className="tabs tabs-dark" style={{ marginBottom: 0 }}>
+        <div className="tabs" style={{ marginBottom: 0 }}>
           {GROUPS.map(([k, l]) => <button key={k} className={"tab" + (group === k ? " active" : "")} onClick={() => setGroup(k)}>{l}</button>)}
         </div>
       </div>
 
-      {note && <div className="alert info">{note}</div>}
-
-      <div className="card">
+      <div className="sec-inner">
         <table>
           <thead><tr><th style={{ width: 120 }}>Cuándo</th><th style={{ width: 240 }}>Quién</th><th>Qué</th></tr></thead>
           <tbody>
@@ -78,6 +79,7 @@ export function Actividad() {
         </table>
       </div>
       {more && rows.length > 0 && <button className="btn" style={{ marginTop: 14 }} disabled={loading} onClick={() => load(false)}>{loading ? "Cargando…" : "Ver más"}</button>}
+      </section>
     </>
   );
 }

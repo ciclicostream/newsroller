@@ -60,7 +60,7 @@ export function Camaras() {
 
       {err && <div className="alert error">{err}</div>}
 
-      <div style={{ display: "grid", gridTemplateColumns: "320px 1fr", gap: 20, alignItems: "start" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "300px 1fr", gap: 14, alignItems: "start" }}>
         <form className="card" style={{ padding: 18 }} onSubmit={add}>
           <div style={{ fontWeight: 500, marginBottom: 14 }}>Agregar cámara</div>
           <div className="field"><label>Nombre</label><input value={name} onChange={(e) => setName(e.target.value)} required /></div>
@@ -75,6 +75,7 @@ export function Camaras() {
           <button className="btn primary" type="submit" style={{ width: "100%", justifyContent: "center" }}><Plus size={16} /> Agregar</button>
         </form>
 
+        <div className="card" style={{ padding: 18 }}>
         <div className="asset-grid">
           {items.map((c) => {
             const t = thumb(c);
@@ -113,6 +114,7 @@ export function Camaras() {
             );
           })}
           {items.length === 0 && <div className="muted-note">Sin cámaras todavía.</div>}
+        </div>
         </div>
       </div>
     </>

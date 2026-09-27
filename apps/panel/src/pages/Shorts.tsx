@@ -9,7 +9,9 @@ export function Shorts() {
           <p>Últimos shorts del canal en YouTube. Editá el título que sale al aire y elegí cuáles rotan.</p>
         </div>
       </div>
-      <ShortsManager />
+      <section className="card sec-card">
+        <ShortsManager />
+      </section>
     </>
   );
 }

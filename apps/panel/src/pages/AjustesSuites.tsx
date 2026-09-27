@@ -114,8 +114,8 @@ export function AjustesSuites() {
       {err && <div className="alert error">{err}</div>}
       {msg && <div className="alert">{msg}</div>}
 
-      <h3 style={{ margin: "6px 0 10px" }}>Suites</h3>
-      <div className="card" style={{ padding: 6 }}>
+      <section className="card sec-card">
+        <div className="sec-card-hd"><h3>Suites</h3></div>
         {suites.map((s) => {
           const on = s.id === active;
           return (
@@ -142,11 +142,11 @@ export function AjustesSuites() {
           </select>
           <button type="button" className="btn primary" disabled={!newName || busy != null} onClick={createSuite}><Plus size={15} /> Crear suite</button>
         </div>
-      </div>
+      </section>
 
-      <h3 style={{ margin: "22px 0 10px" }}>Links del canal</h3>
-      <p className="muted-note" style={{ marginTop: 0 }}>La salida del canal es una sola señal: la parrilla del Copiloto y, mientras el Host tiene Stream abierto, el Stream. Cargá estos links una vez en OBS/vMix (1920×1080 el horizontal, 1080×1920 el vertical). No lo compartas: cualquiera con el link ve la señal.</p>
-      <div className="card" style={{ padding: 6 }}>
+      <section className="card sec-card">
+        <div className="sec-card-hd"><h3>Links del canal</h3>
+        <p>La salida del canal es una sola señal: la parrilla del Copiloto y, mientras el Host tiene Stream abierto, el Stream. Cargá estos links una vez en OBS/vMix (1920×1080 el horizontal, 1080×1920 el vertical). No lo compartas: cualquiera con el link ve la señal.</p></div>
         {links == null && <div style={{ padding: 12, color: "#6b7688" }}><Loader2 size={14} className="spin" /> Cargando…</div>}
         {links?.map((l, i) => (
           <div key={l.slug} style={{ ...row, borderTop: i ? row.borderTop : undefined, flexWrap: "wrap" }}>
@@ -162,11 +162,11 @@ export function AjustesSuites() {
             <button type="button" className="btn" disabled={busy != null} onClick={() => regenerate(l)} title="Si el link se filtró: genera uno nuevo al azar y el viejo deja de emitir"><RefreshCw size={15} /> Regenerar</button>
           </div>
         ))}
-      </div>
+      </section>
 
-      <h3 style={{ margin: "22px 0 10px" }}>Colecciones habilitadas</h3>
-      <p className="muted-note" style={{ marginTop: 0 }}>{isMaster ? "Elegí qué colecciones de templates se pueden usar en las suites." : "Las habilita el Master."}</p>
-      <div className="card" style={{ padding: 6 }}>
+      <section className="card sec-card">
+        <div className="sec-card-hd"><h3>Colecciones habilitadas</h3>
+        <p>{isMaster ? "Elegí qué colecciones de templates se pueden usar en las suites." : "Las habilita el Master."}</p></div>
         {TEMPLATE_COLLECTIONS.map((c, i) => {
           const on = enabled.includes(c.id);
           return (
@@ -183,9 +183,9 @@ export function AjustesSuites() {
             </div>
           );
         })}
-      </div>
+      </section>
 
-      <div className="card" style={{ padding: 18, marginTop: 18, display: "flex", alignItems: "center", gap: 14 }}>
+      <div className="card sec-card" style={{ display: "flex", alignItems: "center", gap: 14 }}>
         <Link2Off size={20} style={{ flex: "none", color: "#6b7688" }} />
         <div style={{ flex: 1 }}>
           <div style={{ fontWeight: 600 }}>Links viejos con variables</div>

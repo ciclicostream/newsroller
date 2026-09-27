@@ -45,7 +45,7 @@ export function Reportes() {
         </div>
       </div>
 
-      <div className="rp-controls no-print">
+      <div className="card sec-card rp-controls no-print">
         <div className="rp-seg">
           <button className={period === "week" ? "on" : ""} onClick={() => { setPeriod("week"); setStart(undefined); }}>Semanal</button>
           <button className={period === "month" ? "on" : ""} onClick={() => { setPeriod("month"); setStart(undefined); }}>Mensual</button>
@@ -54,10 +54,10 @@ export function Reportes() {
         <div className="rp-label">{rep?.label ?? "…"}{rep?.in_progress && <span className="rp-tag">en curso</span>}</div>
         <button className="icon-btn rp-nav" disabled={!rep?.next_start} onClick={() => rep?.next_start && setStart(rep.next_start)} aria-label="Siguiente"><ChevronRight size={18} /></button>
         {start && <button className="btn" onClick={() => setStart(undefined)}>Ir al actual</button>}
+        {loading && !rep && <div className="uploading" style={{ marginLeft: "auto" }}><Loader2 size={16} className="spin" /> Armando el reporte…</div>}
       </div>
 
       {err && <div className="alert error">{err}</div>}
-      {loading && !rep && <div className="uploading"><Loader2 size={16} className="spin" /> Armando el reporte…</div>}
 
       {rep && (
         <div style={{ opacity: loading ? 0.5 : 1, transition: "opacity .15s" }}>

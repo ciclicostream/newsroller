@@ -88,6 +88,7 @@ export function AjustesPlataformas() {
       {msg && <div className="alert">{msg}</div>}
       <input ref={fileRef} type="file" accept="image/*" style={{ display: "none" }} onChange={onFile} />
 
+      <section className="card sec-card">
       {list == null ? (
         <div className="muted-note">Cargando…</div>
       ) : (
@@ -116,6 +117,7 @@ export function AjustesPlataformas() {
           </div>
         </>
       )}
+      </section>
     </>
   );
 }

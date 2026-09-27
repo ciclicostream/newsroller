@@ -117,6 +117,7 @@ export function AjustesClima() {
       ) : (
         <div className="cw-layout">
         <div className="cw-main">
+          <section className="card sec-card">
           <h2 className="cw-h">Ícono grande</h2>
           <p className="cw-p">Va arriba de todo en la placa Clima, según el estado actual. De noche usa el de noche.</p>
           <div className="cw-grid">
@@ -138,7 +139,9 @@ export function AjustesClima() {
               </div>
             ))}
           </div>
+          </section>
 
+          <section className="card sec-card">
           <h2 className="cw-h">Íconos de los días</h2>
           <p className="cw-p">Los chicos de HOY, MAÑANA y el día siguiente, según el pronóstico de cada día.</p>
           <div className="cw-grid small">
@@ -153,8 +156,9 @@ export function AjustesClima() {
               );
             })}
           </div>
+          </section>
         </div>
-        <aside className="cw-side">
+        <aside className="card sec-card cw-side">
           <div className="cw-pv-hd">Vista previa: <b>{climaEstadoLabel(sel.estado)}</b> · {sel.night ? "noche" : "día"}</div>
           <PreviewMonitor type="clima" data={{ city: "Buenos Aires", preview: { code: climaCodeOf(sel.estado), isDay: !sel.night, v } }} dur={10} />
           <div className="cw-pv-ctl">
@@ -175,7 +179,7 @@ export function AjustesClima() {
 }
 
 const CSS = `
-.cw-layout{display:grid;grid-template-columns:minmax(0,1fr) 440px;gap:22px;align-items:start}
+.cw-layout{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:14px;align-items:start}
 @media (max-width:1100px){.cw-layout{grid-template-columns:1fr}.cw-side{position:static!important;order:-1}}
 .cw-side{position:sticky;top:16px;display:flex;flex-direction:column;gap:10px}
 .cw-pv-hd{font-size:13px;color:var(--muted)}
@@ -187,10 +191,10 @@ const CSS = `
 .cw-seg button.on{background:#2f6bff;color:#fff}
 .cw-thumb{cursor:pointer;outline:2px solid transparent;outline-offset:2px;transition:outline-color .2s}
 .cw-thumb.sel{outline-color:#2f6bff}
-.cw-h{font-size:17px;margin:22px 0 2px}
+.cw-h{font-size:16px;margin:0 0 2px}
 .cw-p{font-size:13px;color:var(--muted);margin:0 0 12px}
-.cw-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px}
-.cw-grid.small{grid-template-columns:repeat(auto-fill,minmax(170px,1fr))}
+.cw-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px}
+.cw-grid.small{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
 .cw-card{padding:12px;display:flex;flex-direction:column;gap:6px}
 .cw-name{font-weight:600;font-size:14px}
 .cw-when{font-size:11.5px;color:var(--muted)}
