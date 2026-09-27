@@ -3,6 +3,7 @@ import type { RetroData } from "@newsroller/shared";
 import { IS_VERTICAL } from "../../lib/orientation";
 import { P } from "../../lib/params";
 import { useForcePlay } from "../../lib/autoplay";
+import { YouTubePlayer } from "../../templates/render";
 import { NM_CSS, useFit, useLife } from "./base";
 import { ModernChrome } from "./Chrome";
 
@@ -56,9 +57,11 @@ export function Retro({ data, durationSec }: { data: RetroData; durationSec?: nu
         <div className="nmr-tv">
           <div className="nmr-crt">
             <div className={"nmr-in" + (portrait ? " portrait" : "")}>
-              {data.media_kind === "video"
-                ? <video key={data.media_url} ref={videoRef} src={data.media_url} autoPlay muted={!WANT_AUDIO} loop playsInline onLoadedMetadata={(e) => setPortrait(e.currentTarget.videoHeight > e.currentTarget.videoWidth)} />
-                : <img src={data.media_url} alt="" onLoad={(e) => setPortrait(e.currentTarget.naturalHeight > e.currentTarget.naturalWidth)} />}
+              {data.media_kind === "youtube"
+                ? <div className="nmr-yt"><YouTubePlayer videoId={data.media_url} onEnded={() => {}} loop /></div>
+                : data.media_kind === "video"
+                  ? <video key={data.media_url} ref={videoRef} src={data.media_url} autoPlay muted={!WANT_AUDIO} loop playsInline onLoadedMetadata={(e) => setPortrait(e.currentTarget.videoHeight > e.currentTarget.videoWidth)} />
+                  : <img src={data.media_url} alt="" onLoad={(e) => setPortrait(e.currentTarget.naturalHeight > e.currentTarget.naturalWidth)} />}
             </div>
             <Static />
           </div>
@@ -92,7 +95,9 @@ const CSS = `
   box-shadow:inset 0 1px 0 rgba(255,255,255,.18),inset 0 0 0 1px rgba(255,255,255,.08),0 70px 140px -30px rgba(0,0,0,.85)}
 .nmr-crt{position:absolute;inset:26px;border-radius:26px;overflow:hidden;background:#000}
 .nmr-in{position:absolute;inset:0;transform:scale(0,.004)}
-.nmr-in img,.nmr-in video{width:100%;height:100%;object-fit:cover;display:block;animation:nmr-jit 3s steps(1) infinite}
+.nmr-in img,.nmr-in video,.nmr-yt{width:100%;height:100%;object-fit:cover;display:block;animation:nmr-jit 3s steps(1) infinite}
+.nmr-yt{overflow:hidden}
+.nmr-yt iframe{width:100%;height:100%;display:block;pointer-events:none}
 .nmr-in.portrait img,.nmr-in.portrait video{object-fit:contain}
 @keyframes nmr-jit{0%,92%,100%{transform:none}94%{transform:translateX(3px)}96%{transform:translateX(-2px)}}
 .nmr-crt::after{content:"";position:absolute;inset:0;pointer-events:none;z-index:2;background:repeating-linear-gradient(0deg,rgba(0,0,0,.28) 0 2px,transparent 2px 4px),radial-gradient(ellipse at center,transparent 55%,rgba(0,0,0,.7) 100%)}

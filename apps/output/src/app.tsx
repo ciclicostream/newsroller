@@ -159,6 +159,14 @@ const DEMOS: Record<string, { type: string; data: Record<string, any>; dur?: num
       text: "Ciclo de entretenimiento que marcó la televisión de la década. Combinaba humor, juegos y bloques deportivos, y se volvió un clásico de la pantalla argentina.",
     },
   },
+  retro_youtube: {
+    type: "retro", dur: 20,
+    data: {
+      media_url: "dQw4w9WgXcQ", media_kind: "youtube", chip: "PROGRAMA", year: "1987",
+      title: "Un tema en la tele", subtitle: "Video de YouTube",
+      text: "Retro con el video pegado por link de YouTube en vez de un archivo subido.",
+    },
+  },
   retro_afiche: {
     type: "retro", dur: 15,
     data: {

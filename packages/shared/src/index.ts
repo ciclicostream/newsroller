@@ -615,8 +615,8 @@ export const LISTA_MAX_ITEMS = 10;
 
 // Datos del tipo "retro": programa (o afiche/tapa) viejo. Imagen o video obligatorio + ficha.
 export interface RetroData {
-  media_url: string;
-  media_kind: "image" | "video";
+  media_url: string; // archivo, o el id del video si media_kind es "youtube"
+  media_kind: "image" | "video" | "youtube";
   chip?: string; // etiqueta, por defecto "PROGRAMA" (vacía = sin etiqueta)
   year?: string; // texto libre: 1990, Años 90, 1978–83 (máx 14)
   title: string; // máx 70

@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import { PreviewMonitor } from "../components/PreviewMonitor";
 import { EfemeridesSwitch } from "../components/PlacaSwitch";
-import { Plus, Trash2, Check, X, Loader2, Tv, Pencil } from "lucide-react";
+import { Plus, Trash2, Check, X, Loader2, Tv, Pencil, Youtube } from "lucide-react";
 import type { ContentItem, RetroData } from "@newsroller/shared";
 import { contentItems } from "../lib/content-items";
 import { uploadMedia } from "../lib/content";
+import { youtubeId } from "../lib/cameras";
 
 const CHIP_MAX = 14;
 const YEAR_MAX = 14;
@@ -19,9 +20,11 @@ export function RetroPlaca() {
   const [msg, setMsg] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
 
+  const [source, setSource] = useState<"file" | "youtube">("file");
   const [mediaUrl, setMediaUrl] = useState<string | null>(null);
   const [mediaKind, setMediaKind] = useState<"image" | "video">("image");
   const [videoSec, setVideoSec] = useState<number | null>(null); // duración del video cargado
+  const [ytInput, setYtInput] = useState(""); // link o ID pegado
   const [chip, setChip] = useState("PROGRAMA");
   const [year, setYear] = useState("");
   const [title, setTitle] = useState("");
@@ -54,8 +57,8 @@ export function RetroPlaca() {
   function clearMedia() { setMediaUrl(null); setVideoSec(null); }
 
   const buildData = (): RetroData => ({
-    media_url: mediaUrl ?? "",
-    media_kind: mediaKind,
+    media_url: source === "youtube" ? youtubeId(ytInput) ?? "" : mediaUrl ?? "",
+    media_kind: source === "youtube" ? "youtube" : mediaKind,
     chip: chip.trim(),
     year: year.trim() || undefined,
     title: title.trim(),
@@ -66,7 +69,8 @@ export function RetroPlaca() {
   async function save(e: React.FormEvent) {
     e.preventDefault();
     setErr(null); setMsg(null);
-    if (!mediaUrl) return setErr("La imagen o el video es obligatorio.");
+    if (source === "youtube" && !youtubeId(ytInput)) return setErr("Pegá el link o ID del video de YouTube.");
+    if (source === "file" && !mediaUrl) return setErr("La imagen o el video es obligatorio.");
     if (!title.trim()) return setErr("El título es obligatorio.");
     setSaving(true);
     try {
@@ -90,7 +94,12 @@ export function RetroPlaca() {
   function startEdit(it: ContentItem) {
     const d = it.data as RetroData;
     setEditingId(it.id);
-    setMediaUrl(d.media_url || null); setMediaKind(d.media_kind ?? "image"); setVideoSec(null);
+    if (d.media_kind === "youtube") {
+      setSource("youtube"); setYtInput(d.media_url ?? ""); setMediaUrl(null); setMediaKind("image");
+    } else {
+      setSource("file"); setYtInput(""); setMediaUrl(d.media_url || null); setMediaKind(d.media_kind ?? "image");
+    }
+    setVideoSec(null);
     setChip(d.chip ?? "PROGRAMA"); setYear(d.year ?? ""); setTitle(d.title ?? "");
     setSubtitle(d.subtitle ?? ""); setText(d.text ?? "");
     setDur(it.duration_sec);
@@ -98,6 +107,7 @@ export function RetroPlaca() {
   }
   function cancelEdit() {
     setEditingId(null);
+    setSource("file"); setYtInput("");
     setMediaUrl(null); setMediaKind("image"); setVideoSec(null);
     setChip("PROGRAMA"); setYear(""); setTitle(""); setSubtitle(""); setText("");
     setDur(DEFAULT_DUR);
@@ -138,7 +148,13 @@ export function RetroPlaca() {
 
           <div className="field">
             <label>Imagen o video (obligatorio)</label>
-            {mediaUrl ? (
+            <div className="tabs" style={{ marginBottom: 8 }}>
+              <button type="button" className={"tab" + (source === "file" ? " active" : "")} onClick={() => setSource("file")}>Archivo</button>
+              <button type="button" className={"tab" + (source === "youtube" ? " active" : "")} onClick={() => setSource("youtube")}>YouTube</button>
+            </div>
+            {source === "youtube" ? (
+              <input value={ytInput} onChange={(e) => setYtInput(e.target.value)} placeholder="https://youtube.com/watch?v=…" />
+            ) : mediaUrl ? (
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                 {mediaKind === "video"
                   ? <video src={mediaUrl} style={{ width: 84, height: 56, objectFit: "cover", borderRadius: 6 }} muted onLoadedMetadata={(e) => setVideoSec(e.currentTarget.duration)} />
@@ -149,7 +165,11 @@ export function RetroPlaca() {
               <input ref={fileRef} type="file" accept="image/*,video/*" onChange={onFile} disabled={uploading} />
             )}
             {uploading && <div style={{ fontSize: 12, color: "#6b7688", marginTop: 4 }}><Loader2 size={13} className="spin" /> subiendo…</div>}
-            <div className="muted-note" style={{ marginTop: 4 }}>Captura horizontal, afiche vertical o un clip. El marco se ajusta a la proporción. El video sale mudo salvo que se active el audio de la salida.</div>
+            <div className="muted-note" style={{ marginTop: 4 }}>
+              {source === "youtube"
+                ? "El video de YouTube se reproduce completo en loop dentro del televisor, mudo salvo que se active el audio de la salida."
+                : "Captura horizontal, afiche vertical o un clip. El marco se ajusta a la proporción. El video sale mudo salvo que se active el audio de la salida."}
+            </div>
           </div>
 
           <div className="field xy" style={{ display: "flex", gap: 10 }}>
@@ -185,7 +205,7 @@ export function RetroPlaca() {
             <label>Duración del bloque (segundos)</label>
             <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
               <input type="number" min={2} value={dur} onChange={(e) => setDur(Math.max(2, Number(e.target.value) || DEFAULT_DUR))} style={{ flex: 1 }} />
-              {mediaKind === "video" && videoSec ? (
+              {source === "file" && mediaKind === "video" && videoSec ? (
                 <button type="button" className="btn" onClick={() => setDur(Math.max(2, Math.ceil(videoSec)))}>Usar lo que dura el video ({Math.ceil(videoSec)} s)</button>
               ) : null}
             </div>
@@ -197,20 +217,29 @@ export function RetroPlaca() {
         </form>
 
         <div className="pm-col">
-          <PreviewMonitor type="retro" data={buildData() as unknown as Record<string, unknown>} dur={dur} ready={!!mediaUrl && !!title.trim()} />
+          <PreviewMonitor type="retro" data={buildData() as unknown as Record<string, unknown>} dur={dur} ready={(source === "youtube" ? !!youtubeId(ytInput) : !!mediaUrl) && !!title.trim()} />
           {items.length === 0 && <div className="card" style={{ padding: 18, color: "#6b7688" }}>Todavía no hay contenidos Retro.</div>}
           {items.map((it) => {
             const d = it.data as RetroData;
             return (
               <div key={it.id} data-item={it.id} className="card" style={{ padding: 16, display: "flex", gap: 16, alignItems: "center" }}>
                 <div style={{ width: 44, height: 44, borderRadius: 8, background: "#0d2168", flex: "0 0 auto", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
-                  {d.media_kind === "image" && d.media_url ? <img src={d.media_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <Tv size={20} color="#fff" />}
+                  {d.media_kind === "image" && d.media_url ? (
+                    <img src={d.media_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                  ) : d.media_kind === "youtube" && d.media_url ? (
+                    <img src={`https://img.youtube.com/vi/${d.media_url}/hqdefault.jpg`} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                  ) : (
+                    <Tv size={20} color="#fff" />
+                  )}
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{d.title}</div>
-                  <div style={{ fontSize: 12, color: "#6b7688", marginTop: 4, display: "flex", gap: 12 }}>
+                  <div style={{ fontSize: 12, color: "#6b7688", marginTop: 4, display: "flex", gap: 12, alignItems: "center" }}>
                     {d.year && <span>{d.year}</span>}
-                    <span>{d.media_kind === "video" ? "Video" : "Imagen"}</span>
+                    <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                      {d.media_kind === "youtube" && <Youtube size={12} />}
+                      {d.media_kind === "video" ? "Video" : d.media_kind === "youtube" ? "YouTube" : "Imagen"}
+                    </span>
                     <span>{it.duration_sec}s</span>
                   </div>
                 </div>
