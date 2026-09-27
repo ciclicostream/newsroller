@@ -326,11 +326,12 @@ export function Programacion() {
                   {monVertical ? <RectangleVertical size={15} /> : <RectangleHorizontal size={15} />}
                 </button>
               </div>
-              <div className={"pv-mon" + (monVertical ? " v" : "")}>
+              <div className={"pv-mon" + (monVertical ? " v" : "") + (mode === "aire" && streamTx ? " instream" : "")}>
                 {/* AIRE muestra el output real tal cual: si está cortado, la propia
                     placa off_air.jpg ya lo dice — no le agregamos texto encima. */}
                 {monUrl ? <iframe key={monUrl} src={monUrl} title="monitor" allow="autoplay; encrypted-media" /> : <div className="pv-ph">Elegí un contenido para previsualizarlo.</div>}
               </div>
+              {mode === "aire" && <span className={"pv-monsrc" + (streamTx ? " st" : "")}>{streamTx ? "En stream" : "Parrilla"}</span>}
             </div>
 
             <div className="pv-card pv-sndcard">
@@ -361,7 +362,7 @@ export function Programacion() {
               }</b></div>
               <div className="r"><span>Salida:</span><b>1920×1080 · {liveStatus ? liveStatus.fps : "—"} FPS</b></div>
             </div>
-            <div className="pv-clock"><span className={"pv-instream" + (streamTx ? "" : " off")} title="Stream tiene la señal"><i />En stream</span><span className="dg">{fmt(airSec).split(":").map((t, i) => <span key={i}>{i > 0 && <i className="colon" />}{t}</span>)}</span><span className="lb">al aire</span></div>
+            <div className="pv-clock"><span className="dg">{fmt(airSec).split(":").map((t, i) => <span key={i}>{i > 0 && <i className="colon" />}{t}</span>)}</span><span className="lb">al aire</span></div>
           </div>
 
           <div className="pv-kpis">

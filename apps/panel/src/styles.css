@@ -511,7 +511,7 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 6px
 .pv-monrow{background:#fff;border:1px solid var(--ln);color:var(--dim);cursor:pointer;border-radius:8px;padding:5px 7px;display:inline-flex;flex:none}
 .pv-monrow:hover{color:#fff;background:var(--ac);border-color:var(--ac)}
 
-.pv-mon-card{padding:14px;box-shadow:0 4px 16px rgba(20,30,60,.05),inset 0 2px 14px rgba(20,30,60,.07)}
+.pv-mon-card{position:relative;padding:14px;box-shadow:0 4px 16px rgba(20,30,60,.05),inset 0 2px 14px rgba(20,30,60,.07)}
 .pv-mon-hd{display:flex;align-items:center;gap:8px;margin-bottom:10px}
 .pv-mon-hd .pv-ct{flex:1}
 .pv-suite{max-width:190px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;border:1px solid var(--ln);border-radius:9px;background:#fff;color:var(--tx);font-size:11px;font-weight:700;padding:6px 10px}
@@ -532,6 +532,10 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 6px
 .pv-mon-row{display:flex;gap:10px;align-items:stretch}
 .pv-mon{flex:1;aspect-ratio:16/9;background:#05081a;border-radius:12px;overflow:hidden;position:relative}
 .pv-mon-row{justify-content:center}
+.pv-mon.instream{box-shadow:0 0 0 1.5px rgba(238,34,12,.75),0 0 16px rgba(238,34,12,.45)}
+.pv-monsrc{position:absolute;left:0;right:0;bottom:2px;text-align:center;font-size:7px;line-height:10px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:var(--dim);pointer-events:none;animation:pv-soft 2.4s ease-in-out infinite}
+.pv-monsrc.st{color:#ee220c}
+@keyframes pv-soft{50%{opacity:.35}}
 .pv-mon.v{flex:none;aspect-ratio:9/16;height:520px;margin:0 auto}
 .pv-mon iframe{width:100%;height:100%;border:0;display:block}
 .pv-ph,.pv-standby{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#8a93a6;font-size:13px;text-align:center;padding:20px}
@@ -554,10 +558,6 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 6px
 .pv-clock .dg .colon{position:relative;display:inline-block;width:.24em;height:.6em;margin:0 .1em}
 .pv-clock .dg .colon::before,.pv-clock .dg .colon::after{content:"";position:absolute;left:50%;width:.14em;height:.14em;margin-left:-.07em;border-radius:50%;background:currentColor;box-shadow:0 0 6px currentColor}
 .pv-clock .dg .colon::before{top:.08em}.pv-clock .dg .colon::after{bottom:.08em}
-.pv-clock .pv-instream{display:inline-flex;align-items:center;gap:4px;background:#ff2b2b;color:#fff;font-size:8px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;border-radius:999px;padding:2px 7px;animation:pv-blink 1s steps(2,start) infinite}
-.pv-clock .pv-instream i{width:5px;height:5px;border-radius:50%;background:#fff}
-.pv-clock .pv-instream.off{visibility:hidden;animation:none}
-@keyframes pv-blink{50%{opacity:.25}}
 .pv-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
 .pv-kpi{background:#fff;border:1px solid var(--ln);border-radius:12px;padding:10px;text-align:center;box-shadow:0 3px 12px rgba(20,30,60,.05)}
 .pv-kpi .v{font-size:22px;font-weight:800;line-height:1}.pv-kpi .l{font-size:10px;color:var(--dim);margin-top:3px;font-weight:600}
