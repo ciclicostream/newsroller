@@ -1,7 +1,8 @@
-import type { CamarasData, InformeData, ListaData, PromosData, PublicidadData, ShortsData, VideoFullData, CarteleraData, CifrasData, ClimaData, ClimaPayload, DeclaracionesData, DolarData, DolarPayload, EfemeridesData, ObituarioData, PlacasData, RetroData, UltimaHoraData } from "@newsroller/shared";
+import type { CamarasData, InformeData, ListaData, PromosData, PublicidadData, ShortsData, VideoFullData, CarteleraData, CifrasData, ClimaData, ClimaPayload, DeclaracionesData, DolarData, DolarPayload, EfemeridesData, MusicaData, ObituarioData, PlacasData, RetroData, UltimaHoraData } from "@newsroller/shared";
 import type { ItemProps } from "../../templates/items";
 import { Ahora } from "./Ahora";
 import { Obituario } from "./Obituario";
+import { Musica } from "./Musica";
 import { Placas } from "./Placas";
 import { Dolar } from "./Dolar";
 import { Cifras } from "./Cifras";
@@ -26,6 +27,8 @@ export function ModernaItemView({ id, type, cameras, data, durationSec, createdA
       return <Ahora data={data as UltimaHoraData} durationSec={durationSec} updatedAt={updatedAt ?? createdAt} />;
     case "obituario":
       return <Obituario data={data as ObituarioData} durationSec={durationSec} />;
+    case "musica":
+      return <Musica data={data as MusicaData} durationSec={durationSec} />;
     case "placas":
       return <Placas data={data as PlacasData} durationSec={durationSec} createdAt={createdAt} />;
     case "dolar":

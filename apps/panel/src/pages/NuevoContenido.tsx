@@ -20,6 +20,7 @@ import { InformePlaca } from "./InformePlaca";
 import { ListaPlaca } from "./ListaPlaca";
 import { RetroPlaca } from "./RetroPlaca";
 import { ObituarioPlaca } from "./ObituarioPlaca";
+import { MusicaPlaca } from "./MusicaPlaca";
 import { PublicidadPlaca } from "./PublicidadPlaca";
 import { PromosPlaca } from "./PromosPlaca";
 
@@ -29,12 +30,8 @@ const MENU_LABEL: Record<string, string> = { declaraciones: "Textual", publicida
 // Plantilla mostrada por defecto al entrar a Contenido.
 const DEFAULT_TYPE = "placas";
 
-// Submenú horizontal con todas las plantillas (y la papelera). Lo usan Contenido y la Papelera.
+// Submenú horizontal con todas las plantillas.
 export function ContenidoNav({ active }: { active: string }) {
-  // Cantidad de contenidos en la papelera (para el chip).
-  const [trashCount, setTrashCount] = useState(0);
-  useEffect(() => { contentItems.trash().then((l) => setTrashCount(l.length)).catch(() => {}); }, []);
-
   // Tipos de plantilla que tienen contenido en la PARRILLA (borrador que se edita en
   // Programación). Se refresca cada tanto y al volver a la pestaña.
   const [inGrid, setInGrid] = useState<Set<string>>(new Set());
@@ -79,11 +76,6 @@ export function ContenidoNav({ active }: { active: string }) {
             </Link>
           );
         })}
-        {/* Papelera (30 días) */}
-        <Link to="/contenido/papelera" className={"tpl-chip trash" + (active === "papelera" ? " active" : "")} title="Contenidos borrados: se conservan 30 días">
-          <span className="tpl-chip-ic"><Trash2 size={16} /></span>
-          <span className="tpl-chip-lbl"><span>Papelera</span>{trashCount ? <span>({trashCount})</span> : null}</span>
-        </Link>
       </nav>
   );
 }
@@ -118,6 +110,7 @@ function TemplateForm({ type }: { type: string }) {
   if (type === "lista") return <ListaPlaca />;
   if (type === "retro") return <RetroPlaca />;
   if (type === "obituario") return <ObituarioPlaca />;
+  if (type === "musica") return <MusicaPlaca />;
   if (type === "publicidad") return <PublicidadPlaca />;
   if (type === "promos") return <PromosPlaca />;
   const def = TIPO_BY_KEY[type];

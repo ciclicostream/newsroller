@@ -17,6 +17,7 @@ import {
   ListChecks,
   Tv,
   Flower2,
+  Disc3,
   type LucideIcon,
 } from "lucide-react";
 
@@ -44,6 +45,7 @@ export const TIPOS: TipoDef[] = [
   { type: "lista", label: "Lista", desc: "Lista con foco (dentro de Informes)", Icon: ListChecks, ready: true, hidden: true },
   { type: "obituario", label: "Obituario", desc: "Despedida sobria, sin marco (dentro de Última Hora)", Icon: Flower2, ready: true, hidden: true },
   { type: "retro", label: "Retro", desc: "Programa viejo con imagen o video (dentro de Efemérides)", Icon: Tv, ready: true, hidden: true },
+  { type: "musica", label: "Música", desc: "Canción con portada, créditos y letra sincronizada", Icon: Disc3, ready: true },
   { type: "publicidad", label: "Publicidad", desc: "Full o vertical (genera reporte)", Icon: Megaphone, ready: true },
   { type: "video_full", label: "Video Full", desc: "Video a pantalla completa", Icon: MonitorPlay, ready: true },
   { type: "promos", label: "Promos / Avances", desc: "Pill + card + video 9:16 o 4:3", Icon: Sparkles, ready: true },

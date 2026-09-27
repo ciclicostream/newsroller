@@ -24,6 +24,7 @@ const TYPES = new Set([
   "clima",
   "placas",
   "obituario",
+  "musica",
 ]);
 
 // Banco de contenidos tipados (ultima_hora, etc.). Todos los roles ven; ver ownerGuard para modificar.

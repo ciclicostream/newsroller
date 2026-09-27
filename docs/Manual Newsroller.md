@@ -22,6 +22,18 @@ Todos los contenidos tienen además una **Duración** (manual, en segundos). Los
 | | Oficio | Manual | Qué hacía |
 | | Texto | Manual | Breve semblanza |
 | | Foto | Manual | Retrato |
+| **Música** *(sólo colección Moderna por ahora)* | Álbum ya cargado | Manual | Se elige de una lista y completa los datos del álbum (nombre, portada, fotos, descripción, fecha, géneros, Instagram): sólo se carga el tema nuevo. Un álbum puede tener varios temas |
+| | Pista de audio | Manual | Obligatoria; la duración del bloque es la del audio |
+| | Nombre del tema | Manual | Obligatorio |
+| | Álbum | Manual | Obligatorio |
+| | Portada | Manual | Obligatoria, imagen cuadrada |
+| | Más fotos | Manual | Opcional, hasta 5; rotan con la portada |
+| | Géneros | Manual | Hasta 3, de la lista de Ajustes → Géneros musicales |
+| | Descripción del álbum | Manual | Opcional, hasta 350 caracteres |
+| | Fecha de lanzamiento | Manual | Opcional |
+| | Créditos | Manual | Opcional, texto libre |
+| | Instagram de la banda | Manual | Opcional, se muestra a la derecha de la card de créditos |
+| | Letra | Manual | Opcional; una línea por vez, sincronizada con el audio (se marca en el formulario o se pega en formato LRC) |
 | **Placas** | Volanta | Manual | Tema de la nota |
 | | Título | Manual | Titular, admite negrita |
 | | Cuerpo | Manual | Texto de la nota |

@@ -3,7 +3,7 @@ import { getSupabase } from "../db/supabase.js";
 import { requireAuth, requirePerm } from "../auth/middleware.js";
 import { clearLimitsCache } from "../auth/sessions.js";
 import { logActivity } from "../activity.js";
-import { CLIMA_SLOT_KEYS, CLIMA_DAY_DEFAULT, normalizeClimaIcons, PLATAFORMAS_DEFAULT, IDLE_MINUTES_DEFAULT, MUSIC_DEFAULT, ROLES, DEFAULT_COLLECTION, SUITE_DEFAULT, SUITE_NAME_RE, collectionById, can, type Suite, type Plataforma, type Role, type MusicSettings } from "@newsroller/shared";
+import { CLIMA_SLOT_KEYS, CLIMA_DAY_DEFAULT, normalizeClimaIcons, PLATAFORMAS_DEFAULT, IDLE_MINUTES_DEFAULT, MUSIC_DEFAULT, GENEROS_MUSICALES_DEFAULT, ROLES, DEFAULT_COLLECTION, SUITE_DEFAULT, SUITE_NAME_RE, collectionById, can, type Suite, type Plataforma, type Role, type MusicSettings } from "@newsroller/shared";
 import type { IO } from "../realtime/socket.js";
 
 // Preferencias del sistema (key/value). Defaults + validación por clave.
@@ -32,6 +32,8 @@ const DEFAULTS = {
   // Música de fondo continua (Ajustes → Música): temas cargados, cuál está seleccionado y si
   // el canal está habilitado (el toggle vive en el Monitor de Emisión, no acá).
   music: MUSIC_DEFAULT as MusicSettings,
+  // Géneros musicales elegibles en el formulario de Música (Ajustes → Géneros musicales).
+  generos: GENEROS_MUSICALES_DEFAULT as string[],
   // Colecciones de templates habilitadas por el Master (Ajustes → Suites). Cada suite elige una de éstas.
   collections: [DEFAULT_COLLECTION] as string[],
   // Suites (nombre + colección) y cuál está activa: la salida del canal emite con la colección de la activa.
@@ -58,6 +60,16 @@ function coerce(key: SettingsKey, raw: unknown): SettingsValue | null {
     if (!Array.isArray(raw) || raw.length === 0 || raw.length > 20) return null;
     const ids = [...new Set(raw)];
     return ids.every((id) => typeof id === "string" && collectionById(id)?.ready) ? (ids as string[]) : null;
+  }
+  if (key === "generos") {
+    if (!Array.isArray(raw) || raw.length > 100) return null;
+    const out: string[] = [];
+    for (const it of raw) {
+      const g = typeof it === "string" ? it.trim().slice(0, 40) : "";
+      if (!g) return null;
+      if (!out.some((x) => x.toLowerCase() === g.toLowerCase())) out.push(g);
+    }
+    return out;
   }
   if (key === "legacyLinks") return typeof raw === "boolean" ? raw : null;
   if (key === "suites") {

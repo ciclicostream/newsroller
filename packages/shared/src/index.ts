@@ -315,6 +315,7 @@ export type ContentItemType =
   | "clima"
   | "placas"
   | "obituario"
+  | "musica"
   | (string & {});
 
 export interface ContentItem {
@@ -509,6 +510,51 @@ export interface DeclaracionesData {
   headline?: string;          // titular de la nota (opcional)
   interview_program?: string; // "Entrevista completa en …" (opcional)
   audio_url?: string | null;  // audio opcional (se reproduce mientras está al aire)
+}
+
+// Géneros musicales que el editor puede elegir en el formulario de Música (Ajustes → Géneros musicales).
+export const GENEROS_MUSICALES_DEFAULT: string[] = [
+  "Académica - Clásica", "Blues", "Canción de autor", "Chamamé", "Contemporánea - experimental", "Coro", "Country", "Cuarteto",
+  "Cumbia", "Electrónica", "Era Contemporánea", "Étnica", "Flamenco", "Folclore latinoamericano", "Folclore nacional", "Folk",
+  "Funk", "Fusión", "Góspel", "Hardcore", "Heavy metal", "Hip Hop", "Infantil", "Jazz", "Melódica", "Murga", "Otro", "Piano",
+  "Pop", "Punk", "Rap", "Reggae", "Rioplatense", "Rock", "Salsa", "Ska", "Soul", "Tango", "Trap", "Tropical",
+];
+export const MUSICA_MAX_GENEROS = 3;
+export const MUSICA_MAX_FOTOS = 5; // fotos extra que rotan con la portada
+
+// Una línea de la letra. `t` = segundo en que empieza a cantarse (null = sin sincronizar).
+export interface MusicaLine { t: number | null; text: string }
+
+// Datos del tipo "musica": una canción con portada, ficha y letra sincronizada. Álbum, portada, géneros, tema y pista
+// de audio son obligatorios; fecha, créditos y letra son opcionales. La duración del bloque es la del audio.
+export interface MusicaData {
+  album: string;
+  cover_url: string; // portada (cuadrada)
+  photos?: string[]; // más fotos (hasta MUSICA_MAX_FOTOS): rotan con la portada
+  description?: string; // descripción del álbum
+  release_date?: string; // ISO "YYYY-MM-DD"
+  genres: string[]; // 1 a MUSICA_MAX_GENEROS, de Ajustes → Géneros musicales
+  title: string; // nombre del tema
+  credits?: string; // texto libre, puede llevar saltos de línea
+  instagram?: string; // usuario de Instagram de la banda, ej. "@losbandaloschinos"
+  lyrics?: MusicaLine[]; // una línea por renglón, sin renglones vacíos
+  audio_url: string; // pista de audio
+}
+
+// Índice de la línea que se canta en el segundo `sec`, o -1 si todavía no empezó la primera. Si ninguna línea tiene
+// tiempo (letra sin sincronizar) se reparten parejo a lo largo de `total` segundos.
+export function musicaLineIndex(lines: MusicaLine[], sec: number, total: number): number {
+  if (!lines.length) return -1;
+  if (lines.every((l) => l.t == null)) {
+    const per = Math.max(1, total) / lines.length;
+    return Math.min(lines.length - 1, Math.floor(sec / per));
+  }
+  let idx = -1;
+  for (let i = 0; i < lines.length; i++) {
+    const t = lines[i]!.t;
+    if (t != null && t <= sec) idx = i;
+  }
+  return idx;
 }
 
 // Datos del tipo "shorts": 1 o 2 shorts verticales del canal (YouTube). El

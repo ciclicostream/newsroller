@@ -5,7 +5,6 @@ import { TIPO_BY_KEY } from "../lib/tipos";
 import { contentItems, type TrashedItem } from "../lib/content-items";
 import { toast } from "../lib/toast";
 import { useAuth } from "../auth/AuthProvider";
-import { ContenidoNav } from "./NuevoContenido";
 
 const titleOf = (it: TrashedItem): string => {
   const d = (it.data ?? {}) as Record<string, unknown>;
@@ -41,13 +40,12 @@ export function Papelera() {
 
   return (
     <>
-      <ContenidoNav active="papelera" />
       <div className="page-head">
         <div>
           <h1>Papelera</h1>
           <p>Los contenidos borrados se guardan 30 días; después se eliminan solos.</p>
         </div>
-        <Link to="/contenido" className="btn"><ArrowLeft size={16} /> Contenido</Link>
+        <Link to="/ajustes" className="btn"><ArrowLeft size={16} /> Ajustes</Link>
       </div>
 
       {rows == null ? (

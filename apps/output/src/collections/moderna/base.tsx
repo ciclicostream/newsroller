@@ -207,6 +207,12 @@ export const fechaLarga = (iso?: string): string => {
   const d = new Date(iso);
   return Number.isNaN(d.getTime()) ? "" : `${d.getDate()} de ${MESES_LARGO[d.getMonth()]}`;
 };
+// "12 de marzo de 2021" a partir de "YYYY-MM-DD" (sin pasar por Date, para que la zona horaria no corra el día).
+export const fechaCompleta = (iso?: string): string => {
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso ?? "");
+  const mes = m ? MESES_LARGO[Number(m[2]) - 1] : undefined;
+  return m && mes ? `${Number(m[3])} de ${mes} de ${m[1]}` : "";
+};
 export const horaCorta = (iso?: string): string => {
   const d = iso ? new Date(iso) : new Date();
   return Number.isNaN(d.getTime()) ? "" : `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;

@@ -8,12 +8,12 @@ import { TIPO_BY_KEY } from "./tipos";
 export const TYPE_CAT: Record<string, string> = {
   ultima_hora: "ultima", obituario: "ultima", dolar: "datos", cifras: "datos", clima: "datos",
   efemerides: "editorial", cartelera: "editorial", declaraciones: "editorial", informe: "editorial", lista: "editorial", retro: "editorial",
-  publicidad: "media", promos: "media", video_full: "media", shorts: "media", camaras: "camaras",
+  publicidad: "media", promos: "media", video_full: "media", musica: "media", shorts: "media", camaras: "camaras",
 };
 export const TYPE_LABEL: Record<string, string> = {
   ultima_hora: "Última Hora", obituario: "Obituario", dolar: "Dólar", cifras: "Cifras", clima: "Clima",
   efemerides: "Efemérides", cartelera: "Cartelera", declaraciones: "Declaraciones", informe: "Informe", lista: "Lista", retro: "Retro",
-  publicidad: "Publicidad", promos: "Promo", video_full: "Video", shorts: "Shorts", camaras: "Cámara",
+  publicidad: "Publicidad", promos: "Promo", video_full: "Video", musica: "Música", shorts: "Shorts", camaras: "Cámara",
 };
 export const CAT: Record<string, { label: string; color: string; Icon: any }> = {
   ultima: { label: "Última Hora", color: "#EE220C", Icon: AlertTriangle },
@@ -56,6 +56,7 @@ export function itemText(ci: ContentItem, ctx: TextCtx): string {
       return d.media_url ? fileName(d.media_url) : fallback;
     }
     case "lista": case "retro": return d.title ? String(d.title) : fallback;
+    case "musica": return (d.title ? `${d.title}${d.album ? " · " + d.album : ""}` : fallback).toString();
     case "obituario": return d.name ? String(d.name) : fallback;
     case "publicidad": return d.title ? String(d.title) : d.media_url ? fileName(d.media_url) : fallback;
     case "cifras": return (d.subtitle || d.value || fallback).toString();

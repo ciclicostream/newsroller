@@ -12,6 +12,7 @@ export interface AppSettings {
   airPausedAt: string; // ISO del corte de emisión ("" = al aire); congela el reloj
   airChangedAt?: string; // ISO del último envío a vivo o corte/reanudación (lo estampa el servidor)
   music?: MusicSettings; // música de fondo continua (Ajustes → Música + toggle en el Monitor de Emisión)
+  generos?: string[]; // géneros musicales elegibles en el formulario de Música (Ajustes → Géneros musicales)
   collections?: string[]; // colecciones de templates habilitadas por el Master
   suites?: Suite[]; // suites (nombre + colección)
   activeSuite?: string; // id de la suite activa: la salida del canal emite con su colección

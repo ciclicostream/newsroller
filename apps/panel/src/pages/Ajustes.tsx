@@ -1,14 +1,15 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import {
-  ROLES, ROLE_LABEL, IDLE_MINUTES_DEFAULT, MUSIC_DEFAULT, DEFAULT_COLLECTION, TEMPLATE_COLLECTIONS, activeSuiteOf,
+  ROLES, ROLE_LABEL, IDLE_MINUTES_DEFAULT, MUSIC_DEFAULT, GENEROS_MUSICALES_DEFAULT, DEFAULT_COLLECTION, TEMPLATE_COLLECTIONS, activeSuiteOf,
   type Camera, type MusicSettings, type Plataforma, type Role, type Short,
 } from "@newsroller/shared";
-import { Users as UsersIcon, Youtube, Tv, Images, Rss, CloudSun, Clapperboard, History, Music, Palette, Video, Timer, ChevronRight, Hash } from "lucide-react";
+import { Users as UsersIcon, Youtube, Tv, Images, Rss, CloudSun, Clapperboard, History, Music, Disc3, Trash2, Palette, Video, Timer, ChevronRight, Hash } from "lucide-react";
 import { useAuth } from "../auth/AuthProvider";
 import { settingsApi, type AppSettings } from "../lib/settings";
 import { camerasApi } from "../lib/cameras";
 import { content } from "../lib/content";
+import { contentItems } from "../lib/content-items";
 import { banco, fmtSize, type BancoList } from "../lib/banco";
 import { api } from "../lib/api";
 
@@ -49,6 +50,7 @@ export function Ajustes() {
   const [users, setUsers] = useState<{ id: string; active?: boolean }[] | null>(null);
   const [online, setOnline] = useState<number | null>(null);
   const [acts, setActs] = useState<Activity[] | null>(null);
+  const [trashCount, setTrashCount] = useState<number | null>(null);
 
   // Newsticker e inactividad: se editan acá mismo.
   const [speed, setSpeed] = useState<number | null>(null);
@@ -64,6 +66,7 @@ export function Ajustes() {
   useEffect(() => {
     settingsApi.get().then(applySettings).catch((e) => setErr(e.message));
     content.listShorts().then(setShorts).catch(() => {});
+    if (can("contenidos")) contentItems.trash().then((l) => setTrashCount(l.length)).catch(() => {});
     api.get<{ id: string }[]>("/api/presence").then((l) => setOnline(l.length)).catch(() => {});
     if (can("camaras")) camerasApi.list().then(setCams).catch(() => {});
     if (can("ajustes")) banco.list().then(setBank).catch(() => {});
@@ -214,6 +217,18 @@ export function Ajustes() {
                 </div>
               )
             )}
+          </AjCard>
+        )}
+
+        {can("ajustes") && (
+          <AjCard to="/ajustes/generos" icon={<Disc3 size={22} />} name="Géneros musicales" desc="Lista para elegir al cargar una canción">
+            {settings && <div className="aj-stats"><span><b>{(settings.generos ?? GENEROS_MUSICALES_DEFAULT).length}</b> géneros</span></div>}
+          </AjCard>
+        )}
+
+        {can("contenidos") && (
+          <AjCard to="/ajustes/papelera" icon={<Trash2 size={22} />} name="Papelera" desc="Contenidos borrados: se conservan 30 días">
+            {trashCount != null && <div className="aj-stats"><span><b>{trashCount}</b> contenido{trashCount === 1 ? "" : "s"}</span></div>}
           </AjCard>
         )}
 

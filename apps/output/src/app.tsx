@@ -41,6 +41,45 @@ const DEMOS: Record<string, { type: string; data: Record<string, any>; dur?: num
     type: "cartelera", dur: 12,
     data: { kind: "teatro", photo_url: "https://picsum.photos/seed/teatro/1600/900", title: "¡Oh cabezas locas de las religiosas!", author: "Mía Micelli", cast: "Ana Luz Camps, Melina Del Valle Villar, Miranda Di Lorenzo, Agustín Gagliardi, Mía Miceli", venue: "Espacio Callejón", address: "Humahuaca 3759", city: "Almagro - CABA", days: "Sábados", time: "16:00 hs" },
   },
+  musica: {
+    type: "musica", dur: 60,
+    data: {
+      album: "10 Obras Argentinas para Guitarra", title: "Girls in the party con el auto rojo", cover_url: "https://picsum.photos/seed/guitarra/900/900", photos: ["https://picsum.photos/seed/guitarra2/900/900", "https://picsum.photos/seed/guitarra3/900/900"], release_date: "2026-06-26",
+      description: "10 obras argentinas para guitarra contiene las obras del libro homónimo publicado en 2023 por el compositor Juan Pablo Ferreyra, con el apoyo de Fondo Nacional de Las Artes y Municipio de Pilar. Contiene 10 obras originales para guitarra solista y dúo de guitarras sobre ritmos característicos del folklore argentino como chamamé, bailecito y milonga.",
+      genres: ["Chamamé", "Folclore nacional"], credits: "Letra y música: Juan Pablo Ferreyra", instagram: "@losbandaloschinos",
+      audio_url: "", lyrics: [
+        { t: 0, text: "Girls in the party and you are alone" },
+        { t: 5, text: "Watching your cell phone, what’s goin’ on?" },
+        { t: 10, text: "Boys in the party and you are alone" },
+        { t: 15, text: "Watching your cell phone, what’s goin’ on?" },
+        { t: 20, text: "You have yous shinin’ shoes..." },
+        { t: 25, text: "Llamè a tu vieja, y ella dijo mm, està todo bien" },
+        { t: 30, text: "Llamè al doctor, y el tordo dijo iii, masomeno ahì va" },
+        { t: 35, text: "But you are burnin’ yeee" },
+        { t: 40, text: "Burnin, iiii Activeishon baby" }
+      ],
+    },
+  },
+  musica_largo: {
+    type: "musica", dur: 20,
+    data: {
+      album: "Un álbum con un nombre larguísimo para probar la volanta", title: "Un título de tema muy largo que ocupa varias líneas en la pantalla completa", cover_url: "https://picsum.photos/seed/portada3/900/900",
+      genres: ["Académica - Clásica", "Contemporánea - experimental", "Folclore latinoamericano"], audio_url: "",
+      lyrics: [{ t: 0, text: "Y una línea muy larga para ver cómo se acomoda cuando el verso no entra en un solo renglón de la pantalla y hay que achicarlo bastante más" }],
+    },
+  },
+  musica_creditos: {
+    type: "musica", dur: 20,
+    data: { album: "Sin letra ni descripción", title: "Tema con créditos", cover_url: "https://picsum.photos/seed/portada4/900/900", genres: ["Tango"], credits: "Letra y música: A. Pérez", audio_url: "" },
+  },
+  musica_ig: {
+    type: "musica", dur: 20,
+    data: { album: "Sólo Instagram", title: "Tema con Instagram", cover_url: "https://picsum.photos/seed/portada5/900/900", genres: ["Rock"], instagram: "losbandaloschinos", audio_url: "", lyrics: [{ t: 0, text: "Una línea de prueba" }] },
+  },
+  musica_min: {
+    type: "musica", dur: 20,
+    data: { album: "Sin letra", title: "Tema instrumental", cover_url: "https://picsum.photos/seed/portada2/900/900", genres: ["Jazz"], audio_url: "" },
+  },
   clima: { type: "clima", dur: 12, data: { city: "Buenos Aires" } },
   clima_lluvia: { type: "clima", dur: 12, data: { city: "Posadas" } },
   clima_parcial: { type: "clima", dur: 12, data: { city: "Paraná" } },

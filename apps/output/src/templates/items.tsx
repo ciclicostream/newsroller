@@ -17,6 +17,7 @@ import { Retro } from "./Retro";
 import { Publicidad } from "./Publicidad";
 import { Promos } from "./Promos";
 import { Obituario } from "./Obituario";
+import { ModernaItemView } from "../collections/moderna";
 
 // Despacha un contenido tipado del banco 2026 a su componente de output.
 // `liveData` = scene.data (payloads en vivo por fuente, ej. liveData.dolar) para
@@ -72,6 +73,9 @@ export function ClasicaItemView({ id, type, data, durationSec, liveData, cameras
       return <Publicidad id={id} data={data as PublicidadData} />;
     case "promos":
       return <Promos data={data as PromosData} durationSec={durationSec} />;
+    // Música todavía no tiene versión Clásica: mientras tanto se ve la Moderna para que la pantalla no quede vacía.
+    case "musica":
+      return <ModernaItemView id={id} type={type} data={data} durationSec={durationSec} liveData={liveData} cameras={cameras} />;
     default:
       return null;
   }
