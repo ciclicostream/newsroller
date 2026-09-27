@@ -292,7 +292,7 @@ export function Radio() {
             <div className="rd-clk g">
               <span className="lb">stream</span>
               <span className="dg">{fmt(txSec)}</span>
-              <span className="ft">{live ? `desde las ${hhmm(txStart!)} hs` : lastRun != null ? `última: ${fmt(lastRun)}` : "sin abrir"}</span>
+              <span className="ft">{live ? `desde las ${hhmm(txStart!)} hs${cur ? "" : " · placa de espera"}` : lastRun != null ? `última: ${fmt(lastRun)}` : "sin abrir"}</span>
             </div>
             <div className="rd-clk r">
               <span className="lb">{cur?.kind === "cam" ? "cámara" : clips.length > 1 ? `clip ${clipIdx + 1} de ${clips.length}` : "clip al aire"}</span>

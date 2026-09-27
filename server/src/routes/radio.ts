@@ -137,6 +137,11 @@ export function radioRouter(io: IO): Router {
     res.json(state);
   });
 
+  // Panel (cualquier usuario): si Stream tiene la señal, para que el Copiloto lo avise en su reloj "Al aire".
+  r.get("/status", requireAuth, (_req, res) => {
+    res.json({ tx: state.tx, pad: state.pad != null });
+  });
+
   // Host: qué contenido está al aire, cámara, micrófono, etc.
   r.put("/state", requireAuth, requirePerm("stream"), (req, res) => {
     const next = cleanState((req.body ?? {}) as Record<string, unknown>);

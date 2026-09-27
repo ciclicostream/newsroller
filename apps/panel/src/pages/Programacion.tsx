@@ -10,6 +10,7 @@ import { parrilla, OUTPUT_FRAME_BASE } from "../lib/parrilla";
 import { sessions as sessionsApi, type SessionRow } from "../lib/sessions";
 import { contentItems as contentItemsApi } from "../lib/content-items";
 import { settingsApi } from "../lib/settings";
+import { radioApi } from "../lib/radioLink";
 import { camerasApi, youtubeTitle } from "../lib/cameras";
 import { collectionLabel, useActiveSuite } from "../lib/collections";
 import { outputLinksApi } from "../lib/outputLinks";
@@ -51,6 +52,7 @@ export function Programacion() {
   const [mode, setMode] = useState<"preview" | "aire" | "clip">("preview");
   const [clipId, setClipId] = useState<string | null>(null);
   const [onAir, setOnAirState] = useState(true);
+  const [streamTx, setStreamTx] = useState(false); // Stream (radio manual) tiene la señal: la parrilla no sale
   const [airSince, setAirSince] = useState<string | null>(null);
   const [liveStatus, setLiveStatus] = useState<LiveStatus | null>(null);
   const [tick, setTick] = useState(0); // fuerza un re-render por segundo para el reloj
@@ -70,6 +72,15 @@ export function Programacion() {
   });
   const gridRef = useRef<HTMLDivElement>(null);
   const rowsRef = useRef<HTMLDivElement>(null);
+
+  // Avisa cuando Stream tiene la señal (se consulta cada 5 s, igual que el aviso del Host).
+  useEffect(() => {
+    let dead = false;
+    const poll = () => radioApi.status().then((r) => { if (!dead) setStreamTx(r.tx); }).catch(() => {});
+    poll();
+    const t = setInterval(poll, 5000);
+    return () => { dead = true; clearInterval(t); };
+  }, []);
 
   // Estado real del corte de emisión y del reloj "al aire" (persistidos en
   // /api/settings, no locales) — sobreviven a un refresco del navegador.
@@ -358,7 +369,7 @@ export function Programacion() {
               }</b></div>
               <div>Salida: <b>1920×1080</b> · FPS: <b>{liveStatus ? liveStatus.fps : "—"}</b></div>
             </div>
-            <div className="pv-clock"><span className="lb">al aire</span><span className="dg">{fmt(airSec)}</span></div>
+            <div className="pv-clock"><span className="lb">al aire</span><span className="dg">{fmt(airSec)}</span>{streamTx && <span className="ft">Stream tiene la señal</span>}</div>
           </div>
 
           <div className="pv-kpis">

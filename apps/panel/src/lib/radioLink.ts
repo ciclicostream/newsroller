@@ -10,6 +10,7 @@ import { OUTPUT_BASE } from "./parrilla";
 export interface RadioConfig { key: string; iceServers: RTCIceServer[]; turn: boolean }
 export const radioApi = {
   config: () => api.get<RadioConfig>("/api/radio/config"),
+  status: () => api.get<{ tx: boolean; pad: boolean }>("/api/radio/status"),
   setState: (s: Omit<RadioState, "at">) => api.put<RadioState>("/api/radio/state", s),
 };
 
