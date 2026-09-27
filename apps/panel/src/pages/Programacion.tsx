@@ -276,7 +276,7 @@ export function Programacion() {
   const cicloSec = draft.filter((r) => r.enabled).reduce((a, r) => a + r.duration_sec, 0);
 
   // Pasadas las 24 h el reloj no crece a lo ancho: "2d | 14:23:05".
-  const fmt = (s: number) => (s >= 86400 ? `${Math.floor(s / 86400)}d | ` : "") + [Math.floor((s % 86400) / 3600), Math.floor((s % 3600) / 60), s % 60].map((n) => String(n).padStart(2, "0")).join(":");
+  const fmt = (s: number) => (s >= 86400 ? `${Math.floor(s / 86400)}d\u2009|\u2009` : "") + [Math.floor((s % 86400) / 3600), Math.floor((s % 3600) / 60), s % 60].map((n) => String(n).padStart(2, "0")).join(":");
   // Tiempo real al aire desde la última publicación (persiste entre refrescos:
   // se calcula contra airSince, no contra un contador local que arranca de 0).
   void tick; // sólo dispara el re-render de 1x/seg; el valor en sí no se usa
@@ -361,7 +361,7 @@ export function Programacion() {
               }</b></div>
               <div className="r"><span>Salida:</span><b>1920×1080 · {liveStatus ? liveStatus.fps : "—"} FPS</b></div>
             </div>
-            <div className="pv-clock"><span className={"pv-instream" + (streamTx ? "" : " off")} title="Stream tiene la señal"><i />En stream</span><span className="lb">al aire</span><span className="dg">{fmt(airSec)}</span></div>
+            <div className="pv-clock"><span className={"pv-instream" + (streamTx ? "" : " off")} title="Stream tiene la señal"><i />En stream</span><span className="dg">{fmt(airSec)}</span><span className="lb">al aire</span></div>
           </div>
 
           <div className="pv-kpis">
