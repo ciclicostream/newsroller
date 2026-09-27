@@ -27,16 +27,15 @@ interface NavDef {
   cls?: string;
 }
 
-// Orden simétrico alrededor de Copiloto (que se dibuja aparte, al centro):
-// izquierda Contenido/Sesiones/Fuentes, derecha Stream/Plantillas/Reportes, y Ajustes
-// separado por una rayita porque no es parte de la simetría. Cámaras vive dentro de Ajustes.
+// Al centro, agrupados en una card gris, Copiloto y Stream (lo que va al aire); a la izquierda
+// Contenido/Sesiones/Fuentes, a la derecha Plantillas/Reportes, y Ajustes separado por una rayita.
+// Cámaras vive dentro de Ajustes.
 const NAV_LEFT: NavDef[] = [
   { to: "/contenido", label: "Contenido", icon: <FilePlus2 size={18} />, perm: "contenidos" },
   { to: "/sesiones", label: "Sesiones", icon: <ListMusic size={18} />, perm: "sesiones" },
   { to: "/fuentes", label: "Fuentes", icon: <Radio size={18} />, perm: "fuentes" },
 ];
 const NAV_RIGHT: NavDef[] = [
-  { to: "/stream", label: "Stream", icon: <AudioLines size={18} />, perm: "stream", cls: "nav-stream" },
   { to: "/plantillas", label: "Plantillas", icon: <LayoutTemplate size={18} />, perm: "plantillas_ver" },
   { to: "/reportes", label: "Reportes", icon: <BarChart3 size={18} />, perm: "reportes" },
 ];
@@ -73,11 +72,20 @@ export function Layout({ children }: { children: ReactNode }) {
             </NavLink>
           ))}
 
-          {/* Copiloto (antes "Emisión"): al centro, con el mismo estilo que los demás. */}
-          {canDo("programar") && (
-            <NavLink to="/" end className={({ isActive }) => "nav-item" + (isActive ? " active" : "")}>
-              <ListVideo size={18} /> Copiloto
-            </NavLink>
+          {/* Copiloto (antes "Emisión") y Stream: al centro, agrupados en una card gris. */}
+          {(canDo("programar") || canDo("stream")) && (
+            <span className="nav-group">
+              {canDo("programar") && (
+                <NavLink to="/" end className={({ isActive }) => "nav-item" + (isActive ? " active" : "")}>
+                  <ListVideo size={18} /> Copiloto
+                </NavLink>
+              )}
+              {canDo("stream") && (
+                <NavLink to="/stream" className={({ isActive }) => "nav-item nav-stream" + (isActive ? " active" : "")}>
+                  <AudioLines size={18} /> Stream
+                </NavLink>
+              )}
+            </span>
           )}
 
           {NAV_RIGHT.filter((n) => canDo(n.perm)).map((n) => (
