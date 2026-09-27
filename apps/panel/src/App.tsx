@@ -22,7 +22,6 @@ import { Banco } from "./pages/Banco";
 import { Reportes } from "./pages/Reportes";
 import { Ajustes } from "./pages/Ajustes";
 import { Users } from "./pages/Users";
-import { Radio } from "./pages/Radio";
 import { Sesiones } from "./pages/Sesiones";
 import { SesionEditor } from "./pages/SesionEditor";
 
@@ -39,7 +38,7 @@ export function App() {
     <Routes>
       <Route path="/login" element={<Login />} />
       <Route path="/" element={<Protected perm="programar"><Programacion /></Protected>} />
-      <Route path="/stream" element={<Protected perm="stream"><Radio /></Protected>} />
+      <Route path="/stream" element={<Protected perm="stream">{null}</Protected>} />
       <Route path="/contenido" element={<Protected perm="contenidos"><NuevoContenido /></Protected>} />
       <Route path="/contenido/papelera" element={<Protected perm="contenidos"><Papelera /></Protected>} />
       <Route path="/contenido/:type" element={<Protected perm="contenidos"><NuevoContenido /></Protected>} />

@@ -118,7 +118,9 @@ function CardHead({ icon: I, title, children }: { icon: any; title: string; chil
   );
 }
 
-export function Radio() {
+// `visible`: el Layout mantiene Stream montado al salir de la pantalla (si no, se cortaba la señal: el aviso al server,
+// el mic, la cámara y el enlace WebRTC viven en este componente). Oculto no atiende atajos ni carga el monitor.
+export function Radio({ visible = true }: { visible?: boolean }) {
   const [items, setItems] = useState<ContentItem[]>([]);
   const [sess, setSess] = useState<SessionRow[]>([]);
   const [cams, setCams] = useState<Camera[]>([]);
@@ -246,6 +248,7 @@ export function Radio() {
   // Atajos: M abre/cierra el micrófono, Esc deja la placa fija (no se activan escribiendo en un campo).
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      if (!visible) return;
       const t = e.target as HTMLElement | null;
       if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable)) return;
       if (e.key === "m" || e.key === "M") mic.toggle();
@@ -253,12 +256,12 @@ export function Radio() {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [mic.toggle]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [mic.toggle, visible]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Suite activa: el Host ve con qué suite sale el canal (sólo el nombre; la cambia el Admin en Ajustes → Suites).
   const activeSuite = useActiveSuite();
   const orient = monVertical ? "&orientation=vertical" : "";
-  const monUrl = cur && cur.kind !== "cam"
+  const monUrl = visible && cur && cur.kind !== "cam"
     ? cur.kind === "session"
       ? `${OUTPUT_FRAME_BASE}/output/?session=${cur.id}${monSound ? "&audio=1" : ""}${orient}`
       : `${OUTPUT_FRAME_BASE}/output/?preview=${cur.id}${monSound ? "&audio=1" : ""}${orient}`

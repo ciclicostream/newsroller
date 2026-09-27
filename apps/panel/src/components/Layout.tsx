@@ -1,5 +1,5 @@
 import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
-import { type ReactNode } from "react";
+import { type ReactNode, useEffect, useState } from "react";
 import {
   ListVideo,
   FilePlus2,
@@ -17,6 +17,7 @@ import { IdleGuard } from "./IdleGuard";
 import { Avatar } from "./Avatar";
 import { PresenceStrip } from "./PresenceStrip";
 import { Toaster } from "./Toaster";
+import { Radio as StreamPage } from "../pages/Radio";
 import ciclicoBlack from "../assets/ciclico-black.png";
 
 interface NavDef {
@@ -50,6 +51,11 @@ export function Layout({ children }: { children: ReactNode }) {
   const { me, signOut, can: canDo } = useAuth();
   const navigate = useNavigate();
   const { pathname } = useLocation();
+  // Stream queda montado una vez abierto: salir de la pantalla no debe cortar la señal (el aviso al server, el mic,
+  // la cámara y el enlace WebRTC viven en ese componente). Sólo se muestra en /stream; cerrar sesión lo desmonta.
+  const onStream = pathname === "/stream";
+  const [streamOpened, setStreamOpened] = useState(onStream);
+  useEffect(() => { if (onStream) setStreamOpened(true); }, [onStream]);
 
   async function handleLogout() {
     await signOut();
@@ -115,7 +121,7 @@ export function Layout({ children }: { children: ReactNode }) {
         </div>
       </header>
 
-      <main className={"main" + (isSection(pathname) ? " sec" : "")}>{children}</main>
+      <main className={"main" + (isSection(pathname) ? " sec" : "")}>{children}{streamOpened && canDo("stream") && <div style={{ display: onStream ? "contents" : "none" }}><StreamPage visible={onStream} /></div>}</main>
       <Toaster />
       {me && <IdleGuard minutes={me.idleMinutes} onIdle={() => { void signOut("idle").then(() => navigate("/login")); }} />}
     </div>
