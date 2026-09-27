@@ -5,6 +5,7 @@ import { RADIO_STATE_DEFAULT, can, normalizeRole, type RadioState } from "@newsr
 import { env } from "../config/env.js";
 import { requireAuth, requirePerm } from "../auth/middleware.js";
 import { getSupabase } from "../db/supabase.js";
+import { readAll, writeSettings } from "./settings.js";
 import type { IO } from "../realtime/socket.js";
 
 // Stream (radio manual): estado en memoria, señalización WebRTC entre el panel del Host y el output
@@ -26,9 +27,31 @@ let state: RadioState = { ...RADIO_STATE_DEFAULT };
 // y se rechaza si el server ya tiene uno posterior. No se compara con relojes de la compu del Host.
 let releasedAt = 0;
 export const RADIO_RELEASED = "released";
+
+// Desde cuándo está Stream al aire (para descontarle esos minutos a la parrilla cuando vuelve, ver abajo).
+let streamStartedAt = 0;
+
+// Mientras Stream tiene la señal, la parrilla no se ve (no avanza para nadie que la esté mirando). Sin esto, al
+// volver arrancaría en el punto que le tocaría según el reloj real (ver output.ts) SALTEÁNDOSE justo los minutos
+// que Stream estuvo al aire, como si el tiempo hubiera seguido corriendo para ella. Corriendo "al aire desde" hacia
+// adelante por lo que duró Stream, la parrilla retoma exactamente donde había quedado.
+async function shiftAirSinceByStreamTime(io: IO): Promise<void> {
+  if (!streamStartedAt) return;
+  const elapsed = Date.now() - streamStartedAt;
+  streamStartedAt = 0;
+  if (elapsed < 1000) return; // ruido: prender y cortar en el acto
+  try {
+    const st = await readAll();
+    const since = typeof st.airSince === "string" && st.airSince ? st.airSince : null;
+    if (!since) return;
+    await writeSettings(io, { airSince: new Date(new Date(since).getTime() + elapsed).toISOString() });
+  } catch { /* noop: en el peor caso la parrilla queda un rato adelantada, no rompe nada */ }
+}
+
 export function releaseRadio(io: IO): boolean {
   if (!state.tx) return false;
   releasedAt = Date.now();
+  streamStartedAt = 0; // "Enviar a vivo" ya vuelve a estampar airSince = ahora; no hace falta el descuento
   state = { ...RADIO_STATE_DEFAULT, at: releasedAt };
   io.to(VIEWERS).emit("radio:state", state);
   void persist();
@@ -52,7 +75,10 @@ async function restore(): Promise<void> {
   if (!sb) return;
   const { data } = await sb.from("app_settings").select("value").eq("key", STORE_KEY).maybeSingle();
   const saved = data?.value as RadioState | undefined;
-  if (saved?.tx) { state = { ...RADIO_STATE_DEFAULT, ...saved }; lastSeen = Date.now(); } // el Host tiene STALE_MS para volver a avisar
+  if (saved?.tx) {
+    state = { ...RADIO_STATE_DEFAULT, ...saved }; lastSeen = Date.now(); // el Host tiene STALE_MS para volver a avisar
+    streamStartedAt = Date.now(); // se perdió el inicio real (reinicio del server): sólo se descuenta desde acá
+  }
 }
 const same = (a: RadioState, b: RadioState) => JSON.stringify({ ...a, at: 0 }) === JSON.stringify({ ...b, at: 0 });
 
@@ -86,6 +112,7 @@ export function attachRadio(io: IO): void {
   setInterval(() => {
     if (!state.tx || Date.now() - lastSeen < STALE_MS) return;
     console.warn("[radio] el Host dejó de avisar: se corta el stream");
+    void shiftAirSinceByStreamTime(io);
     state = { ...RADIO_STATE_DEFAULT, at: Date.now() };
     io.to(VIEWERS).emit("radio:state", state);
     void persist();
@@ -162,6 +189,8 @@ export function radioRouter(io: IO): Router {
     const known = Number((req.body as Record<string, unknown>)?.known) || 0;
     if (next.tx && known < releasedAt) return res.status(409).json({ error: RADIO_RELEASED, releasedAt });
     lastSeen = Date.now();
+    if (!state.tx && next.tx) streamStartedAt = Date.now(); // arranca la transmisión
+    else if (state.tx && !next.tx) void shiftAirSinceByStreamTime(io); // el Host la corta a mano
     const changed = !same(state, next);
     state = next;
     if (changed) { io.to(VIEWERS).emit("radio:state", state); void persist(); }
