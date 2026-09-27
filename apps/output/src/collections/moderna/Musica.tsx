@@ -152,6 +152,8 @@ export function Musica({ data, durationSec }: { data: MusicaData; durationSec?: 
   }, [idx]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useFitMax(titleRef, 92, 44, IS_VERTICAL ? 175 : 172, [data.title]);
+  // Arranca cuando la última palabra del título ya cayó (t0 del título + su cascada de 28ms/palabra + settle).
+  const artistT0 = 1.15 + Math.max(0, (data.title ?? "").trim().split(/\s+/).filter(Boolean).length - 1) * 0.028 + 0.45;
   useFit(credRef, 21, 13, [credits]);
 
   // Vertical: el conjunto se centra en el alto disponible (entre el marco de arriba y la pill de abajo), así con pocos datos
@@ -201,7 +203,12 @@ export function Musica({ data, durationSec }: { data: MusicaData; durationSec?: 
         <div className="nmm-head">
           <div className="nm-kick nmm-k"><span className="rule" /><span className="nmm-alb">{data.album}</span></div>
           <div className="nmm-tw" ref={titleRef}><Words text={data.title} t0={1.15} /></div>
-          {data.artist && <div className="nmm-artist"><Words text={data.artist} t0={1.3} /></div>}
+          {data.artist && (
+            <div className="nmm-artist">
+              <span className="nmm-artist-lb">Intérprete:</span>
+              <Words text={data.artist} t0={artistT0} className="nm-ttl nmm-artist-name" />
+            </div>
+          )}
         </div>
         {(data.genres?.length > 0 || date) && (
           <div className="nmm-gens">
@@ -303,16 +310,16 @@ const CSS = `
 .out .nmm-arg{animation:nm-fadeOut .5s ease both}
 
 /* Volanta (álbum), tema y géneros */
-.nmm-head{position:absolute;left:940px;top:150px;width:880px;height:226px;display:flex;flex-direction:column;justify-content:flex-end;gap:14px}
+.nmm-head{position:absolute;left:940px;top:160px;width:880px;height:226px;display:flex;flex-direction:column;justify-content:flex-end;gap:14px}
 .nmm-k{width:100%;letter-spacing:.14em}
 .nmm-k .rule{box-shadow:0 0 16px 2px rgba(47,107,255,.95)}
 .nmm-alb{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-shadow:0 0 22px rgba(47,107,255,.7)}
 .nmm-tw{width:100%;font-size:92px}
-.nmm-artist{width:100%;font-size:30px;font-weight:700;color:#9fb4ff;letter-spacing:.01em;margin-top:6px}
-.nmm-artist .nm-ttl{font-size:inherit;line-height:1.2}
-.nmm-artist::before{content:"Intérprete: "}
+.nmm-artist{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px;width:100%;font-size:30px;font-weight:700;color:#9fb4ff;letter-spacing:.01em;margin-top:4px}
+.nmm-artist-lb{flex:none}
+.nmm-artist-name{font-size:inherit;line-height:1.2}
 .nmm-tw .nm-ttl{font-size:inherit;line-height:1.02;text-shadow:0 0 44px rgba(47,107,255,.35),0 4px 0 rgba(0,0,0,.18)}
-.nmm-gens{position:absolute;left:940px;top:386px;width:880px;display:flex;flex-wrap:wrap;gap:10px}
+.nmm-gens{position:absolute;left:940px;top:396px;width:880px;display:flex;flex-wrap:wrap;gap:10px}
 .nmm-g{padding:8px 18px 7px;border-radius:999px;border:1px solid rgba(127,162,255,.55);
   background:linear-gradient(160deg,rgba(60,100,210,.42),rgba(10,22,54,.6));-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
   box-shadow:inset 0 1px 0 rgba(255,255,255,.28),0 0 22px -6px rgba(47,107,255,.7);color:#DCE6FF;
@@ -349,16 +356,16 @@ const CSS = `
 .nolyr .nmm-pr{top:15px}
 
 /* Sobre el álbum: donde estaba la letra */
-.nmm-ds{left:940px;top:482px;width:880px;height:290px;padding:28px 36px 24px;box-sizing:border-box;display:flex;flex-direction:column;gap:12px}
+.nmm-ds{left:940px;top:492px;width:880px;height:290px;padding:28px 36px 24px;box-sizing:border-box;display:flex;flex-direction:column;gap:12px}
 .in .nmm-ds{animation:nm-up .8s cubic-bezier(.2,.8,.2,1) 1.6s forwards}
 .nmm-dst{flex:1;min-height:0;overflow:hidden;font-size:30px;line-height:1.32;color:#DCE6FF}
 
 /* Sin descripción, sube la card de créditos a su lugar; sin créditos ni Instagram queda una card chica con el ecualizador */
-.nodesc .nmm-cr{top:482px}
+.nodesc .nmm-cr{top:492px}
 .nmm-cr.solo2{width:150px}
 
 /* Créditos, con un ecualizador a la izquierda dentro de la card */
-.nmm-cr{left:940px;top:792px;width:880px;height:100px;box-sizing:border-box}
+.nmm-cr{left:940px;top:802px;width:880px;height:100px;box-sizing:border-box}
 .in .nmm-cr{animation:nm-up .8s cubic-bezier(.2,.8,.2,1) 1.95s forwards}
 .nmm-ceq{position:absolute;left:28px;top:50%;height:54px;margin-top:-27px;display:flex;align-items:flex-end;gap:4px}
 .nmm-ceq i{display:block;width:8px;height:100%;border-radius:3px;background:linear-gradient(180deg,#DCE6FF,var(--blue-soft) 35%,var(--blue));box-shadow:0 0 12px rgba(47,107,255,.75);
