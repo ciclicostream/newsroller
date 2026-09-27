@@ -80,8 +80,8 @@ const CSS = `
 .nmr-bars{position:absolute;left:96px;right:96px;top:128px;height:10px;display:flex;border-radius:3px;overflow:hidden;transform-origin:0 50%}
 .nmr-bars span{flex:1}
 .in .nmr-bars{animation:nm-growX .5s cubic-bezier(.2,.8,.2,1) .15s both}
-.nmr-l{position:absolute;left:96px;top:196px;width:700px;height:690px;display:flex;flex-direction:column;gap:18px}
-.nmr-chip{align-self:flex-start;background:#F2C230;color:#1A1400;font-family:var(--display);font-weight:800;font-stretch:115%;font-size:17px;letter-spacing:.3em;padding:9px 14px 8px;border-radius:4px;text-transform:uppercase;opacity:0}
+.nmr-l{position:absolute;left:96px;top:196px;width:700px;height:690px;display:flex;flex-direction:column;align-items:flex-end;text-align:right;gap:18px}
+.nmr-chip{align-self:flex-end;background:#F2C230;color:#1A1400;font-family:var(--display);font-weight:800;font-stretch:115%;font-size:17px;letter-spacing:.3em;padding:9px 14px 8px;border-radius:4px;text-transform:uppercase;opacity:0}
 .nmr-year{font-family:"Alfa Slab One",Georgia,serif;font-size:150px;line-height:.95;color:#F2C230;text-shadow:-5px 0 #FF3D6E,5px 0 #25E2FF;opacity:0}
 .nmr-ti{flex:none;max-height:2.1em;max-height:176px;overflow:hidden;font-family:var(--display);font-weight:800;font-stretch:90%;font-size:84px;line-height:1;color:#F4F6FB;opacity:0}
 .nmr-sub{font-family:var(--display);font-weight:600;font-stretch:112%;font-size:18px;letter-spacing:.26em;text-transform:uppercase;color:#8FD3DE;opacity:0}
@@ -114,6 +114,7 @@ const CSS = `
 const CSS_V = `
 .nmr-bars{left:60px;right:60px;top:160px}
 .nmr-tv{left:60px;top:210px;width:960px;height:720px;transform:perspective(2400px) rotateY(-8deg)}
-.nmr-l{left:60px;top:990px;width:960px;height:730px}
+.nmr-l{left:60px;top:990px;width:960px;height:730px;align-items:flex-start;text-align:left}
+.nmr-chip{align-self:flex-start}
 .nmr-year{font-size:140px}
 `;
