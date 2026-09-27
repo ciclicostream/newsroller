@@ -43,27 +43,30 @@ class SupabaseStore implements CacheStore {
     if (error) throw new Error(`supabase upsert ${data.source}: ${error.message}`);
   }
 
+  // Tras un reinicio el espejo arranca vacío y cada fuente lo va llenando a medida que termina su primera consulta
+  // (el clima tarda: son 24 capitales). Antes, con una sola fuente ya cargada, getAll devolvía sólo esa y el resto
+  // (clima incluido) faltaba hasta su primer poll. Ahora se hidrata UNA vez desde la base con lo último guardado;
+  // lo que llegue fresco de un poller siempre pisa lo hidratado.
+  private hydrating: Promise<void> | null = null;
+  private hydrate(): Promise<void> {
+    this.hydrating ??= (async () => {
+      const sb = getSupabase();
+      if (!sb) return;
+      const { data, error } = await sb.from("data_cache").select("source, payload, fetched_at");
+      if (error || !data) { this.hydrating = null; return; } // se reintenta en la próxima lectura
+      for (const r of data) if (!this.mirror.has(r.source)) this.mirror.set(r.source, { source: r.source, payload: r.payload, fetchedAt: r.fetched_at });
+    })();
+    return this.hydrating;
+  }
+
   async getData(source: SourceId): Promise<CachedData | null> {
-    const local = this.mirror.get(source);
-    if (local) return local;
-    const sb = getSupabase();
-    if (!sb) return null;
-    const { data, error } = await sb
-      .from("data_cache")
-      .select("source, payload, fetched_at")
-      .eq("source", source)
-      .maybeSingle();
-    if (error || !data) return null;
-    return { source: data.source, payload: data.payload, fetchedAt: data.fetched_at };
+    await this.hydrate();
+    return this.mirror.get(source) ?? null;
   }
 
   async getAll(): Promise<CachedData[]> {
-    if (this.mirror.size) return [...this.mirror.values()];
-    const sb = getSupabase();
-    if (!sb) return [];
-    const { data, error } = await sb.from("data_cache").select("source, payload, fetched_at");
-    if (error || !data) return [];
-    return data.map((r) => ({ source: r.source, payload: r.payload, fetchedAt: r.fetched_at }));
+    await this.hydrate();
+    return [...this.mirror.values()];
   }
 }
 
