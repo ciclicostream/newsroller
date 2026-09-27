@@ -1,4 +1,4 @@
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import { Layout } from "./components/Layout";
 import type { Perm } from "@newsroller/shared";
 import { ProtectedRoute } from "./components/ProtectedRoute";
@@ -45,7 +45,8 @@ export function App() {
       <Route path="/contenido/:type" element={<Protected perm="contenidos"><NuevoContenido /></Protected>} />
       <Route path="/plantillas" element={<Protected perm="plantillas_ver"><Plantillas /></Protected>} />
       <Route path="/plantillas/:type" element={<Protected perm="plantillas_ver"><PlantillaContenidos /></Protected>} />
-      <Route path="/camaras" element={<Protected perm="camaras"><Camaras /></Protected>} />
+      <Route path="/camaras" element={<Navigate to="/ajustes/camaras" replace />} />
+      <Route path="/ajustes/camaras" element={<Protected perm="camaras"><Camaras /></Protected>} />
       <Route path="/fuentes" element={<Protected perm="fuentes"><Sources /></Protected>} />
       <Route path="/shorts" element={<Protected perm="ajustes_medios"><Shorts /></Protected>} />
       <Route path="/programas" element={<Protected perm="ajustes_medios"><Programas /></Protected>} />

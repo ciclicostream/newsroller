@@ -280,12 +280,6 @@ export function Programacion() {
 
   return (
     <div className="pv">
-
-      <div className="pv-head">
-        <h1>Programación</h1>
-        <div className="pv-hint">Arrastrá contenidos a la parrilla, ordená y deslizá el tirador del monitor para salir al aire.</div>
-        <span />
-      </div>
       {err && <div className="pv-alert err">{err}</div>}
       {msg && <div className="pv-alert ok">{msg}</div>}
 

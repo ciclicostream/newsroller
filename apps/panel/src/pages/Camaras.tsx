@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { Plus, Trash2, Video, Play, Square, Check } from "lucide-react";
+import { Link } from "react-router-dom";
+import { ArrowLeft, Plus, Trash2, Video, Play, Square, Check } from "lucide-react";
 import type { Camera, CameraType } from "@newsroller/shared";
 import { camerasApi, youtubeId } from "../lib/cameras";
 
@@ -54,6 +55,7 @@ export function Camaras() {
           <h1>Cámaras</h1>
           <p>Cámaras en vivo (YouTube o HLS). Tocá ▶ para ver el vivo y confirmar que transmite; "Al aire" elige cuál usan las placas con el elemento Cámara.</p>
         </div>
+        <Link to="/ajustes" className="btn"><ArrowLeft size={16} /> Ajustes</Link>
       </div>
 
       {err && <div className="alert error">{err}</div>}

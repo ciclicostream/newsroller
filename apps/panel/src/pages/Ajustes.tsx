@@ -1,55 +1,92 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
-import { ROLES, ROLE_LABEL, IDLE_MINUTES_DEFAULT, type Role } from "@newsroller/shared";
-import { Users as UsersIcon, Youtube, Tv, Images, Rss, CloudSun, Clapperboard, History, Music, Palette } from "lucide-react";
+import {
+  ROLES, ROLE_LABEL, IDLE_MINUTES_DEFAULT, MUSIC_DEFAULT, SUITE_DEFAULT, TEMPLATE_COLLECTIONS, activeSuiteOf,
+  type Camera, type MusicSettings, type Plataforma, type Role, type Short, type Suite,
+} from "@newsroller/shared";
+import { Users as UsersIcon, Youtube, Tv, Images, Rss, CloudSun, Clapperboard, History, Music, Palette, Video, Timer, ChevronRight, Hash } from "lucide-react";
 import { useAuth } from "../auth/AuthProvider";
-import { settingsApi } from "../lib/settings";
+import { settingsApi, type AppSettings } from "../lib/settings";
+import { camerasApi } from "../lib/cameras";
+import { content } from "../lib/content";
+import { banco, fmtSize, type BancoList } from "../lib/banco";
+import { api } from "../lib/api";
 
+interface Activity { id: string; at: string; actor_name: string | null; summary: string | null; action: string }
+const hhmm = (iso: string) => new Date(iso).toLocaleString("es-AR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
+
+// Card del masonry: encabezado (lleva a la sección si tiene `to`) + un resumen o control a la vista.
+function AjCard({ to, icon, name, desc, children }: { to?: string; icon: ReactNode; name: string; desc: string; children?: ReactNode }) {
+  const head = (
+    <>
+      <span className="tipo-ic">{icon}</span>
+      <span className="tipo-main" style={{ flex: 1 }}>
+        <span className="tipo-name">{name}</span>
+        <span className="tipo-desc">{desc}</span>
+      </span>
+      {to && <ChevronRight size={18} className="aj-go" />}
+    </>
+  );
+  return (
+    <section className="card aj-card">
+      {to ? <Link to={to} className="aj-hd">{head}</Link> : <div className="aj-hd">{head}</div>}
+      {children != null && <div className="aj-body">{children}</div>}
+    </section>
+  );
+}
+
+// Ajustes: las secciones en masonry. Cada card muestra lo importante (o el control) sin tener que entrar.
 export function Ajustes() {
   const { can } = useAuth();
-
-  // Tiempos de inactividad por rol (sólo el Master los cambia).
-  const [idle, setIdle] = useState<Record<Role, number> | null>(null);
-  const [idleSaved, setIdleSaved] = useState<string>("");
-  useEffect(() => {
-    if (!can("config_sistema")) return;
-    settingsApi.get().then((s) => { const v = { ...IDLE_MINUTES_DEFAULT, ...(s.idleMinutes ?? {}) } as Record<Role, number>; setIdle(v); setIdleSaved(JSON.stringify(v)); }).catch(() => {});
-  }, [can]);
-  async function guardarIdle() {
-    if (!idle) return;
-    try { const s = await settingsApi.update({ idleMinutes: idle }); const v = { ...IDLE_MINUTES_DEFAULT, ...(s.idleMinutes ?? {}) } as Record<Role, number>; setIdle(v); setIdleSaved(JSON.stringify(v)); }
-    catch (e) { setErr((e as Error).message); }
-  }
   const isAdmin = can("perfiles");
-
-  // Velocidad del newsticker (segundos por vuelta; mayor = más lento).
-  const [speed, setSpeed] = useState<number | null>(null);
-  const [saved, setSaved] = useState<number | null>(null);
-  const [saving, setSaving] = useState(false);
+  const isMaster = can("config_sistema");
   const [err, setErr] = useState<string | null>(null);
 
+  const [settings, setSettings] = useState<AppSettings | null>(null);
+  const [cams, setCams] = useState<Camera[] | null>(null);
+  const [shorts, setShorts] = useState<Short[] | null>(null);
+  const [bank, setBank] = useState<BancoList | null>(null);
+  const [users, setUsers] = useState<{ id: string; active?: boolean }[] | null>(null);
+  const [online, setOnline] = useState<number | null>(null);
+  const [acts, setActs] = useState<Activity[] | null>(null);
+
+  // Newsticker e inactividad: se editan acá mismo.
+  const [speed, setSpeed] = useState<number | null>(null);
+  const [idle, setIdle] = useState<Record<Role, number> | null>(null);
+  const [busy, setBusy] = useState<string | null>(null);
+
+  const applySettings = (s: AppSettings) => {
+    setSettings(s);
+    setSpeed(s.tickerSpeed);
+    setIdle({ ...IDLE_MINUTES_DEFAULT, ...(s.idleMinutes ?? {}) } as Record<Role, number>);
+  };
+
   useEffect(() => {
-    settingsApi
-      .get()
-      .then((s) => { setSpeed(s.tickerSpeed); setSaved(s.tickerSpeed); })
-      .catch((e) => setErr(e.message));
+    settingsApi.get().then(applySettings).catch((e) => setErr(e.message));
+    content.listShorts().then(setShorts).catch(() => {});
+    api.get<{ id: string }[]>("/api/presence").then((l) => setOnline(l.length)).catch(() => {});
+    if (can("camaras")) camerasApi.list().then(setCams).catch(() => {});
+    if (can("ajustes")) banco.list().then(setBank).catch(() => {});
+    if (isAdmin) api.get<{ id: string; active?: boolean }[]>("/api/users").then(setUsers).catch(() => {});
+    if (can("reportes")) api.get<{ rows: Activity[] }>("/api/activity?limit=3").then((r) => setActs(r.rows ?? [])).catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const dirty = speed != null && speed !== saved;
-  async function guardar() {
-    if (speed == null || !dirty) return;
-    setSaving(true);
+  async function update(key: string, patch: Partial<AppSettings>) {
+    setBusy(key);
     setErr(null);
-    try {
-      const s = await settingsApi.update({ tickerSpeed: speed });
-      setSaved(s.tickerSpeed);
-      setSpeed(s.tickerSpeed);
-    } catch (e) {
-      setErr((e as Error).message);
-    } finally {
-      setSaving(false);
-    }
+    try { applySettings(await settingsApi.update(patch)); }
+    catch (e) { setErr((e as Error).message); }
+    finally { setBusy(null); }
   }
+
+  const suites: Suite[] = settings?.suites?.length ? settings.suites : [SUITE_DEFAULT];
+  const activeSuite = settings ? activeSuiteOf(settings) : null;
+  const music: MusicSettings = settings?.music ?? MUSIC_DEFAULT;
+  const plataformas = (settings?.plataformas ?? []) as Plataforma[];
+  const climaCount = settings ? Object.values(settings.climaIcons ?? {}).filter(Boolean).length + Object.values(settings.climaDayIcons ?? {}).filter(Boolean).length : null;
+  const idleDirty = !!settings && !!idle && JSON.stringify(idle) !== JSON.stringify({ ...IDLE_MINUTES_DEFAULT, ...(settings.idleMinutes ?? {}) });
+  const liveCam = cams?.find((c) => c.active);
 
   return (
     <>
@@ -60,141 +97,162 @@ export function Ajustes() {
         </div>
       </div>
 
-      <div className="tipo-grid">
-        {isAdmin && (
-          <Link to="/usuarios" className="tipo-card">
-            <span className="tipo-ic"><UsersIcon size={22} /></span>
-            <span className="tipo-main">
-              <span className="tipo-name">Usuarios</span>
-              <span className="tipo-desc">Altas, roles y accesos al panel</span>
-            </span>
-          </Link>
-        )}
-        {isAdmin && (
-          <Link to="/ajustes/suites" className="tipo-card">
-            <span className="tipo-ic"><Palette size={22} /></span>
-            <span className="tipo-main">
-              <span className="tipo-name">Suites</span>
-              <span className="tipo-desc">Suite activa, colecciones y links del canal</span>
-            </span>
-          </Link>
-        )}
+      {err && <div className="alert error">{err}</div>}
+
+      <div className="aj-masonry">
         {can("ajustes") && (
-          <Link to="/banco" className="tipo-card">
-          <span className="tipo-ic"><Images size={22} /></span>
-          <span className="tipo-main">
-            <span className="tipo-name">Banco</span>
-            <span className="tipo-desc">Fondos, fotos, videos y logos</span>
-          </span>
-        </Link>
+          <AjCard icon={<Rss size={22} />} name="Newsticker" desc="Velocidad del texto del zócalo, en todas las placas">
+            {speed == null ? <span className="muted-note">Cargando…</span> : (
+              <>
+                <div className="aj-kv"><span>≈{speed}s por vuelta</span><span className="muted-note">{speed < 60 ? "rápido" : speed > 150 ? "lento" : "medio"}</span></div>
+                <input type="range" min={20} max={240} step={5} value={speed} onChange={(e) => setSpeed(Number(e.target.value))} style={{ width: "100%" }} />
+                <div className="aj-scale"><span>Más rápido</span><span>Más lento</span></div>
+                {speed !== settings?.tickerSpeed && (
+                  <button className="btn primary aj-save" disabled={busy === "ticker"} onClick={() => update("ticker", { tickerSpeed: speed })}>
+                    {busy === "ticker" ? "Guardando…" : "Guardar"}
+                  </button>
+                )}
+              </>
+            )}
+          </AjCard>
         )}
-        <Link to="/shorts" className="tipo-card">
-          <span className="tipo-ic"><Youtube size={22} /></span>
-          <span className="tipo-main">
-            <span className="tipo-name">Shorts</span>
-            <span className="tipo-desc">Sincronizar shorts de YouTube</span>
-          </span>
-        </Link>
+
+        {isAdmin && (
+          <AjCard to="/ajustes/suites" icon={<Palette size={22} />} name="Suites" desc="Suite activa, colecciones y links del canal">
+            {activeSuite && (
+              <>
+                <label className="aj-lbl">Suite activa</label>
+                <select value={activeSuite.id} disabled={busy === "suite"} onChange={(e) => {
+                  const next = suites.find((s) => s.id === e.target.value);
+                  if (next && confirm(`¿Activar la suite "${next.name}"? La salida del canal la usa desde el próximo contenido.`)) void update("suite", { activeSuite: next.id });
+                }}>
+                  {suites.map((s) => (
+                    <option key={s.id} value={s.id}>{s.name} · {TEMPLATE_COLLECTIONS.find((c) => c.id === s.style)?.label ?? s.style}</option>
+                  ))}
+                </select>
+              </>
+            )}
+          </AjCard>
+        )}
+
+        {can("camaras") && (
+          <AjCard to="/ajustes/camaras" icon={<Video size={22} />} name="Cámaras" desc="Cámaras en vivo (YouTube o HLS)">
+            {cams == null ? <span className="muted-note">Cargando…</span> : (
+              <>
+                <div className="aj-stats"><span><b>{cams.length}</b> cargada{cams.length === 1 ? "" : "s"}</span></div>
+                <div className="aj-kv"><span>Al aire</span><b className={liveCam ? "aj-live" : ""}>{liveCam ? liveCam.name : "ninguna"}</b></div>
+              </>
+            )}
+          </AjCard>
+        )}
+
+        {isAdmin && (
+          <AjCard to="/usuarios" icon={<UsersIcon size={22} />} name="Usuarios" desc="Altas, roles y accesos al panel">
+            <div className="aj-stats">
+              <span><b>{users?.length ?? "…"}</b> usuarios</span>
+              {users && <span><b>{users.filter((u) => u.active !== false).length}</b> activos</span>}
+              {online != null && <span className="on"><i className="live-dot" /><b>{online}</b> conectados</span>}
+            </div>
+          </AjCard>
+        )}
+
+        <AjCard to="/ajustes/musica" icon={<Music size={22} />} name="Música" desc="Temas para el canal de fondo">
+          {!settings ? <span className="muted-note">Cargando…</span> : music.tracks.length === 0 ? (
+            <span className="muted-note">Todavía no hay temas cargados.</span>
+          ) : (
+            <>
+              <label className="aj-lbl">Tema activo · {music.enabled ? "canal encendido" : "canal apagado"}</label>
+              <select value={music.activeId ?? ""} disabled={busy === "music"} onChange={(e) => {
+                  const next = music.tracks.find((t) => t.id === e.target.value);
+                  if (next && confirm(`¿Poner "${next.name}" como tema activo de la música de fondo?`)) void update("music", { music: { ...music, activeId: next.id } });
+                }}>
+                {!music.activeId && <option value="">Sin elegir</option>}
+                {music.tracks.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+              </select>
+            </>
+          )}
+        </AjCard>
+
+        <AjCard to="/shorts" icon={<Youtube size={22} />} name="Shorts" desc="Sincronizar shorts de YouTube">
+          {shorts && (
+            <div className="aj-stats">
+              <span><b>{shorts.filter((s) => s.active).length}</b> rotando</span>
+              <span><b>{shorts.length}</b> sincronizados</span>
+            </div>
+          )}
+        </AjCard>
+
         {can("ajustes") && (
-          <Link to="/ajustes/clima" className="tipo-card">
-          <span className="tipo-ic"><CloudSun size={22} /></span>
-          <span className="tipo-main">
-            <span className="tipo-name">Íconos del clima</span>
-            <span className="tipo-desc">Imágenes grandes según el cielo</span>
-          </span>
-        </Link>
+          <AjCard to="/banco" icon={<Images size={22} />} name="Banco" desc="Fondos, fotos, videos y logos">
+            {bank && (
+              <div className="aj-stats">
+                <span><b>{bank.items.length}</b> archivos</span>
+                <span><b>{fmtSize(bank.items.reduce((a, i) => a + (i.size ?? 0), 0))}</b></span>
+                {bank.trash_count > 0 && <span><b>{bank.trash_count}</b> en papelera</span>}
+              </div>
+            )}
+          </AjCard>
         )}
+
+        {can("ajustes") && (
+          <AjCard to="/ajustes/clima" icon={<CloudSun size={22} />} name="Íconos del clima" desc="Imágenes grandes según el cielo">
+            {climaCount != null && (
+              <div className="aj-stats"><span><b>{climaCount}</b> ícono{climaCount === 1 ? "" : "s"} propio{climaCount === 1 ? "" : "s"}</span><span>el resto, predeterminados</span></div>
+            )}
+          </AjCard>
+        )}
+
+        {can("ajustes") && (
+          <AjCard to="/ajustes/plataformas" icon={<Clapperboard size={22} />} name="Plataformas" desc="Logos de streaming para series">
+            {settings && (
+              plataformas.length === 0 ? <span className="muted-note">Sin plataformas cargadas.</span> : (
+                <div className="aj-logos">
+                  {plataformas.map((p) => (
+                    <span key={p.id} className="aj-logo" title={p.name}>{p.logo ? <img src={p.logo} alt={p.name} /> : p.name}</span>
+                  ))}
+                </div>
+              )
+            )}
+          </AjCard>
+        )}
+
         {can("reportes") && (
-          <Link to="/ajustes/actividad" className="tipo-card">
-            <span className="tipo-ic"><History size={22} /></span>
-            <span className="tipo-main">
-              <span className="tipo-name">Actividad</span>
-              <span className="tipo-desc">Quién hizo qué y cuándo</span>
-            </span>
-          </Link>
-        )}
-        <Link to="/ajustes/musica" className="tipo-card">
-          <span className="tipo-ic"><Music size={22} /></span>
-          <span className="tipo-main">
-            <span className="tipo-name">Música</span>
-            <span className="tipo-desc">Temas para el canal de fondo</span>
-          </span>
-        </Link>
-        {can("ajustes") && (
-          <Link to="/ajustes/plataformas" className="tipo-card">
-          <span className="tipo-ic"><Clapperboard size={22} /></span>
-          <span className="tipo-main">
-            <span className="tipo-name">Plataformas</span>
-            <span className="tipo-desc">Logos de streaming para series</span>
-          </span>
-        </Link>
-        )}
-        <Link to="/programas" className="tipo-card">
-          <span className="tipo-ic"><Tv size={22} /></span>
-          <span className="tipo-main">
-            <span className="tipo-name">Programas</span>
-            <span className="tipo-desc">Búsqueda por hashtags</span>
-          </span>
-        </Link>
-      </div>
-
-      {can("ajustes") && (
-      <div className="card" style={{ padding: 20, marginTop: 18, maxWidth: 560 }}>
-        <div style={{ display: "flex", gap: 10, alignItems: "center", marginBottom: 4 }}>
-          <Rss size={18} />
-          <h2 style={{ fontSize: 16, margin: 0 }}>Newsticker</h2>
-        </div>
-        <p className="muted-note" style={{ marginTop: 0 }}>
-          Velocidad del texto que corre en el zócalo del aire. Aplica a todas las placas.
-        </p>
-
-        {err && <div className="alert error">{err}</div>}
-
-        {speed == null ? (
-          <div className="muted-note">Cargando…</div>
-        ) : (
-          <>
-            <div className="field" style={{ marginBottom: 8 }}>
-              <label>Velocidad — ≈{speed}s por vuelta</label>
-              <input
-                type="range"
-                min={20}
-                max={240}
-                step={5}
-                value={speed}
-                onChange={(e) => setSpeed(Number(e.target.value))}
-              />
-              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: "var(--muted)", marginTop: 4 }}>
-                <span>Más rápido</span>
-                <span>Más lento</span>
-              </div>
-            </div>
-            <div className="row" style={{ marginTop: 10 }}>
-              <button className="btn primary" onClick={guardar} disabled={!dirty || saving}>
-                {saving ? "Guardando…" : "Guardar"}
-              </button>
-              {!dirty && saved != null && <span className="muted-note">Guardado.</span>}
-            </div>
-          </>
-        )}
-      </div>
-      )}
-
-      {idle && (
-        <div className="card" style={{ padding: 20, marginTop: 18, maxWidth: 560 }}>
-          <h2 style={{ fontSize: 16, margin: "0 0 4px" }}>Cierre de sesión por inactividad</h2>
-          <p className="muted-note" style={{ marginTop: 0 }}>Minutos sin actividad tras los cuales se cierra la sesión de cada rol. El aire no se ve afectado.</p>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-            {ROLES.map((r) => (
-              <div className="field" key={r} style={{ marginBottom: 0 }}>
-                <label>{ROLE_LABEL[r]}</label>
-                <input type="number" min={1} max={480} value={idle[r]} onChange={(e) => setIdle({ ...idle, [r]: Math.max(1, Math.min(480, Number(e.target.value) || 1)) })} />
-              </div>
+          <AjCard to="/ajustes/actividad" icon={<History size={22} />} name="Actividad" desc="Quién hizo qué y cuándo">
+            {acts && (acts.length === 0 ? <span className="muted-note">Sin registros todavía.</span> : (
+              <ul className="aj-acts">
+                {acts.map((a) => (
+                  <li key={a.id}>
+                    <span className="aj-act-txt">{a.summary ?? a.action}</span>
+                    <span className="muted-note">{a.actor_name ?? "Sistema"} · {hhmm(a.at)}</span>
+                  </li>
+                ))}
+              </ul>
             ))}
-          </div>
-          <button className="btn primary" style={{ marginTop: 14 }} disabled={JSON.stringify(idle) === idleSaved} onClick={guardarIdle}>Guardar</button>
-        </div>
-      )}
+          </AjCard>
+        )}
+
+        <AjCard to="/programas" icon={<Tv size={22} />} name="Programas" desc="Búsqueda por hashtags">
+          <div className="aj-stats"><span><Hash size={12} />ciclico</span><span><Hash size={12} />programa</span><span className="muted-note">en construcción</span></div>
+        </AjCard>
+
+        {isMaster && idle && (
+          <AjCard icon={<Timer size={22} />} name="Cierre por inactividad" desc="Minutos sin actividad por rol. El aire no se ve afectado.">
+            <div className="aj-idle">
+              {ROLES.map((r) => (
+                <label key={r}>
+                  <span>{ROLE_LABEL[r]}</span>
+                  <input type="number" min={1} max={480} value={idle[r]} onChange={(e) => setIdle({ ...idle, [r]: Math.max(1, Math.min(480, Number(e.target.value) || 1)) })} />
+                </label>
+              ))}
+            </div>
+            {idleDirty && (
+              <button className="btn primary aj-save" disabled={busy === "idle"} onClick={() => update("idle", { idleMinutes: idle })}>
+                {busy === "idle" ? "Guardando…" : "Guardar"}
+              </button>
+            )}
+          </AjCard>
+        )}
+      </div>
     </>
   );
 }

@@ -1,10 +1,9 @@
-import { Link, NavLink, useNavigate } from "react-router-dom";
+import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 import { type ReactNode } from "react";
 import {
   ListVideo,
   FilePlus2,
   LayoutTemplate,
-  Video,
   Radio,
   BarChart3,
   Settings,
@@ -29,8 +28,8 @@ interface NavDef {
 }
 
 // Orden simétrico alrededor de Copiloto (que se dibuja aparte, al centro):
-// izquierda Contenido/Sesiones/Fuentes, derecha Plantillas/Cámaras/Reportes, y Ajustes
-// separado por una rayita porque no es parte de la simetría.
+// izquierda Contenido/Sesiones/Fuentes, derecha Stream/Plantillas/Reportes, y Ajustes
+// separado por una rayita porque no es parte de la simetría. Cámaras vive dentro de Ajustes.
 const NAV_LEFT: NavDef[] = [
   { to: "/contenido", label: "Contenido", icon: <FilePlus2 size={18} />, perm: "contenidos" },
   { to: "/sesiones", label: "Sesiones", icon: <ListMusic size={18} />, perm: "sesiones" },
@@ -39,13 +38,19 @@ const NAV_LEFT: NavDef[] = [
 const NAV_RIGHT: NavDef[] = [
   { to: "/stream", label: "Stream", icon: <AudioLines size={18} />, perm: "stream", cls: "nav-stream" },
   { to: "/plantillas", label: "Plantillas", icon: <LayoutTemplate size={18} />, perm: "plantillas_ver" },
-  { to: "/camaras", label: "Cámaras", icon: <Video size={18} />, perm: "camaras" },
   { to: "/reportes", label: "Reportes", icon: <BarChart3 size={18} />, perm: "reportes" },
 ];
+
+// Secciones que usan el ancho de Contenido (card de encabezado + contenido a 924px, centrado).
+// El editor de una sesión (/sesiones/:id) queda fuera: es una consola a todo el ancho, como Copiloto.
+const SECTION_ROOTS = ["/sesiones", "/fuentes", "/plantillas", "/reportes", "/ajustes", "/usuarios", "/banco", "/shorts", "/programas"];
+const isSection = (path: string) =>
+  path === "/sesiones" || SECTION_ROOTS.some((r) => r !== "/sesiones" && (path === r || path.startsWith(r + "/")));
 
 export function Layout({ children }: { children: ReactNode }) {
   const { me, signOut, can: canDo } = useAuth();
   const navigate = useNavigate();
+  const { pathname } = useLocation();
 
   async function handleLogout() {
     await signOut();
@@ -102,7 +107,7 @@ export function Layout({ children }: { children: ReactNode }) {
         </div>
       </header>
 
-      <main className="main">{children}</main>
+      <main className={"main" + (isSection(pathname) ? " sec" : "")}>{children}</main>
       <Toaster />
       {me && <IdleGuard minutes={me.idleMinutes} onIdle={() => { void signOut("idle").then(() => navigate("/login")); }} />}
     </div>

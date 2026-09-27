@@ -10,7 +10,7 @@ export function Programas() {
         </div>
       </div>
 
-      <div className="card" style={{ padding: 18, maxWidth: 560 }}>
+      <div className="card" style={{ padding: 18 }}>
         <div className="field">
           <label>Hashtags</label>
           <div className="row" style={{ gap: 8 }}>

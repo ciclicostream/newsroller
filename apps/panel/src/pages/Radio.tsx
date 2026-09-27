@@ -269,12 +269,6 @@ export function Radio() {
 
   return (
     <div className="pv rd">
-      <div className="pv-head">
-        <h1>Stream</h1>
-        <div className="pv-hint">Abrí la transmisión, tocá un botón y queda al aire en loop hasta que toques otro.</div>
-        <span />
-      </div>
-
       <div className="rd-top">
         {/* Al aire */}
         <div className={"pv-card rd-card rd-now " + state}>
