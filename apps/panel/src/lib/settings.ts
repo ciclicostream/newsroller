@@ -10,6 +10,7 @@ export interface AppSettings {
   climaIcons?: Record<string, string>; // íconos grandes del clima cargados en Ajustes ({casillero: url})
   climaDayIcons?: Record<string, string>; // íconos chicos de los días del pronóstico ({estado: url})
   airPausedAt: string; // ISO del corte de emisión ("" = al aire); congela el reloj
+  airChangedAt?: string; // ISO del último envío a vivo o corte/reanudación (lo estampa el servidor)
   music?: MusicSettings; // música de fondo continua (Ajustes → Música + toggle en el Monitor de Emisión)
   collections?: string[]; // colecciones de templates habilitadas por el Master
   suites?: Suite[]; // suites (nombre + colección)

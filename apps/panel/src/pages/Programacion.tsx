@@ -26,10 +26,10 @@ interface LiveStatus {
   next: { id: string; itemType: string | null; durationSec: number } | null;
 }
 
-// Hora (y fecha si no es hoy) del último mensaje de telemetría recibido, para "Última actualización".
+// Hora 24 h sin segundos (y fecha si no es hoy) del último envío a vivo o corte/reanudación, para "Última actualización".
 function fmtUpdatedAt(iso: string): string {
   const d = new Date(iso);
-  const time = d.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+  const time = d.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit", hour12: false });
   const sameDay = d.toDateString() === new Date().toDateString();
   return sameDay ? time : `${d.toLocaleDateString("es-AR")} ${time}`;
 }
@@ -57,6 +57,8 @@ export function Programacion() {
   const [tick, setTick] = useState(0); // fuerza un re-render por segundo para el reloj
   const [publishing, setPublishing] = useState(false);
   const [airPausedAt, setAirPausedAt] = useState<string | null>(null);
+  // Último envío a vivo o corte/reanudación: queda fijo hasta el próximo.
+  const [airChangedAt, setAirChangedAt] = useState<string | null>(null);
   const [cams, setCams] = useState<Camera[]>([]);
   const [availableSessions, setAvailableSessions] = useState<SessionRow[]>([]); // Sesiones que se pueden meter como contenido
   const [music, setMusicState] = useState<MusicSettings>(MUSIC_DEFAULT); // canal de música de fondo (Ajustes → Música)
@@ -73,7 +75,7 @@ export function Programacion() {
   // Estado real del corte de emisión y del reloj "al aire" (persistidos en
   // /api/settings, no locales) — sobreviven a un refresco del navegador.
   useEffect(() => {
-    settingsApi.get().then((s) => { setOnAirState(s.onAir !== false); setAirSince(s.airSince || null); setAirPausedAt(s.onAir === false ? s.airPausedAt || null : null); setMusicState(s.music ?? MUSIC_DEFAULT); }).catch(() => {});
+    settingsApi.get().then((s) => { setOnAirState(s.onAir !== false); setAirSince(s.airSince || null); setAirPausedAt(s.onAir === false ? s.airPausedAt || null : null); setAirChangedAt(s.airChangedAt || null); setMusicState(s.music ?? MUSIC_DEFAULT); }).catch(() => {});
     camerasApi.list().then(setCams).catch(() => {});
     sessionsApi.list().then(setAvailableSessions).catch(() => {}); // si falta la migración 0020, sigue sin Sesiones
   }, []);
@@ -99,7 +101,7 @@ export function Programacion() {
     }
     const prev = { onAir, airSince, airPausedAt };
     setOnAirState(next); setAirSince(since); setAirPausedAt(next ? null : patch.airPausedAt);
-    try { await settingsApi.update(patch); }
+    try { const s = await settingsApi.update(patch); setAirChangedAt(s.airChangedAt || now.toISOString()); }
     catch (e) { setOnAirState(prev.onAir); setAirSince(prev.airSince); setAirPausedAt(prev.airPausedAt); setErr(e instanceof Error ? e.message : "error"); }
   }
 
@@ -168,7 +170,7 @@ export function Programacion() {
 
   async function publish() {
     setPublishing(true); setErr(null);
-    try { const r = await parrilla.publish(); setMsg(`Al aire: ${r.count} bloque(s)`); if (onAir) setAirSince(new Date().toISOString()); setTimeout(() => setMsg(null), 2500); }
+    try { const r = await parrilla.publish(); setMsg(`Al aire: ${r.count} bloque(s)`); const now = new Date().toISOString(); if (onAir) setAirSince(now); setAirChangedAt(now); setTimeout(() => setMsg(null), 2500); }
     catch (e) { setErr(e instanceof Error ? e.message : "error"); }
     finally { setPublishing(false); }
   }
@@ -349,7 +351,7 @@ export function Programacion() {
 
           <div className="pv-airrow">
             <div className="pv-airmeta">
-              <div>Última actualización: <b>{liveStatus ? fmtUpdatedAt(liveStatus.updatedAt) : "—"}</b></div>
+              <div>Última actualización: <b>{airChangedAt ? fmtUpdatedAt(airChangedAt) : "—"}</b></div>
               <div>Próximo item: <b>{
                 liveStatus?.next
                   ? (TYPE_LABEL[liveStatus.next.itemType ?? ""] ?? liveStatus.next.itemType ?? "—") + " · " + liveStatus.next.durationSec + "s"

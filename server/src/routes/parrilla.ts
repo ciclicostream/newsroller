@@ -100,7 +100,8 @@ export function parrillaRouter(io: IO): Router {
     // Con el canal cortado sólo se prepara la parrilla: el reloj queda congelado.
     try {
       const st = await readAll();
-      if (st.onAir !== false) await writeSettings(io, { airSince: new Date().toISOString() });
+      const now = new Date().toISOString();
+      await writeSettings(io, st.onAir !== false ? { airSince: now, airChangedAt: now } : { airChangedAt: now });
     } catch { /* noop */ }
     logActivity(_req.user, { action: "parrilla.publicar", entity: "parrilla", summary: `Envió a vivo la parrilla (${rows.length} bloques)`, meta: { count: rows.length } });
     res.json({ ok: true, count: rows.length });

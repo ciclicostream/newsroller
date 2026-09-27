@@ -18,6 +18,9 @@ const DEFAULTS = {
   airSince: "" as string,
   // Momento en que se cortó la emisión (vacío = al aire). Congela el reloj "al aire".
   airPausedAt: "" as string,
+  // Última vez que se envió a vivo o se cortó/reanudó la emisión ("Última actualización" del Monitor).
+  // Lo estampa el servidor; el panel no lo escribe.
+  airChangedAt: "" as string,
   // Íconos BIG del clima cargados por el editor: { [slot]: url }. Vacío = predeterminados.
   climaIcons: {} as Record<string, string>,
   // Íconos chicos de los días del pronóstico cargados por el editor: { [estado]: url }. Vacío = predeterminados.
@@ -207,12 +210,13 @@ export function settingsRouter(io: IO): Router {
     if (Object.keys(updates).length === 0) {
       return res.status(400).json({ error: "sin cambios válidos" });
     }
+    if ("onAir" in updates) updates.airChangedAt = new Date().toISOString();
     try {
       const all = await writeSettings(io, updates);
       if ("idleMinutes" in updates) clearLimitsCache();
       // Registro: corte / reanudación del aire y cambios de ajustes (sin los relojes internos del reloj "al aire").
       if ("onAir" in updates) logActivity(req.user, { action: updates.onAir === false ? "aire.cortar" : "aire.reanudar", entity: "aire", summary: updates.onAir === false ? "Cortó la emisión (fuera de aire)" : "Reanudó la emisión" });
-      const changed = Object.keys(updates).filter((k) => !["onAir", "airSince", "airPausedAt"].includes(k));
+      const changed = Object.keys(updates).filter((k) => !["onAir", "airSince", "airPausedAt", "airChangedAt"].includes(k));
       if (changed.length) logActivity(req.user, { action: "ajustes.cambiar", entity: "ajustes", summary: `Cambió ajustes: ${changed.join(", ")}`, meta: { keys: changed } });
       res.json(all);
     } catch (e) {
