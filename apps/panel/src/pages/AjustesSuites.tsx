@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Check, Copy, ExternalLink, Link2Off, Loader2, Plus, RectangleHorizontal, RectangleVertical, RefreshCw, Trash2, Volume2, VolumeX } from "lucide-react";
+import { ArrowLeft, Check, Copy, ExternalLink, Link2Off, Loader2, Plus, RectangleHorizontal, RectangleVertical, RefreshCw, Trash2, Volume2, VolumeX, X } from "lucide-react";
 import { DEFAULT_COLLECTION, SUITE_DEFAULT, SUITE_NAME_RE, TEMPLATE_COLLECTIONS, activeSuiteOf, collectionById, type OutputLink, type Suite } from "@newsroller/shared";
 import { useAuth } from "../auth/AuthProvider";
 import { settingsApi } from "../lib/settings";
@@ -29,6 +29,7 @@ export function AjustesSuites() {
   const [busy, setBusy] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
+  const [regen, setRegen] = useState<OutputLink | null>(null);
 
   const apply = (s: { collections?: string[]; suites?: Suite[]; activeSuite?: string; legacyLinks?: boolean }) => {
     setEnabled(s.collections?.length ? s.collections : [DEFAULT_COLLECTION]);
@@ -82,8 +83,9 @@ export function AjustesSuites() {
     if (!confirm(`El link /output/${l.slug} va a dejar de funcionar y pasa a ser /output/${next}. Hay que cargar el nuevo en OBS/vMix. ¿Seguimos?`)) return;
     void run(l.slug, async () => { await outputLinksApi.update(l.slug, { slug: next }); setEditSlug((m) => ({ ...m, [l.slug]: "" })); await loadLinks(); }, `Ahora es /output/${next}.`);
   };
+  // Se confirma en la ventana de "Regenerar link" (regen), que explica qué pasa.
   const regenerate = (l: OutputLink) => {
-    if (!confirm(`El link /output/${l.slug} va a dejar de funcionar y se genera uno nuevo al azar. Hay que cargar el nuevo en OBS/vMix. ¿Seguimos?`)) return;
+    setRegen(null);
     void run(l.slug, async () => { const n = await outputLinksApi.regenerate(l.slug); await loadLinks(); setMsg(`Link nuevo: /output/${n.slug}`); });
   };
   async function copy(slug: string) {
@@ -99,7 +101,8 @@ export function AjustesSuites() {
 
   const colName = (id: string) => collectionById(id)?.label ?? id;
   const row: React.CSSProperties = { display: "flex", alignItems: "center", gap: 12, padding: "10px 12px", borderTop: "1px solid #eef1f6" };
-  const sel: React.CSSProperties = { height: 32, borderRadius: 8, border: "1px solid #e3e7ef", padding: "0 8px", background: "#fff" };
+  // width auto: el select/input global es 100% y aplastaba el nombre de la suite.
+  const sel: React.CSSProperties = { height: 32, width: "auto", flex: "none", borderRadius: 8, border: "1px solid #e3e7ef", padding: "0 8px", background: "#fff" };
 
   return (
     <>
@@ -136,7 +139,7 @@ export function AjustesSuites() {
           );
         })}
         <div style={row}>
-          <input value={newName} onChange={(e) => setNewName(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "").slice(0, 40))} placeholder="nombre de la suite nueva (ej. navidad2026)" style={{ ...sel, flex: 1, padding: "0 10px" }} aria-label="Nombre de la suite nueva" />
+          <input value={newName} onChange={(e) => setNewName(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "").slice(0, 40))} placeholder="nombre de la suite nueva (ej. navidad2026)" style={{ ...sel, flex: 1, minWidth: 0, padding: "0 10px" }} aria-label="Nombre de la suite nueva" />
           <select value={newStyle} onChange={(e) => setNewStyle(e.target.value)} style={sel} aria-label="Colección de la suite nueva">
             {enabled.map((id) => <option key={id} value={id}>{colName(id)}</option>)}
           </select>
@@ -149,17 +152,17 @@ export function AjustesSuites() {
         <p>La salida del canal es una sola señal: la parrilla del Copiloto y, mientras el Host tiene Stream abierto, el Stream. Cargá estos links una vez en OBS/vMix (1920×1080 el horizontal, 1080×1920 el vertical). No lo compartas: cualquiera con el link ve la señal.</p></div>
         {links == null && <div style={{ padding: 12, color: "#6b7688" }}><Loader2 size={14} className="spin" /> Cargando…</div>}
         {links?.map((l, i) => (
-          <div key={l.slug} style={{ ...row, borderTop: i ? row.borderTop : undefined, flexWrap: "wrap" }}>
+          <div key={l.slug} style={{ ...row, borderTop: i ? row.borderTop : undefined, gap: 8 }}>
             <span title={l.orientation === "vertical" ? "Vertical 9:16" : "Horizontal 16:9"} style={{ display: "inline-flex", color: "#6b7688" }}>{l.orientation === "vertical" ? <RectangleVertical size={18} /> : <RectangleHorizontal size={18} />}</span>
-            <div style={{ flex: 1, minWidth: 200, fontFamily: "ui-monospace, Menlo, monospace", fontSize: 13, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={outputLinkUrl(l.slug)}>{outputLinkUrl(l.slug)}</div>
+            <div style={{ flex: 1, minWidth: 0, fontFamily: "ui-monospace, Menlo, monospace", fontSize: 12, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={outputLinkUrl(l.slug)}>{outputLinkUrl(l.slug)}</div>
             <button type="button" className="btn" onClick={() => void copy(l.slug)} title={copied === l.slug ? "Copiado" : "Copiar"}>{copied === l.slug ? <Check size={15} /> : <Copy size={15} />}</button>
             <a className="btn" href={outputLinkUrl(l.slug)} target="_blank" rel="noreferrer" title="Abrir"><ExternalLink size={15} /></a>
             <button type="button" className={"toggle-pill" + (l.audio ? " on" : "")} disabled={busy != null} onClick={() => void setAudio(l, !l.audio)} title={l.audio ? "Con audio" : "Sin audio"}>
               {busy === l.slug ? <Loader2 size={14} className="spin" /> : l.audio ? <Volume2 size={14} /> : <VolumeX size={14} />} {l.audio ? "Con audio" : "Sin audio"}
             </button>
-            <input value={editSlug[l.slug] ?? ""} onChange={(e) => setEditSlug((m) => ({ ...m, [l.slug]: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "").slice(0, 40) }))} placeholder="nombre nuevo" style={{ ...sel, width: 150, padding: "0 10px" }} aria-label={`Nombre nuevo para ${l.slug}`} />
+            <input value={editSlug[l.slug] ?? ""} onChange={(e) => setEditSlug((m) => ({ ...m, [l.slug]: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "").slice(0, 40) }))} placeholder="nombre nuevo" style={{ ...sel, width: 120, padding: "0 10px" }} aria-label={`Nombre nuevo para ${l.slug}`} />
             <button type="button" className="btn" disabled={!editSlug[l.slug] || busy != null} onClick={() => rename(l)}>Renombrar</button>
-            <button type="button" className="btn" disabled={busy != null} onClick={() => regenerate(l)} title="Si el link se filtró: genera uno nuevo al azar y el viejo deja de emitir"><RefreshCw size={15} /> Regenerar</button>
+            <button type="button" className="btn" disabled={busy != null} onClick={() => setRegen(l)} title="Si el link se filtró: genera uno nuevo al azar y el viejo deja de emitir"><RefreshCw size={15} /> Regenerar</button>
           </div>
         ))}
       </section>
@@ -197,6 +200,29 @@ export function AjustesSuites() {
           {busy === "legacy" ? <Loader2 size={14} className="spin" /> : legacy ? <Check size={14} /> : null} {legacy ? "Funcionan" : "Apagados"}
         </button>
       </div>
+
+      {regen && (
+        <div className="modal-back" onClick={() => setRegen(null)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()} role="dialog" aria-label="Regenerar link">
+            <div className="modal-head">
+              <b>Regenerar el link {regen.orientation === "vertical" ? "vertical" : "horizontal"}</b>
+              <button className="icon-btn" onClick={() => setRegen(null)} aria-label="Cerrar"><X size={18} /></button>
+            </div>
+            <div className="sx-regen">
+              <p>Regenerar crea un link nuevo al azar para esta salida del canal. Sirve si el link se filtró: quien lo tenga deja de ver la señal.</p>
+              <ul>
+                <li>El link actual <code>/output/{regen.slug}</code> deja de emitir en el momento.</li>
+                <li>Los OBS/vMix que lo usan quedan sin señal hasta que cargues el link nuevo.</li>
+                <li>Se mantienen la suite activa y el audio {regen.audio ? "(con audio)" : "(sin audio)"}.</li>
+              </ul>
+              <div className="row" style={{ justifyContent: "flex-end", marginTop: 16 }}>
+                <button className="btn" onClick={() => setRegen(null)}>Cancelar</button>
+                <button className="btn primary" style={{ background: "#c0392b", borderColor: "#c0392b" }} onClick={() => regenerate(regen)}><RefreshCw size={15} /> Regenerar link</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
