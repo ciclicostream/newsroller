@@ -49,7 +49,7 @@ export function Programacion() {
   const [err, setErr] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
   const [sel, setSel] = useState<string | null>(null);
-  const [mode, setMode] = useState<"preview" | "aire" | "clip">("preview");
+  const [mode, setMode] = useState<"aire" | "clip">("aire");
   const [clipId, setClipId] = useState<string | null>(null);
   const [onAir, setOnAirState] = useState(true);
   const [streamTx, setStreamTx] = useState(false); // Stream (radio manual) tiene la señal: la parrilla no sale
@@ -249,13 +249,12 @@ export function Programacion() {
   useEffect(() => { try { localStorage.setItem("pv-cols", JSON.stringify(cols)); } catch { /* noop */ } }, [cols]);
 
   // ---- monitor ----
-  // CLIP: un contenido suelto elegido a mano (botón "Monitor" de Contenidos disponibles), en loop y sin
-  // el resto de la parrilla. PREVIEW: la parrilla BORRADOR completa rotando de verdad (con música y
-  // todo), tal cual va a salir al publicar — no un solo contenido.
+  // AIRE: lo que está saliendo en vivo. CLIP: un contenido suelto elegido a mano (botón "Monitor" de Contenidos
+  // disponibles), en loop y sin el resto de la parrilla.
   const previewCi = (): ContentItem | null => (mode === "clip" && clipId ? itemById.get(clipId) ?? null : null);
   // AIRE siempre carga el output real (aunque esté cortado, el propio output
   // muestra la placa de "fuera del aire" — no hace falta un placeholder local).
-  // Sonido: sólo en PREVIEW y CLIP. En AIRE no se escucha desde el panel (sería un eco desfasado del aire real).
+  // Sonido: sólo en CLIP. En AIRE no se escucha desde el panel (sería un eco desfasado del aire real).
   const [monSound, toggleMonSound] = useMonitorAudio();
   const soundOn = monSound && mode !== "aire";
   const [monVertical, toggleMonVertical] = useMonitorVertical(); // 16:9 o 9:16
@@ -268,14 +267,10 @@ export function Programacion() {
   const monUrl = (() => {
     const orient = monVertical ? "orientation=vertical" : "";
     if (mode === "aire") return canalSlug ? `${OUTPUT_FRAME_BASE}/output/${canalSlug}?mute=1` : `${OUTPUT_FRAME_BASE}/output/${orient ? "?" + orient : ""}`;
-    if (mode === "preview") {
-      const params = new URLSearchParams({ borrador: "1", ...(soundOn ? { audio: "1" } : {}), ...(monVertical ? { orientation: "vertical" } : {}) });
-      return `${OUTPUT_FRAME_BASE}/output/?${params.toString()}`;
-    }
     const ci = previewCi();
     return ci ? `${OUTPUT_FRAME_BASE}/output/?preview=${ci.id}${soundOn ? "&audio=1" : ""}${monVertical ? "&orientation=vertical" : ""}` : null;
   })();
-  // AIRE y PREVIEW cargan el output real (por telemetría postMessage sabemos si suena algo,
+  // AIRE carga el output real (por telemetría postMessage sabemos si suena algo,
   // contenido propio o la música de fondo); CLIP es un contenido suelto sin telemetría.
   const monHasAudio = mode === "clip"
     ? (() => { const ci = previewCi(); return !!ci && contentHasAudio(ci.type, ci.data); })()
@@ -325,7 +320,7 @@ export function Programacion() {
                 <span className="pv-ct">Monitor</span>
                 {activeSuite && <span className="pv-suite" title="Colección con la que sale el canal (Copiloto y Stream)">{collectionLabel(activeSuite.style)}</span>}
                 <div className="pv-seg">
-                  {(["preview", "aire", "clip"] as const).map((m) => (
+                  {(["aire", "clip"] as const).map((m) => (
                     <button key={m} className={"pv-segb" + (mode === m ? " on " + m : "")} onClick={() => setMode(m)}>{m.toUpperCase()}</button>
                   ))}
                 </div>
@@ -344,7 +339,7 @@ export function Programacion() {
             <div className="pv-card pv-sndcard">
               <button type="button" className={"pv-snd" + (soundOn ? " on" : "")} onClick={toggleMonSound} disabled={mode === "aire"}
                 aria-pressed={soundOn} aria-label={soundOn ? "Silenciar el monitor" : "Escuchar el monitor"}
-                title={mode === "aire" ? "En AIRE no se escucha desde el panel (evita el eco con el aire real)" : soundOn ? "Silenciar el monitor" : "Escuchar el monitor (PREVIEW y CLIP)"}>
+                title={mode === "aire" ? "En AIRE no se escucha desde el panel (evita el eco con el aire real)" : soundOn ? "Silenciar el monitor" : "Escuchar el monitor (CLIP)"}>
                 {soundOn ? <Volume2 size={14} /> : <VolumeX size={14} />}
               </button>
               <button type="button" className={"pv-snd" + (music.enabled ? " on" : "")} onClick={toggleMusic} disabled={musicBusy || !music.activeId}
