@@ -12,7 +12,7 @@ import { OUTPUT_FRAME_BASE } from "../lib/parrilla";
 import { sessions as sessionsApi, type SessionRow } from "../lib/sessions";
 import { contentItems as contentItemsApi } from "../lib/content-items";
 import { camerasApi } from "../lib/cameras";
-import { createRadioLink, radioApi, type RadioConfig, type RadioLink } from "../lib/radioLink";
+import { RADIO_RELEASED, createRadioLink, radioApi, type RadioConfig, type RadioLink } from "../lib/radioLink";
 import offAir from "../assets/off-air.jpg";
 import { CAT, CAT_ICON, CAT_ORDER, SESSION_COLOR, SESSION_ICON, TYPE_LABEL, catOf, iconOf, itemText } from "../lib/contentCatalog";
 
@@ -31,6 +31,9 @@ const fmt = (s: number) => `${pad2(Math.floor(s / 3600))}:${pad2(Math.floor((s %
 const fmtMS = (s: number) => `${pad2(Math.floor(s / 60))}:${pad2(s % 60)}`;
 const hhmm = (t: number) => new Date(t).toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit", hour12: false });
 const readTx = (): number | null => { try { const v = Number(localStorage.getItem(TX_KEY)); return v > 0 ? v : null; } catch { return null; } };
+const REL_KEY = "nr.radio.rel";
+const readKnown = (): number => { try { return Number(localStorage.getItem(REL_KEY)) || 0; } catch { return 0; } };
+const writeKnown = (v: number) => { try { localStorage.setItem(REL_KEY, String(v)); } catch { /* sin storage */ } };
 const writeTx = (v: number | null) => { try { if (v) localStorage.setItem(TX_KEY, String(v)); else localStorage.removeItem(TX_KEY); } catch { /* sin storage: sólo esta vista */ } };
 
 // Micrófono de esta computadora: pide permiso a Chrome la primera vez y mide el nivel de entrada.
@@ -129,6 +132,7 @@ export function Radio({ visible = true }: { visible?: boolean }) {
   const [txStart, setTxStart] = useState<number | null>(readTx); // transmisión abierta (ms) o null
   const [lastRun, setLastRun] = useState<number | null>(null); // duración (s) de la última transmisión cortada
   const [confirmCut, setConfirmCut] = useState(false);
+  const [taken, setTaken] = useState(false); // el Copiloto tomó la señal y cerró la transmisión
   const [active, setActive] = useState<string | null>(null); // key del botón al aire
   const [padSince, setPadSince] = useState<number | null>(null);
   const [clips, setClips] = useState<number[]>([]); // duración (s) de cada clip del botón al aire, en orden; una Sesión trae varios
@@ -195,10 +199,16 @@ export function Radio({ visible = true }: { visible?: boolean }) {
   // Además lo reenvía cada 5 s: el server lo guarda en memoria y un reinicio (cada deploy) lo vuelve a "sin
   // transmisión", con lo que la salida del canal volvía al Copiloto aunque el Host siguiera emitiendo.
   const radioStateRef = useRef<Omit<RadioState, "at"> | null>(null);
+  const knownRef = useRef<number>(readKnown()); // último corte del Copiloto que conocía al abrir la transmisión
+  const txStartRef = useRef<number | null>(txStart);
+  txStartRef.current = txStart;
   const sendRadioState = () => {
     const st = radioStateRef.current;
     if (!st) return;
-    radioApi.setState(st).then(() => setLinkErr(null)).catch((e) => setLinkErr(e instanceof Error ? e.message : "No se pudo avisar al output."));
+    radioApi.setState({ ...st, known: knownRef.current }).then(() => setLinkErr(null)).catch((e) => {
+      if (e instanceof Error && e.message === RADIO_RELEASED) { setLinkErr(null); releasedByCopiloto(); return; }
+      setLinkErr(e instanceof Error ? e.message : "No se pudo avisar al output.");
+    });
   };
   useEffect(() => {
     if (!cfg) return;
@@ -214,8 +224,21 @@ export function Radio({ visible = true }: { visible?: boolean }) {
     return () => clearInterval(t);
   }, [cfg]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // El Copiloto tomó la señal (Enviar a vivo): la transmisión se cierra sola, como si el Host la hubiera cortado.
+  function releasedByCopiloto() {
+    if (!txStartRef.current) return;
+    setLastRun(Math.floor((Date.now() - txStartRef.current) / 1000));
+    setTxStart(null); writeTx(null); setConfirmCut(false); stopClip(); lastPadRef.current = null;
+    setTaken(true);
+  }
+
   // Transmisión: la abre el locutor al sentarse y la corta al terminar el programa.
-  function startTx() { const t = Date.now(); setTxStart(t); writeTx(t); setLastRun(null); }
+  async function startTx() {
+    // Anota el último corte del Copiloto que existe hoy: sólo uno posterior a esta apertura cierra la transmisión.
+    const st = await radioApi.status().catch(() => null);
+    knownRef.current = st?.releasedAt ?? 0; writeKnown(knownRef.current);
+    const t = Date.now(); setTaken(false); setTxStart(t); writeTx(t); setLastRun(null);
+  }
   function cutTx() {
     if (!confirmCut) { setConfirmCut(true); return; }
     if (txStart) setLastRun(Math.floor((Date.now() - txStart) / 1000));
@@ -300,7 +323,8 @@ export function Radio({ visible = true }: { visible?: boolean }) {
             <div className="rd-clk g">
               <span className="lb">stream</span>
               <span className="dg">{fmt(txSec)}</span>
-              <span className="ft">{live ? `desde las ${hhmm(txStart!)} hs${cur ? "" : " · placa de espera"}` : lastRun != null ? `última: ${fmt(lastRun)}` : "sin abrir"}</span>
+              <span className="ft">{live ? `desde las ${hhmm(txStart!)} hs` : lastRun != null ? `última: ${fmt(lastRun)}` : "sin abrir"}</span>
+              <span className={"ft b" + (live && !cur || taken && !live ? "" : " off")}>{taken && !live ? "el Copiloto tomó la señal" : "placa de espera"}</span>
             </div>
             <div className="rd-clk r">
               <span className="lb">{cur?.kind === "cam" ? "cámara" : clips.length > 1 ? `clip ${clipIdx + 1} de ${clips.length}` : "clip al aire"}</span>

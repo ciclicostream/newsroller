@@ -8,10 +8,12 @@ import { OUTPUT_BASE } from "./parrilla";
 // El micrófono y la cámara viajan por WebRTC directo de esta compu al output (el server sólo intercambia los
 // mensajes de conexión); el estado (qué contenido está al aire, cámara, micrófono) va por una ruta del server.
 export interface RadioConfig { key: string; iceServers: RTCIceServer[]; turn: boolean }
+export const RADIO_RELEASED = "released";
 export const radioApi = {
   config: () => api.get<RadioConfig>("/api/radio/config"),
-  status: () => api.get<{ tx: boolean; pad: boolean }>("/api/radio/status"),
-  setState: (s: Omit<RadioState, "at">) => api.put<RadioState>("/api/radio/state", s),
+  status: () => api.get<{ tx: boolean; pad: boolean; releasedAt: number }>("/api/radio/status"),
+  // `known`: último corte del Copiloto que conocía el Host al abrir su transmisión; el server rechaza (409 "released") si hubo uno posterior.
+  setState: (s: Omit<RadioState, "at"> & { known?: number }) => api.put<RadioState>("/api/radio/state", s),
 };
 
 // Link del output de Stream para OBS/vMix.

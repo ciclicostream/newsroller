@@ -21,6 +21,19 @@ if (!env.radioKey) console.warn(`[radio] RADIO_KEY sin definir: se generó una t
 export const radioKey = (): string => KEY;
 
 let state: RadioState = { ...RADIO_STATE_DEFAULT };
+// Cuándo el Copiloto tomó la señal (Enviar a vivo con Stream abierto, hora del server). El Host que sigue con esa
+// transmisión abierta no puede volver a ponerla en marcha: su panel manda `known` (el último corte que conocía al abrirla)
+// y se rechaza si el server ya tiene uno posterior. No se compara con relojes de la compu del Host.
+let releasedAt = 0;
+export const RADIO_RELEASED = "released";
+export function releaseRadio(io: IO): boolean {
+  if (!state.tx) return false;
+  releasedAt = Date.now();
+  state = { ...RADIO_STATE_DEFAULT, at: releasedAt };
+  io.to(VIEWERS).emit("radio:state", state);
+  void persist();
+  return true;
+}
 // Último aviso del Host. Su panel reenvía el estado cada 5 s; si deja de hacerlo (cerró la pestaña, se colgó la
 // compu) el stream se corta solo y la salida del canal vuelve al Copiloto.
 let lastSeen = 0;
@@ -139,13 +152,15 @@ export function radioRouter(io: IO): Router {
 
   // Panel (cualquier usuario): si Stream tiene la señal, para que el Copiloto lo avise en su reloj "Al aire".
   r.get("/status", requireAuth, (_req, res) => {
-    res.json({ tx: state.tx, pad: state.pad != null });
+    res.json({ tx: state.tx, pad: state.pad != null, releasedAt });
   });
 
   // Host: qué contenido está al aire, cámara, micrófono, etc.
   r.put("/state", requireAuth, requirePerm("stream"), (req, res) => {
     const next = cleanState((req.body ?? {}) as Record<string, unknown>);
     if (!next) return res.status(400).json({ error: "estado inválido" });
+    const known = Number((req.body as Record<string, unknown>)?.known) || 0;
+    if (next.tx && known < releasedAt) return res.status(409).json({ error: RADIO_RELEASED, releasedAt });
     lastSeen = Date.now();
     const changed = !same(state, next);
     state = next;

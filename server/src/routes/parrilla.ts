@@ -5,6 +5,7 @@ import { requireAuth, requirePermByMethod } from "../auth/middleware.js";
 import type { IO } from "../realtime/socket.js";
 import { writeSettings, readAll } from "./settings.js";
 import { logActivity } from "../activity.js";
+import { releaseRadio } from "./radio.js";
 
 const TYPES: ContentType[] = ["short", "placa", "ad", "background", "data", "template", "content_item", "session"];
 const TEMPLATE_IDS = new Set(LAYOUTS.map((t) => t.id));
@@ -103,7 +104,9 @@ export function parrillaRouter(io: IO): Router {
       const now = new Date().toISOString();
       await writeSettings(io, st.onAir !== false ? { airSince: now, airChangedAt: now } : { airChangedAt: now });
     } catch { /* noop */ }
-    logActivity(_req.user, { action: "parrilla.publicar", entity: "parrilla", summary: `Envió a vivo la parrilla (${rows.length} bloques)`, meta: { count: rows.length } });
+    // Enviar a vivo toma la señal: si el Host tenía Stream abierto, se cierra (su panel lo ve y corta su contador).
+    const tookSignal = releaseRadio(io);
+    logActivity(_req.user, { action: "parrilla.publicar", entity: "parrilla", summary: `Envió a vivo la parrilla (${rows.length} bloques)${tookSignal ? " y tomó la señal de Stream" : ""}`, meta: { count: rows.length } });
     res.json({ ok: true, count: rows.length });
   });
 
