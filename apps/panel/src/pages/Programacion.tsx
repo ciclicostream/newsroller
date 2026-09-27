@@ -26,11 +26,11 @@ interface LiveStatus {
   next: { id: string; itemType: string | null; durationSec: number } | null;
 }
 
-// "HH:MM - DD-MM-AA" (24 h, sin segundos) del último envío a vivo o corte/reanudación.
+// "HH:MM | DD.MM.AA" (24 h, sin segundos) del último envío a vivo o corte/reanudación.
 function fmtUpdatedAt(iso: string): string {
   const d = new Date(iso);
   const p2 = (n: number) => String(n).padStart(2, "0");
-  return `${p2(d.getHours())}:${p2(d.getMinutes())} - ${p2(d.getDate())}-${p2(d.getMonth() + 1)}-${p2(d.getFullYear() % 100)}`;
+  return `${p2(d.getHours())}:${p2(d.getMinutes())} | ${p2(d.getDate())}.${p2(d.getMonth() + 1)}.${p2(d.getFullYear() % 100)}`;
 }
 
 // Duración del ciclo en un formato legible (no siempre segundos crudos).
@@ -275,8 +275,8 @@ export function Programacion() {
 
   const cicloSec = draft.filter((r) => r.enabled).reduce((a, r) => a + r.duration_sec, 0);
 
-  // Pasadas las 24 h el reloj no crece a lo ancho: "2d 14:23:05".
-  const fmt = (s: number) => (s >= 86400 ? `${Math.floor(s / 86400)}d ` : "") + [Math.floor((s % 86400) / 3600), Math.floor((s % 3600) / 60), s % 60].map((n) => String(n).padStart(2, "0")).join(":");
+  // Pasadas las 24 h el reloj no crece a lo ancho: "2d | 14:23:05".
+  const fmt = (s: number) => (s >= 86400 ? `${Math.floor(s / 86400)}d | ` : "") + [Math.floor((s % 86400) / 3600), Math.floor((s % 3600) / 60), s % 60].map((n) => String(n).padStart(2, "0")).join(":");
   // Tiempo real al aire desde la última publicación (persiste entre refrescos:
   // se calcula contra airSince, no contra un contador local que arranca de 0).
   void tick; // sólo dispara el re-render de 1x/seg; el valor en sí no se usa
@@ -353,15 +353,15 @@ export function Programacion() {
 
           <div className="pv-airrow">
             <div className="pv-airmeta">
-              <div className="r"><span>Actualizado</span><b>{airChangedAt ? fmtUpdatedAt(airChangedAt) : "—"}</b></div>
-              <div className="r"><span>Próximo</span><b>{
+              <div className="r"><span>Actualizado:</span><b>{airChangedAt ? fmtUpdatedAt(airChangedAt) : "—"}</b></div>
+              <div className="r"><span>Próximo:</span><b>{
                 liveStatus?.next
                   ? (TYPE_LABEL[liveStatus.next.itemType ?? ""] ?? liveStatus.next.itemType ?? "—") + " · " + liveStatus.next.durationSec + "s"
                   : draft[0] ? (itemById.get(draft[0].content_id ?? "") ? TYPE_LABEL[itemById.get(draft[0].content_id!)!.type] : draft[0].content_type) + " · " + draft[0].duration_sec + "s" : "—"
               }</b></div>
-              <div className="r"><span>Salida</span><b>1920×1080 · {liveStatus ? liveStatus.fps : "—"} FPS</b></div>
+              <div className="r"><span>Salida:</span><b>1920×1080 · {liveStatus ? liveStatus.fps : "—"} FPS</b></div>
             </div>
-            <div className="pv-clock">{streamTx && <span className="pv-instream" title="Stream tiene la señal"><i />En stream</span>}<span className="lb">al aire</span><span className="dg">{fmt(airSec)}</span></div>
+            <div className="pv-clock"><span className={"pv-instream" + (streamTx ? "" : " off")} title="Stream tiene la señal"><i />En stream</span><span className="lb">al aire</span><span className="dg">{fmt(airSec)}</span></div>
           </div>
 
           <div className="pv-kpis">
