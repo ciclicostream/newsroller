@@ -361,7 +361,7 @@ export function Programacion() {
               }</b></div>
               <div className="r"><span>Salida:</span><b>1920×1080 · {liveStatus ? liveStatus.fps : "—"} FPS</b></div>
             </div>
-            <div className="pv-clock"><span className={"pv-instream" + (streamTx ? "" : " off")} title="Stream tiene la señal"><i />En stream</span><span className="dg">{fmt(airSec)}</span><span className="lb">al aire</span></div>
+            <div className="pv-clock"><span className={"pv-instream" + (streamTx ? "" : " off")} title="Stream tiene la señal"><i />En stream</span><span className="dg">{fmt(airSec).split(":").map((t, i) => <span key={i}>{i > 0 && <i className="colon" />}{t}</span>)}</span><span className="lb">al aire</span></div>
           </div>
 
           <div className="pv-kpis">

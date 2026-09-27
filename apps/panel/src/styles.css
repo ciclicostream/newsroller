@@ -1,5 +1,5 @@
-/* Reloj de 7 segmentos (DSEG7 Classic, OFL): para el reloj "al aire" del Copiloto. */
-@font-face{font-family:"DSEG7";src:url("../../../node_modules/dseg/fonts/DSEG7-Classic/DSEG7Classic-Bold.woff2") format("woff2");font-weight:700;font-style:normal;font-display:swap}
+/* Matriz de puntos (Doto, OFL): reloj "al aire" del Copiloto. */
+@font-face{font-family:"DotoLed";src:url("../../../node_modules/@fontsource-variable/doto/files/doto-latin-full-normal.woff2") format("woff2");font-weight:100 900;font-style:normal;font-display:swap}
 :root {
   --bg: #f4f5f7;
   --surface: #ffffff;
@@ -549,7 +549,11 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 6px
 .pv-airmeta b{min-width:0;color:var(--tx);font-weight:700;font-size:9px;white-space:nowrap;text-align:left}
 .pv-clock{flex:1;min-width:0;background:#160404;border:1px solid #3a0d0d;border-radius:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:8px 10px;white-space:nowrap}
 .pv-clock .lb{font-size:11px;color:#a15;letter-spacing:.12em;font-weight:800;text-transform:uppercase}
-.pv-clock .dg{font-family:"DSEG7","Share Tech Mono",ui-monospace,monospace;font-weight:700;font-size:25px;line-height:1;color:#ff2b2b;letter-spacing:1px;text-shadow:0 0 10px rgba(255,43,43,.7)}
+.pv-clock .dg{font-family:"DotoLed","Share Tech Mono",ui-monospace,monospace;font-weight:800;font-variation-settings:"ROND" 100;font-size:28px;line-height:1;color:#ff1a1a;letter-spacing:0;text-shadow:0 0 6px rgba(255,26,26,.95),0 0 16px rgba(255,26,26,.6)}
+.pv-clock .dg{display:inline-flex;align-items:center}
+.pv-clock .dg .colon{position:relative;display:inline-block;width:.24em;height:.6em;margin:0 .1em}
+.pv-clock .dg .colon::before,.pv-clock .dg .colon::after{content:"";position:absolute;left:50%;width:.14em;height:.14em;margin-left:-.07em;border-radius:50%;background:currentColor;box-shadow:0 0 6px currentColor}
+.pv-clock .dg .colon::before{top:.08em}.pv-clock .dg .colon::after{bottom:.08em}
 .pv-clock .pv-instream{display:inline-flex;align-items:center;gap:4px;background:#ff2b2b;color:#fff;font-size:8px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;border-radius:999px;padding:2px 7px;animation:pv-blink 1s steps(2,start) infinite}
 .pv-clock .pv-instream i{width:5px;height:5px;border-radius:50%;background:#fff}
 .pv-clock .pv-instream.off{visibility:hidden;animation:none}
