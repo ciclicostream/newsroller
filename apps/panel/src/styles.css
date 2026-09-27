@@ -544,11 +544,13 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 6px
 .pv-airmeta .r{display:flex;align-items:baseline;gap:8px;padding:7px 0;min-width:0}
 .pv-airmeta .r+.r{border-top:1px solid var(--ln)}
 .pv-airmeta .r span{flex:none;font-size:9px;font-weight:800;letter-spacing:.05em;text-transform:uppercase}
-.pv-airmeta b{flex:1;min-width:0;color:var(--tx);font-weight:700;font-size:11px;white-space:nowrap;text-align:right}
-.pv-clock{flex:none;background:#160404;border:1px solid #3a0d0d;border-radius:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:10px 14px;white-space:nowrap}
+.pv-airmeta b{flex:1;min-width:0;color:var(--tx);font-weight:700;font-size:9px;white-space:nowrap;text-align:right}
+.pv-clock{position:relative;flex:none;background:#160404;border:1px solid #3a0d0d;border-radius:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:10px 14px;white-space:nowrap}
 .pv-clock .lb{font-size:10px;color:#a15;letter-spacing:.12em;font-weight:800;text-transform:uppercase}
 .pv-clock .dg{font-family:"Share Tech Mono",ui-monospace,monospace;font-size:26px;line-height:1;color:#ff2b2b;letter-spacing:2px;text-shadow:0 0 10px rgba(255,43,43,.7)}
-.pv-clock .ft{font-size:10px;font-weight:700;color:#d1607a}
+.pv-clock .pv-instream{position:absolute;top:6px;right:6px;display:inline-flex;align-items:center;gap:4px;background:#ff2b2b;color:#fff;font-size:8px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;border-radius:999px;padding:2px 7px;animation:pv-blink 1s steps(2,start) infinite}
+.pv-clock .pv-instream i{width:5px;height:5px;border-radius:50%;background:#fff}
+@keyframes pv-blink{50%{opacity:.25}}
 .pv-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
 .pv-kpi{background:#fff;border:1px solid var(--ln);border-radius:12px;padding:10px;text-align:center;box-shadow:0 3px 12px rgba(20,30,60,.05)}
 .pv-kpi .v{font-size:22px;font-weight:800;line-height:1}.pv-kpi .l{font-size:10px;color:var(--dim);margin-top:3px;font-weight:600}
