@@ -220,29 +220,37 @@ export function Radio({ visible = true }: { visible?: boolean }) {
   function cutTx() {
     if (!confirmCut) { setConfirmCut(true); return; }
     if (txStart) setLastRun(Math.floor((Date.now() - txStart) / 1000));
-    setTxStart(null); writeTx(null); setConfirmCut(false); stopClip();
+    setTxStart(null); writeTx(null); setConfirmCut(false); stopClip(); lastPadRef.current = null;
   }
 
   // MAQUETA: el contador del clip se simula recorriendo las duraciones en loop; cuando exista el output
   // `?radio=1` lo va a informar el propio output (telemetría), igual que en Emisión.
+  // Último contenido puesto al aire: al salir de la cámara a pantalla completa se vuelve a él (no a la placa de espera).
+  const lastPadRef = useRef<{ key: string; clips: number[] } | null>(null);
   function press(p: Pad) {
     if (!live) return;
+    lastPadRef.current = { key: p.key, clips: [Math.max(1, p.dur || 8)] };
     setActive(p.key); setPadSince(Date.now()); setClips([Math.max(1, p.dur || 8)]);
     if (p.kind === "session") {
       void sessionsApi.items(p.id).then((rows) => {
         const d = rows.filter((r) => r.enabled).map((r) => Math.max(1, r.duration_sec));
+        if (lastPadRef.current?.key === p.key && d.length) lastPadRef.current.clips = d;
         setActive((k) => { if (k === p.key && d.length) setClips(d); return k; });
       }).catch(() => {});
     }
   }
   function stopClip() { setActive(null); setPadSince(null); setClips([]); }
+  function leaveCam() {
+    const last = lastPadRef.current;
+    if (last && pads.some((p) => p.key === last.key)) { setActive(last.key); setPadSince(Date.now()); setClips(last.clips); } else stopClip();
+  }
   function pressCam() {
     if (!live || !cam.on) return;
-    if (active === CAM_KEY) { stopClip(); return; }
+    if (active === CAM_KEY) { leaveCam(); return; }
     setActive(CAM_KEY); setPadSince(Date.now()); setClips([]);
   }
   function toggleCam() {
-    if (cam.on) { cam.stop(); setCamPip(false); if (active === CAM_KEY) stopClip(); } else void cam.start();
+    if (cam.on) { cam.stop(); setCamPip(false); if (active === CAM_KEY) leaveCam(); } else void cam.start();
   }
 
   // Atajos: M abre/cierra el micrófono, Esc deja la placa fija (no se activan escribiendo en un campo).
