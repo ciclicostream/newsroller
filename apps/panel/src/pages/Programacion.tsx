@@ -178,6 +178,8 @@ export function Programacion() {
   async function setDur(id: string, v: number) { const dur = Math.max(1, v || 1); setDraft((d) => d.map((r) => (r.id === id ? { ...r, duration_sec: dur } : r))); await parrilla.patch(id, { duration_sec: dur }); }
 
   async function publish() {
+    // Con Stream abierto, enviar a vivo toma la señal y cierra la transmisión del Host: se pide confirmación.
+    if (streamTx && !confirm("Stream está al aire. Enviar a vivo cierra la transmisión del Host y toma la señal para la parrilla. ¿Seguimos?")) return;
     setPublishing(true); setErr(null);
     try { const r = await parrilla.publish(); setMsg(`Al aire: ${r.count} bloque(s)`); const now = new Date().toISOString(); if (onAir) setAirSince(now); setAirChangedAt(now); setTimeout(() => setMsg(null), 2500); }
     catch (e) { setErr(e instanceof Error ? e.message : "error"); }

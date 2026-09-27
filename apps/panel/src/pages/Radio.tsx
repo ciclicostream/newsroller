@@ -306,6 +306,9 @@ export function Radio({ visible = true }: { visible?: boolean }) {
     while (pos >= clips[clipIdx]!) { pos -= clips[clipIdx]!; clipIdx++; }
     clipLeft = clips[clipIdx]! - pos;
   }
+  // Una Sesión señala la duración de TODA la sesión (lo que falta para que vuelva a empezar), no la del clip.
+  const isSession = cur?.kind === "session";
+  const leftShown = isSession && cycle > 0 ? cycle - (padSec % cycle) : clipLeft;
   const n = 22; const lit = Math.round(mic.level * n);
   const vuColor = (i: number) => { const q2 = i / n; return q2 > 0.8 ? "#f87171" : q2 > 0.55 ? "#fbbf24" : "#4ade80"; };
   const state: "off" | "plate" | "air" = !live ? "off" : cur ? "air" : "plate";
@@ -327,8 +330,8 @@ export function Radio({ visible = true }: { visible?: boolean }) {
               <span className={"ft b" + (live && !cur || taken && !live ? "" : " off")}>{taken && !live ? "el Copiloto tomó la señal" : "placa de espera"}</span>
             </div>
             <div className="rd-clk r">
-              <span className="lb">{cur?.kind === "cam" ? "cámara" : clips.length > 1 ? `clip ${clipIdx + 1} de ${clips.length}` : "clip al aire"}</span>
-              <span className="dg">{cur?.kind === "cam" ? "--:--" : (cur ? "-" : "") + fmtMS(clipLeft)}</span>
+              <span className="lb">{cur?.kind === "cam" ? "cámara" : isSession ? (clips.length > 1 ? `sesión · clip ${clipIdx + 1} de ${clips.length}` : "sesión al aire") : "clip al aire"}</span>
+              <span className="dg">{cur?.kind === "cam" ? "--:--" : (cur ? "-" : "") + fmtMS(leftShown)}</span>
               <span className="ft">{cur?.kind === "cam" ? "en directo" : cur ? "le queda" : "—"}</span>
             </div>
           </div>
