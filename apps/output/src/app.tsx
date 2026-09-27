@@ -46,6 +46,10 @@ const DEMOS: Record<string, { type: string; data: Record<string, any>; dur?: num
   clima_parcial: { type: "clima", dur: 12, data: { city: "Paraná" } },
   clima_neuquen: { type: "clima", dur: 12, data: { city: "Neuquén" } },
   clima_preview: { type: "clima", dur: 12, data: { city: "Buenos Aires", preview: { code: 45, isDay: false } } },
+  clima_sol: { type: "clima", dur: 12, data: { city: "Mendoza", preview: { code: 0, isDay: true } } },
+  clima_lluvia_fuerte: { type: "clima", dur: 12, data: { city: "Buenos Aires", preview: { code: 65, isDay: true } } },
+  clima_nieve: { type: "clima", dur: 12, data: { city: "Ushuaia", preview: { code: 75, isDay: true } } },
+  clima_brisa: { type: "clima", dur: 12, data: { city: "La Plata" } },
   clima_largo: { type: "clima", dur: 12, data: { city: "San Fernando del Valle de Catamarca" } },
   dolar: {
     type: "dolar", dur: 12,

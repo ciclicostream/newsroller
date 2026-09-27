@@ -12,37 +12,92 @@ import { ModernChrome } from "./Chrome";
 // del estado actual que corre (del borde izquierdo de la card de temperatura al borde derecho de la de la derecha,
 // con los extremos oscurecidos como todos los tickers) y los tres días, que se dan vuelta como cartas.
 // El ícono grande (el de Ajustes, según el cielo) va SIEMPRE por encima de las cards, pisándolas un poco, y flota.
-// Con sol gira apenas y tiene rayos y luz amarilla detrás; con lluvia o tormenta cae lluvia y hay un relámpago.
+// Entra de izquierda a derecha. Con sol gira apenas y, ya ubicado, le salen rayos y luz amarilla detrás; de fondo,
+// lluvia, nieve o brisa según el tiempo (ver WeatherFx), y relámpago con lluvia o tormenta.
 // Al salir, el ícono se va hacia arriba.
 const DIAS = ["DOMINGO", "LUNES", "MARTES", "MIÉRCOLES", "JUEVES", "VIERNES", "SÁBADO"];
 const FREEZE = P.has("freeze");
 
-function Rain() {
+// Fondo animado según el tiempo: lluvia (más gotas y más largas si es lluvia que si es llovizna), nieve que
+// revolotea, y brisa (rachas finas y polvo que cruzan) cuando el viento pasa de 20 km/h (más fuerte desde 40).
+// El viento también inclina la lluvia y arrastra la nieve.
+type FxKind = "rain" | "drizzle" | "snow" | null;
+function WeatherFx({ kind, wind }: { kind: FxKind; wind: number }) {
   const ref = useRef<HTMLCanvasElement>(null);
+  const W = IS_VERTICAL ? 540 : 960;
+  const H = IS_VERTICAL ? 960 : 540;
   useEffect(() => {
     const c = ref.current;
     const x = c?.getContext("2d");
     if (!c || !x) return;
-    const drops = Array.from({ length: 140 }, () => ({ x: Math.random() * 1100, y: Math.random() * 540, l: 10 + Math.random() * 18, v: 9 + Math.random() * 9 }));
+    const R = Math.random;
+    const breeze = wind >= 40 ? 2 : wind >= 20 ? 1 : 0;
+    const slant = kind ? 0.28 + breeze * 0.22 : 0;
+    const drops = kind === "rain" || kind === "drizzle"
+      ? Array.from({ length: kind === "rain" ? 320 : 150 }, () => ({
+          x: R() * (W + 200), y: R() * H,
+          l: kind === "rain" ? 12 + R() * 20 : 6 + R() * 8,
+          v: kind === "rain" ? 10 + R() * 10 : 5 + R() * 4,
+        }))
+      : [];
+    const flakes = kind === "snow"
+      ? Array.from({ length: 170 }, () => ({ x: R() * W, y: R() * H, r: 0.8 + R() * 2.6, v: 0.5 + R() * 1.1, ph: R() * 6.3, sw: 0.4 + R() * 1.2 }))
+      : [];
+    const gusts = breeze
+      ? Array.from({ length: (kind ? 10 : 24) * breeze }, () => ({ x: R() * W, y: R() * H, l: 80 + R() * 180, v: (5 + R() * 6) * breeze, a: 0.22 + R() * 0.3, ph: R() * 6.3 }))
+      : [];
+    const dust = breeze && !kind
+      ? Array.from({ length: 30 * breeze }, () => ({ x: R() * W, y: R() * H, v: (2 + R() * 3) * breeze, ph: R() * 6.3, r: 0.6 + R() * 1.4 }))
+      : [];
     let raf = 0;
+    let t = 0;
     const tick = () => {
-      x.clearRect(0, 0, c.width, c.height);
-      x.strokeStyle = "rgba(170,195,255,.55)";
-      x.lineWidth = 1.2;
-      x.beginPath();
-      for (const d of drops) {
-        x.moveTo(d.x, d.y);
-        x.lineTo(d.x - d.l * 0.28, d.y + d.l);
-        d.y += d.v; d.x -= d.v * 0.28;
-        if (d.y > 560) { d.y = -20; d.x = Math.random() * 1100; }
+      t++;
+      x.clearRect(0, 0, W, H);
+      if (drops.length) {
+        x.strokeStyle = kind === "rain" ? "rgba(170,195,255,.6)" : "rgba(170,195,255,.45)";
+        x.lineWidth = kind === "rain" ? 1.3 : 1;
+        x.beginPath();
+        for (const d of drops) {
+          x.moveTo(d.x, d.y);
+          x.lineTo(d.x - d.l * slant, d.y + d.l);
+          d.y += d.v; d.x -= d.v * slant;
+          if (d.y > H + 20) { d.y = -30; d.x = R() * (W + 200); }
+        }
+        x.stroke();
       }
-      x.stroke();
+      if (flakes.length) {
+        x.fillStyle = "rgba(235,242,255,.85)";
+        for (const f of flakes) {
+          x.beginPath(); x.arc(f.x, f.y, f.r, 0, 6.3); x.fill();
+          f.y += f.v; f.x += Math.sin(t * 0.02 + f.ph) * f.sw + breeze * 0.9;
+          if (f.y > H + 6) { f.y = -6; f.x = R() * W; }
+          if (f.x > W + 6) f.x = -6; else if (f.x < -6) f.x = W + 6;
+        }
+      }
+      for (const g of gusts) {
+        const a = g.a * (0.6 + 0.4 * Math.sin(t * 0.03 + g.ph));
+        const gr = x.createLinearGradient(g.x, 0, g.x + g.l, 0);
+        gr.addColorStop(0, "rgba(200,215,255,0)"); gr.addColorStop(0.5, `rgba(200,215,255,${a})`); gr.addColorStop(1, "rgba(200,215,255,0)");
+        x.strokeStyle = gr; x.lineWidth = 1.6;
+        x.beginPath(); x.moveTo(g.x, g.y); x.quadraticCurveTo(g.x + g.l / 2, g.y - 6 * Math.sin(t * 0.05 + g.ph), g.x + g.l, g.y); x.stroke();
+        g.x += g.v;
+        if (g.x > W + 20) { g.x = -g.l - R() * 200; g.y = R() * H; }
+      }
+      if (dust.length) {
+        x.fillStyle = "rgba(220,228,255,.6)";
+        for (const d of dust) {
+          x.beginPath(); x.arc(d.x, d.y, d.r, 0, 6.3); x.fill();
+          d.x += d.v; d.y += Math.sin(t * 0.04 + d.ph) * 0.6;
+          if (d.x > W + 4) { d.x = -4; d.y = R() * H; }
+        }
+      }
       if (!FREEZE) raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, []);
-  return <canvas ref={ref} className="nmw-rain" width={960} height={540} />;
+  }, [kind, wind, W, H]);
+  return <canvas ref={ref} className={"nmw-fx" + (kind === "snow" ? " snow" : !kind ? " wind" : "")} width={W} height={H} />;
 }
 
 export function Clima({ data, live, durationSec }: { data: ClimaData; live?: ClimaPayload; durationSec?: number }) {
@@ -72,7 +127,8 @@ export function Clima({ data, live, durationSec }: { data: ClimaData; live?: Cli
   const estado = climaEstado(c.code);
   const night = c.isDay === false;
   const sun = estado === "despejado" && !night;
-  const wet = /llovizna|lluvia|chaparrones$|tormenta/.test(estado);
+  const fx: FxKind = /nevada|granos_nieve|chaparrones_nieve/.test(estado) ? "snow" : /llovizna/.test(estado) ? "drizzle" : /lluvia|chaparrones$|tormenta/.test(estado) ? "rain" : null;
+  const wind = c.windKmh ?? 0;
   const bolt = /^lluvia|chaparrones$|tormenta/.test(estado);
   const days = c.days.slice(0, 3);
   const cityName = c.city === "Buenos Aires" ? "CABA" : c.city;
@@ -84,7 +140,8 @@ export function Clima({ data, live, durationSec }: { data: ClimaData; live?: Cli
     <div className={"nm nmw" + cls + (sun ? " sun" : "") + (IS_VERTICAL ? " v" : "")}>
       <style>{NM_CSS + CSS + (IS_VERTICAL ? CSS_V : "")}</style>
       <div className="nm-bg" /><div className="nmw-sky" /><Grain />
-      {sun ? <div className="nmw-glow" /> : wet && <Rain />}
+      {sun && <div className="nmw-glow" />}
+      {(fx || wind >= 20) && <WeatherFx kind={fx} wind={wind} />}
       {bolt && <div className="nmw-bolt" />}
       <div className="nm-sc nmw-sc">
         <div className="nm-panel nmw-x">
@@ -133,7 +190,10 @@ const CSS = `
 .nmw-sky{position:absolute;inset:0;opacity:0;background:radial-gradient(1400px 700px at 20% 0%,rgba(40,70,140,.55),transparent 70%)}
 .nmw.sun .nmw-sky{background:radial-gradient(1400px 700px at 20% 0%,rgba(80,140,255,.45),transparent 70%)}
 .in .nmw-sky{animation:nm-fade 1s ease both}
-.nmw-rain{position:absolute;inset:0;width:100%;height:100%;opacity:.5;mix-blend-mode:screen;z-index:1}
+.nmw-fx{position:absolute;inset:0;width:100%;height:100%;opacity:.55;mix-blend-mode:screen;z-index:1;pointer-events:none}
+.nmw-fx.snow{opacity:.85}
+.nmw-fx.wind{opacity:.8}
+.in .nmw-fx{animation:nm-fade 1s ease both}
 .nmw-bolt{position:absolute;inset:0;z-index:2;background:#DCE6FF;mix-blend-mode:screen;opacity:0;pointer-events:none}
 .in .nmw-bolt{animation:nmw-bolt 1.3s linear .45s both}
 @keyframes nmw-bolt{0%{opacity:0}6%{opacity:.55}10%{opacity:0}18%{opacity:.35}24%{opacity:0}100%{opacity:0}}
@@ -192,7 +252,8 @@ const CSS = `
 .nmw-big{position:absolute;left:50px;top:118px;width:640px;z-index:22;pointer-events:none;filter:drop-shadow(0 50px 60px rgba(0,0,0,.55))}
 .nmw-big img{position:relative;width:100%;display:block;opacity:0}
 .in .nmw-big img{animation:nmw-bigIn 1.2s cubic-bezier(.2,.8,.2,1) .25s both,nmw-bob 6s ease-in-out 1.5s infinite alternate}
-@keyframes nmw-bigIn{from{opacity:0;transform:translate(-160px,-60px) scale(.75) rotate(-8deg)}to{opacity:1;transform:none}}
+/* Entra de izquierda a derecha con un poco de fade (sin caer desde arriba). */
+@keyframes nmw-bigIn{0%{opacity:0;transform:translateX(-260px) scale(.94)}55%{opacity:1}100%{opacity:1;transform:none}}
 @keyframes nmw-bob{from{opacity:1;transform:none}to{opacity:1;transform:translateY(-16px) rotate(-1.2deg)}}
 .nmw.sun .nmw-big{width:560px;left:70px;top:110px;filter:drop-shadow(0 30px 50px rgba(0,0,0,.35))}
 .in.nmw.sun .nmw-big img{animation:nmw-bigIn 1.2s cubic-bezier(.2,.8,.2,1) .25s both,nmw-sunTurn 10s ease-in-out 1.5s infinite alternate}
@@ -200,7 +261,9 @@ const CSS = `
 .nmw-rays{position:absolute;inset:-22%;border-radius:50%;opacity:0;
   background:repeating-conic-gradient(rgba(255,214,100,.34) 0 5deg,transparent 5deg 15deg);
   -webkit-mask:radial-gradient(closest-side,transparent 34%,#000 42%,transparent 100%);mask:radial-gradient(closest-side,transparent 34%,#000 42%,transparent 100%)}
-.in .nmw-rays{animation:nm-fade 1.2s ease .6s both,nmw-spin 50s linear infinite}
+/* Los rayos aparecen cuando el sol ya llegó a su lugar (termina de entrar a los 1,45 s): se abren y giran. */
+.in .nmw-rays{animation:nmw-raysIn 1s cubic-bezier(.2,.8,.2,1) 1.45s both,nmw-spin 50s linear 1.45s infinite}
+@keyframes nmw-raysIn{from{opacity:0;scale:.55}to{opacity:1;scale:1}}
 @keyframes nmw-spin{to{transform:rotate(360deg)}}
 
 /* Salida */
@@ -210,7 +273,7 @@ const CSS = `
 .out .nmw-big img,.out.nmw.sun .nmw-big img{animation:nmw-bigOut 1s cubic-bezier(.5,0,.8,.4) .1s both}
 .out .nmw-rays{animation:nm-fadeOut .6s ease both}
 @keyframes nmw-bigOut{from{opacity:1;transform:none}to{opacity:0;transform:translate(-80px,-480px) scale(.9) rotate(6deg)}}
-.out .nmw-rain,.out .nmw-sky,.out .nmw-glow{animation:nm-fadeOut .8s ease .5s both}
+.out .nmw-fx,.out .nmw-sky,.out .nmw-glow{animation:nm-fadeOut .8s ease .5s both}
 `;
 
 // Vertical: ícono arriba a la izquierda pisando la card principal; debajo, datos en fila, la franja al ancho de las
