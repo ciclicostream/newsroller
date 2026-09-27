@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import type { ClimaData, ClimaPayload, ClimaCiudad, ClimaDayIconsConfig, ClimaEstado, ClimaIconsConfig } from "@newsroller/shared";
-import { climaEstado, normalizeClimaDayIcons, normalizeClimaIcons, resolveClimaBig, resolveClimaDay } from "@newsroller/shared";
+import { climaEstado, climaWithPreview, normalizeClimaDayIcons, normalizeClimaIcons, resolveClimaBig, resolveClimaDay } from "@newsroller/shared";
 import { API_BASE } from "../lib/scene";
 import fondo from "../assets/fondo2.jpg";
 import { Chrome } from "./Chrome";
@@ -40,10 +40,10 @@ const DIAS = ["DOM", "LUN", "MAR", "MIÉ", "JUE", "VIE", "SÁB"];
 // celestes con ícono. Entrada tipo carta (flip). Salida: fade. Header: sólo
 // hora. Dato en vivo de la fuente `clima` (no se congela). Usa <Chrome/>.
 export function Clima({ data, live, durationSec }: { data: ClimaData; live?: ClimaPayload; durationSec?: number }) {
-  const city: ClimaCiudad | undefined = useMemo(
-    () => live?.cities.find((c) => c.city === data.city) ?? live?.cities[0],
-    [live, data.city],
-  );
+  const city: ClimaCiudad | undefined = useMemo(() => {
+    const c = live?.cities.find((x) => x.city === data.city) ?? live?.cities[0];
+    return c && climaWithPreview(c, data.preview);
+  }, [live, data.city, data.preview]);
 
   const [play, setPlay] = useState(false);
   const [exiting, setExiting] = useState(false);

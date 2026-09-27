@@ -2,12 +2,13 @@ import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Upload, RotateCcw, Loader2, Sun, Moon } from "lucide-react";
 import {
-  CLIMA_ESTADOS, climaSlotLabel, climaEstadoLabel, normalizeClimaIcons, normalizeClimaDayIcons, resolveClimaBig, resolveClimaDay,
+  CLIMA_ESTADOS, climaCodeOf, climaSlotLabel, climaEstadoLabel, normalizeClimaIcons, normalizeClimaDayIcons, resolveClimaBig, resolveClimaDay,
   type ClimaDayIconsConfig, type ClimaEstado, type ClimaIconsConfig, type ClimaSlotKey,
 } from "@newsroller/shared";
 import { settingsApi } from "../lib/settings";
 import { uploadMedia } from "../lib/content";
 import { OUTPUT_FRAME_BASE } from "../lib/parrilla";
+import { PreviewMonitor } from "../components/PreviewMonitor";
 
 // Las imágenes predeterminadas vienen con el output, en /output/clima/.
 const BASE = `${OUTPUT_FRAME_BASE}/output/clima/`;
@@ -19,6 +20,7 @@ const tid = (t: Target) => `${t.kind}:${t.key}`;
 //  - un ícono grande de día y otro de noche (el que va arriba de todo en la placa Clima);
 //  - un ícono chico para los días del pronóstico.
 // Lo que no se cargue usa la imagen predeterminada o, si no hay, la del estado más parecido (se indica cuál).
+// A la derecha, la placa Clima en vivo con el estado elegido (tocando un ícono o al cargarlo), para ver cómo queda.
 export function AjustesClima() {
   const [big, setBig] = useState<ClimaIconsConfig | null>(null);
   const [day, setDay] = useState<ClimaDayIconsConfig>({});
@@ -27,6 +29,10 @@ export function AjustesClima() {
   const [msg, setMsg] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const target = useRef<Target | null>(null);
+  // Vista previa: estado y día/noche que se muestran; `v` cambia al guardar para que la placa relea los íconos.
+  const [sel, setSel] = useState<{ estado: ClimaEstado; night: boolean }>({ estado: "despejado", night: false });
+  const [v, setV] = useState(0);
+  const show = (t: Target) => setSel(t.kind === "big" ? { estado: t.key.replace(/_noche$/, "") as ClimaEstado, night: t.key.endsWith("_noche") } : { estado: t.key, night: false });
 
   useEffect(() => {
     settingsApi.get().then((s) => { setBig(normalizeClimaIcons(s.climaIcons)); setDay(normalizeClimaDayIcons(s.climaDayIcons)); }).catch((e) => setErr(e.message));
@@ -46,6 +52,7 @@ export function AjustesClima() {
         setDay(normalizeClimaDayIcons(s.climaDayIcons));
       }
       setMsg(okMsg);
+      show(t); setV((n) => n + 1);
       setTimeout(() => setMsg(null), 2500);
     } catch (e) {
       setErr(e instanceof Error ? e.message : "error");
@@ -73,9 +80,10 @@ export function AjustesClima() {
 
   function Slot({ t, src, custom, from, label }: { t: Target; src: string; custom: boolean; from: string | null; label: React.ReactNode }) {
     const id = tid(t);
+    const on = t.kind === "big" ? sel.estado === t.key.replace(/_noche$/, "") && sel.night === t.key.endsWith("_noche") : false;
     return (
       <div className="cw-slot">
-        <div className="cw-thumb">
+        <div className={"cw-thumb" + (on ? " sel" : "")} onClick={() => show(t)} title="Ver en la vista previa">
           <img src={src} alt="" />
           {busy === id && <div className="cw-busy"><Loader2 size={22} className="spin" /></div>}
         </div>
@@ -107,7 +115,8 @@ export function AjustesClima() {
       {big == null ? (
         <div className="muted-note">Cargando…</div>
       ) : (
-        <>
+        <div className="cw-layout">
+        <div className="cw-main">
           <h2 className="cw-h">Ícono grande</h2>
           <p className="cw-p">Va arriba de todo en la placa Clima, según el estado actual. De noche usa el de noche.</p>
           <div className="cw-grid">
@@ -144,13 +153,40 @@ export function AjustesClima() {
               );
             })}
           </div>
-        </>
+        </div>
+        <aside className="cw-side">
+          <div className="cw-pv-hd">Vista previa: <b>{climaEstadoLabel(sel.estado)}</b> · {sel.night ? "noche" : "día"}</div>
+          <PreviewMonitor type="clima" data={{ city: "Buenos Aires", preview: { code: climaCodeOf(sel.estado), isDay: !sel.night, v } }} dur={10} />
+          <div className="cw-pv-ctl">
+            <select value={sel.estado} onChange={(e) => setSel((x) => ({ ...x, estado: e.target.value as ClimaEstado }))} aria-label="Estado">
+              {CLIMA_ESTADOS.map((e) => <option key={e.key} value={e.key}>{e.label}</option>)}
+            </select>
+            <div className="cw-seg">
+              <button type="button" className={!sel.night ? "on" : ""} onClick={() => setSel((x) => ({ ...x, night: false }))}><Sun size={14} /> Día</button>
+              <button type="button" className={sel.night ? "on" : ""} onClick={() => setSel((x) => ({ ...x, night: true }))}><Moon size={14} /> Noche</button>
+            </div>
+          </div>
+          <p className="cw-p">Tocá cualquier ícono para verlo acá. Los días del pronóstico muestran el mismo estado.</p>
+        </aside>
+        </div>
       )}
     </>
   );
 }
 
 const CSS = `
+.cw-layout{display:grid;grid-template-columns:minmax(0,1fr) 440px;gap:22px;align-items:start}
+@media (max-width:1100px){.cw-layout{grid-template-columns:1fr}.cw-side{position:static!important;order:-1}}
+.cw-side{position:sticky;top:16px;display:flex;flex-direction:column;gap:10px}
+.cw-pv-hd{font-size:13px;color:var(--muted)}
+.cw-pv-hd b{color:inherit;font-weight:700}
+.cw-pv-ctl{display:flex;gap:8px;align-items:center}
+.cw-pv-ctl select{flex:1}
+.cw-seg{display:flex;border:1px solid #d8dee9;border-radius:8px;overflow:hidden}
+.cw-seg button{display:flex;align-items:center;gap:5px;padding:6px 10px;border:0;background:#fff;font:inherit;font-size:13px;cursor:pointer;color:#5b6477}
+.cw-seg button.on{background:#2f6bff;color:#fff}
+.cw-thumb{cursor:pointer;outline:2px solid transparent;outline-offset:2px;transition:outline-color .2s}
+.cw-thumb.sel{outline-color:#2f6bff}
 .cw-h{font-size:17px;margin:22px 0 2px}
 .cw-p{font-size:13px;color:var(--muted);margin:0 0 12px}
 .cw-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px}

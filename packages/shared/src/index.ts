@@ -131,6 +131,8 @@ export const CLIMA_WMO: Record<number, { desc: string; estado: ClimaEstado }> = 
   96: { desc: "Tormenta con granizo leve", estado: "tormenta_granizo" },
   99: { desc: "Tormenta con granizo fuerte", estado: "tormenta_granizo" },
 };
+// Un código representativo de cada estado (el primero de la tabla), para las vistas previas.
+export const climaCodeOf = (estado: ClimaEstado): number => Number(Object.keys(CLIMA_WMO).find((c) => CLIMA_WMO[Number(c)]!.estado === estado) ?? 3);
 export const climaDesc = (code: number | null | undefined): string => (code == null ? "" : CLIMA_WMO[code]?.desc ?? "");
 // Código desconocido o sin dato: cubierto.
 export const climaEstado = (code: number | null | undefined): ClimaEstado => (code == null ? "cubierto" : CLIMA_WMO[code]?.estado ?? "cubierto");
@@ -156,6 +158,13 @@ export const CLIMA_ESTADOS: { key: ClimaEstado; label: string; codes: string; pa
 ];
 const ESTADO_PARENT = Object.fromEntries(CLIMA_ESTADOS.map((e) => [e.key, e.parent])) as Record<ClimaEstado, ClimaEstado | null>;
 export const climaEstadoLabel = (e: ClimaEstado): string => CLIMA_ESTADOS.find((x) => x.key === e)?.label ?? e;
+
+// Vista previa de Ajustes: la ciudad con el estado forzado (el actual y los tres días).
+export function climaWithPreview(c: ClimaCiudad, p: ClimaData["preview"]): ClimaCiudad {
+  if (!p) return c;
+  const desc = climaDesc(p.code);
+  return { ...c, code: p.code, isDay: p.isDay, desc, days: c.days.map((d) => ({ ...d, code: p.code, desc })) };
+}
 
 // ---- Íconos grandes (BIG): uno por estado de día y otro de noche, todos cargables en Ajustes ----
 export type ClimaSlotKey = ClimaEstado | `${ClimaEstado}_noche`;
@@ -224,6 +233,9 @@ export function resolveClimaDay(estado: ClimaEstado, custom: ClimaDayIconsConfig
 // muestra la placa. El resto (temperatura, pronóstico) sale en vivo de la API.
 export interface ClimaData {
   city: string;
+  // Sólo la vista previa de Ajustes → Íconos del clima: fuerza un estado (código WMO) y día/noche para ver cómo
+  // queda cada ícono; `v` cambia al cargar un ícono para que la vista previa lo vuelva a leer. Nunca se guarda.
+  preview?: { code: number; isDay: boolean; v?: number };
 }
 
 export interface CammesaPayload {

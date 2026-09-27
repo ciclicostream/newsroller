@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef } from "react";
 import type { ClimaCiudad, ClimaData, ClimaPayload } from "@newsroller/shared";
-import { climaEstado } from "@newsroller/shared";
+import { climaEstado, climaWithPreview } from "@newsroller/shared";
 import { IS_VERTICAL } from "../../lib/orientation";
 import { P } from "../../lib/params";
 import { climaBigUrl, climaDayUrl, useClimaIcons } from "../../templates/Clima";
@@ -54,7 +54,10 @@ export function Clima({ data, live, durationSec }: { data: ClimaData; live?: Cli
     const el = trkRef.current;
     if (el) el.style.animationDuration = `${Math.max(20, Math.round(el.scrollWidth / 2 / 45))}s`;
   });
-  const c: ClimaCiudad | undefined = useMemo(() => live?.cities.find((x) => x.city === data.city) ?? live?.cities[0], [live, data.city]);
+  const c: ClimaCiudad | undefined = useMemo(() => {
+    const x = live?.cities.find((y) => y.city === data.city) ?? live?.cities[0];
+    return x && climaWithPreview(x, data.preview); // vista previa de Ajustes: estado forzado
+  }, [live, data.city, data.preview]);
 
   if (!c) {
     return (
