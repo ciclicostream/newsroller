@@ -205,8 +205,7 @@ export function Musica({ data, durationSec }: { data: MusicaData; durationSec?: 
           <div className="nmm-tw" ref={titleRef}><Words text={data.title} t0={1.15} /></div>
           {data.artist && (
             <div className="nmm-artist">
-              <span className="nmm-artist-lb">Intérprete:</span>
-              <Words text={data.artist} t0={artistT0} className="nm-ttl nmm-artist-name" />
+              <Words text={`Intérprete: ${data.artist}`} t0={artistT0} className="nm-ttl nmm-artist-name" />
             </div>
           )}
         </div>
@@ -315,9 +314,8 @@ const CSS = `
 .nmm-k .rule{box-shadow:0 0 16px 2px rgba(47,107,255,.95)}
 .nmm-alb{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-shadow:0 0 22px rgba(47,107,255,.7)}
 .nmm-tw{width:100%;font-size:92px}
-.nmm-artist{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px;width:100%;font-size:30px;font-weight:700;color:#9fb4ff;letter-spacing:.01em;margin-top:4px}
-.nmm-artist-lb{flex:none}
-.nmm-artist-name{font-size:inherit;line-height:1.2}
+.nmm-artist{width:100%;font-size:30px;font-weight:700;color:#9fb4ff;letter-spacing:.01em;margin-top:4px}
+.nmm-artist-name{font-size:inherit;font-weight:inherit;color:inherit;line-height:1.2}
 .nmm-tw .nm-ttl{font-size:inherit;line-height:1.02;text-shadow:0 0 44px rgba(47,107,255,.35),0 4px 0 rgba(0,0,0,.18)}
 .nmm-gens{position:absolute;left:940px;top:406px;width:880px;display:flex;flex-wrap:wrap;gap:10px}
 .nmm-g{padding:8px 18px 7px;border-radius:999px;border:1px solid rgba(127,162,255,.55);
@@ -409,7 +407,6 @@ const CSS_V = `
 .nmm-head{align-items:center;text-align:center}
 .nmm-k{justify-content:center}
 .nmm-tw .nm-ttl{text-wrap:balance}
-.nmm-artist{justify-content:center}
 .nmm-gens{justify-content:center}
 .nmm-dt{margin-left:0}
 .nmm-l{justify-content:center;text-align:center}
