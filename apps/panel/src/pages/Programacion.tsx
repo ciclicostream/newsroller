@@ -26,12 +26,11 @@ interface LiveStatus {
   next: { id: string; itemType: string | null; durationSec: number } | null;
 }
 
-// Hora 24 h sin segundos (y fecha si no es hoy) del último envío a vivo o corte/reanudación, para "Última actualización".
+// "HH:MM - DD-MM-AA" (24 h, sin segundos) del último envío a vivo o corte/reanudación.
 function fmtUpdatedAt(iso: string): string {
   const d = new Date(iso);
-  const time = d.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit", hour12: false });
-  const sameDay = d.toDateString() === new Date().toDateString();
-  return sameDay ? time : `${d.toLocaleDateString("es-AR")} ${time}`;
+  const p2 = (n: number) => String(n).padStart(2, "0");
+  return `${p2(d.getHours())}:${p2(d.getMinutes())} - ${p2(d.getDate())}-${p2(d.getMonth() + 1)}-${p2(d.getFullYear() % 100)}`;
 }
 
 // Duración del ciclo en un formato legible (no siempre segundos crudos).
@@ -351,7 +350,7 @@ export function Programacion() {
 
           <div className="pv-airrow">
             <div className="pv-airmeta">
-              <div>Última actualización: <b>{airChangedAt ? fmtUpdatedAt(airChangedAt) : "—"}</b></div>
+              <div>Actualizado a: <b>{airChangedAt ? fmtUpdatedAt(airChangedAt) : "—"}</b></div>
               <div>Próximo item: <b>{
                 liveStatus?.next
                   ? (TYPE_LABEL[liveStatus.next.itemType ?? ""] ?? liveStatus.next.itemType ?? "—") + " · " + liveStatus.next.durationSec + "s"
