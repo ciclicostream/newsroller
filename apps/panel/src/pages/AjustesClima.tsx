@@ -1,34 +1,50 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Upload, RotateCcw, Loader2 } from "lucide-react";
-import { CLIMA_SLOTS, type ClimaIconsConfig, type ClimaSlotKey } from "@newsroller/shared";
+import { ArrowLeft, Upload, RotateCcw, Loader2, Sun, Moon } from "lucide-react";
+import {
+  CLIMA_ESTADOS, climaSlotLabel, climaEstadoLabel, normalizeClimaIcons, normalizeClimaDayIcons, resolveClimaBig, resolveClimaDay,
+  type ClimaDayIconsConfig, type ClimaEstado, type ClimaIconsConfig, type ClimaSlotKey,
+} from "@newsroller/shared";
 import { settingsApi } from "../lib/settings";
 import { uploadMedia } from "../lib/content";
 import { OUTPUT_FRAME_BASE } from "../lib/parrilla";
 
-// Imagen predeterminada de cada slot (viene con el output, en /output/clima/).
-const defaultUrl = (k: ClimaSlotKey) => `${OUTPUT_FRAME_BASE}/output/clima/big-${k}.png`;
+// Las imágenes predeterminadas vienen con el output, en /output/clima/.
+const BASE = `${OUTPUT_FRAME_BASE}/output/clima/`;
 
-// Ajustes → Íconos del clima: una imagen grande (BIG) por cada situación del cielo que distingue el
-// sistema según lo que manda la API (código del clima + día/noche). Lo que no se cargue usa la
-// imagen predeterminada.
+type Target = { kind: "big"; key: ClimaSlotKey } | { kind: "day"; key: ClimaEstado };
+const tid = (t: Target) => `${t.kind}:${t.key}`;
+
+// Ajustes → Íconos del clima. Cada estado del cielo que informa Open-Meteo (según su código) tiene:
+//  - un ícono grande de día y otro de noche (el que va arriba de todo en la placa Clima);
+//  - un ícono chico para los días del pronóstico.
+// Lo que no se cargue usa la imagen predeterminada o, si no hay, la del estado más parecido (se indica cuál).
 export function AjustesClima() {
-  const [icons, setIcons] = useState<ClimaIconsConfig | null>(null);
-  const [busy, setBusy] = useState<ClimaSlotKey | null>(null);
+  const [big, setBig] = useState<ClimaIconsConfig | null>(null);
+  const [day, setDay] = useState<ClimaDayIconsConfig>({});
+  const [busy, setBusy] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
-  const target = useRef<ClimaSlotKey | null>(null);
+  const target = useRef<Target | null>(null);
 
   useEffect(() => {
-    settingsApi.get().then((s) => setIcons((s.climaIcons ?? {}) as ClimaIconsConfig)).catch((e) => setErr(e.message));
+    settingsApi.get().then((s) => { setBig(normalizeClimaIcons(s.climaIcons)); setDay(normalizeClimaDayIcons(s.climaDayIcons)); }).catch((e) => setErr(e.message));
   }, []);
 
-  async function save(next: ClimaIconsConfig, key: ClimaSlotKey, okMsg: string) {
-    setBusy(key); setErr(null); setMsg(null);
+  async function save(t: Target, url: string | null, okMsg: string) {
+    if (!big) return;
+    setBusy(tid(t)); setErr(null); setMsg(null);
     try {
-      const s = await settingsApi.update({ climaIcons: next });
-      setIcons((s.climaIcons ?? {}) as ClimaIconsConfig);
+      if (t.kind === "big") {
+        const next = { ...big }; if (url) next[t.key] = url; else delete next[t.key];
+        const s = await settingsApi.update({ climaIcons: next });
+        setBig(normalizeClimaIcons(s.climaIcons));
+      } else {
+        const next = { ...day }; if (url) next[t.key] = url; else delete next[t.key];
+        const s = await settingsApi.update({ climaDayIcons: next });
+        setDay(normalizeClimaDayIcons(s.climaDayIcons));
+      }
       setMsg(okMsg);
       setTimeout(() => setMsg(null), 2500);
     } catch (e) {
@@ -40,25 +56,37 @@ export function AjustesClima() {
 
   async function onFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
-    const key = target.current;
+    const t = target.current;
     e.target.value = "";
-    if (!file || !key || !icons) return;
+    if (!file || !t) return;
     if (!/^image\//.test(file.type)) return setErr("El archivo tiene que ser una imagen (PNG con fondo transparente, ideal).");
-    setBusy(key); setErr(null);
+    setBusy(tid(t)); setErr(null);
     try {
       const url = await uploadMedia(file, "media", "ajustes");
-      await save({ ...icons, [key]: url }, key, "Ícono guardado.");
+      await save(t, url, "Ícono guardado.");
     } catch (er) {
       setErr(er instanceof Error ? er.message : "no se pudo subir la imagen");
       setBusy(null);
     }
   }
+  const pick = (t: Target) => { target.current = t; fileRef.current?.click(); };
 
-  function pick(key: ClimaSlotKey) { target.current = key; fileRef.current?.click(); }
-  function restore(key: ClimaSlotKey) {
-    if (!icons) return;
-    const next = { ...icons }; delete next[key];
-    void save(next, key, "Volvió al predeterminado.");
+  function Slot({ t, src, custom, from, label }: { t: Target; src: string; custom: boolean; from: string | null; label: React.ReactNode }) {
+    const id = tid(t);
+    return (
+      <div className="cw-slot">
+        <div className="cw-thumb">
+          <img src={src} alt="" />
+          {busy === id && <div className="cw-busy"><Loader2 size={22} className="spin" /></div>}
+        </div>
+        <div className="cw-sl">{label}</div>
+        <div className={"cw-badge" + (custom ? " on" : "")}>{custom ? "Personalizado" : from ? `Usa: ${from}` : "Predeterminado"}</div>
+        <div className="cw-actions">
+          <button className="btn" disabled={busy != null} onClick={() => pick(t)}><Upload size={14} /> {custom ? "Reemplazar" : "Cargar"}</button>
+          {custom && <button className="btn" disabled={busy != null} onClick={() => void save(t, null, "Volvió al predeterminado.")} title="Volver al predeterminado"><RotateCcw size={14} /></button>}
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -66,7 +94,7 @@ export function AjustesClima() {
       <div className="page-head">
         <div>
           <h1>Íconos del clima</h1>
-          <p>Cargá la imagen grande de cada situación del cielo. Lo que no cargues usa la imagen predeterminada.</p>
+          <p>Un ícono por cada estado del cielo que informa Open-Meteo. Lo que no cargues usa la imagen predeterminada o la del estado más parecido.</p>
         </div>
         <Link to="/ajustes" className="btn"><ArrowLeft size={16} /> Ajustes</Link>
       </div>
@@ -74,51 +102,72 @@ export function AjustesClima() {
       {err && <div className="alert error">{err}</div>}
       {msg && <div className="alert">{msg}</div>}
       <input ref={fileRef} type="file" accept="image/png,image/webp,image/*" style={{ display: "none" }} onChange={onFile} />
+      <style>{CSS}</style>
 
-      {icons == null ? (
+      {big == null ? (
         <div className="muted-note">Cargando…</div>
       ) : (
-        <div className="cw-grid">
-          <style>{CSS}</style>
-          {CLIMA_SLOTS.map((s) => {
-            const custom = icons[s.key];
-            const fb = !custom && !s.hasDefault ? CLIMA_SLOTS.find((x) => x.key === s.fallback) : null;
-            const src = custom ?? (s.hasDefault ? defaultUrl(s.key) : fb ? (icons[fb.key] ?? defaultUrl(fb.key)) : null);
-            return (
-              <div className="card cw-card" key={s.key}>
-                <div className="cw-thumb">
-                  {src ? <img src={src} alt={s.label} /> : <span>Sin imagen</span>}
-                  {busy === s.key && <div className="cw-busy"><Loader2 size={22} className="spin" /></div>}
-                </div>
-                <div className="cw-name">{s.label}</div>
-                <div className="cw-when">{s.when}</div>
-                <div className={"cw-badge" + (custom ? " on" : "")}>
-                  {custom ? "Personalizado" : fb ? `Usa la de ${fb.label}` : "Predeterminado"}
-                </div>
-                <div className="cw-actions">
-                  <button className="btn" disabled={busy != null} onClick={() => pick(s.key)}><Upload size={15} /> {custom ? "Reemplazar" : "Cargar"}</button>
-                  {custom && <button className="btn" disabled={busy != null} onClick={() => restore(s.key)} title="Volver al predeterminado"><RotateCcw size={15} /></button>}
+        <>
+          <h2 className="cw-h">Ícono grande</h2>
+          <p className="cw-p">Va arriba de todo en la placa Clima, según el estado actual. De noche usa el de noche.</p>
+          <div className="cw-grid">
+            {CLIMA_ESTADOS.map((e) => (
+              <div className="card cw-card" key={e.key}>
+                <div className="cw-name">{e.label}</div>
+                <div className="cw-when">Código{e.codes.includes(",") ? "s" : ""} {e.codes}</div>
+                <div className="cw-pair">
+                  {([false, true] as const).map((night) => {
+                    const key = (night ? `${e.key}_noche` : e.key) as ClimaSlotKey;
+                    const r = resolveClimaBig(e.key, night, big, BASE);
+                    const custom = !!big[key];
+                    return (
+                      <Slot key={key} t={{ kind: "big", key }} src={r.url} custom={custom} from={custom || r.from === key ? null : climaSlotLabel(r.from)}
+                        label={night ? <><Moon size={12} /> Noche</> : <><Sun size={12} /> Día</>} />
+                    );
+                  })}
                 </div>
               </div>
-            );
-          })}
-        </div>
+            ))}
+          </div>
+
+          <h2 className="cw-h">Íconos de los días</h2>
+          <p className="cw-p">Los chicos de HOY, MAÑANA y el día siguiente, según el pronóstico de cada día.</p>
+          <div className="cw-grid small">
+            {CLIMA_ESTADOS.map((e) => {
+              const r = resolveClimaDay(e.key, day, BASE);
+              const custom = !!day[e.key];
+              return (
+                <div className="card cw-card" key={e.key}>
+                  <Slot t={{ kind: "day", key: e.key }} src={r.url} custom={custom} from={custom || !r.from || r.from === e.key ? null : climaEstadoLabel(r.from)}
+                    label={<><b>{e.label}</b> · {e.codes}</>} />
+                </div>
+              );
+            })}
+          </div>
+        </>
       )}
     </>
   );
 }
 
 const CSS = `
-.cw-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:16px}
+.cw-h{font-size:17px;margin:22px 0 2px}
+.cw-p{font-size:13px;color:var(--muted);margin:0 0 12px}
+.cw-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px}
+.cw-grid.small{grid-template-columns:repeat(auto-fill,minmax(170px,1fr))}
 .cw-card{padding:12px;display:flex;flex-direction:column;gap:6px}
-.cw-thumb{position:relative;aspect-ratio:1/1;border-radius:10px;background:linear-gradient(135deg,#1d3a9a,#0b1f52);display:flex;align-items:center;justify-content:center;overflow:hidden;color:#8fa0d6;font-size:12px}
-.cw-thumb img{width:88%;height:88%;object-fit:contain}
+.cw-name{font-weight:600;font-size:14px}
+.cw-when{font-size:11.5px;color:var(--muted)}
+.cw-pair{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:4px}
+.cw-slot{display:flex;flex-direction:column;gap:6px;min-width:0}
+.cw-thumb{position:relative;aspect-ratio:1/1;border-radius:10px;background:linear-gradient(135deg,#1d3a9a,#0b1f52);display:flex;align-items:center;justify-content:center;overflow:hidden}
+.cw-thumb img{width:84%;height:84%;object-fit:contain}
 .cw-busy{position:absolute;inset:0;background:rgba(5,13,51,.55);display:flex;align-items:center;justify-content:center;color:#fff}
-.cw-name{font-weight:600;font-size:14px;margin-top:4px}
-.cw-when{font-size:11.5px;color:var(--muted);line-height:1.3;min-height:30px}
-.cw-badge{align-self:flex-start;font-size:10.5px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;padding:2px 8px;border-radius:999px;background:#eef1f6;color:#7c869b}
+.cw-sl{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--muted)}
+.cw-sl b{color:inherit;font-weight:600;color:var(--text,#0b1330)}
+.cw-badge{align-self:flex-start;max-width:100%;font-size:10.5px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;padding:2px 8px;border-radius:999px;background:#eef1f6;color:#7c869b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .cw-badge.on{background:#e8efff;color:#2f6bff}
-.cw-actions{display:flex;gap:8px;margin-top:4px}
+.cw-actions{display:flex;gap:6px}
 .cw-actions .btn:first-child{flex:1;justify-content:center}
 .spin{animation:cwspin 1s linear infinite}@keyframes cwspin{to{transform:rotate(360deg)}}
 `;

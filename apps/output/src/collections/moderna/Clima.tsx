@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useRef } from "react";
 import type { ClimaCiudad, ClimaData, ClimaPayload } from "@newsroller/shared";
-import { climaSlotKey, weatherIconKey } from "@newsroller/shared";
+import { climaEstado } from "@newsroller/shared";
 import { IS_VERTICAL } from "../../lib/orientation";
 import { P } from "../../lib/params";
-import { CLIMA_ICON, resolveBig, useClimaIcons } from "../../templates/Clima";
+import { climaBigUrl, climaDayUrl, useClimaIcons } from "../../templates/Clima";
 import { Grain, NM_CSS, useLife } from "./base";
 import { ModernChrome } from "./Chrome";
 
@@ -47,7 +47,7 @@ function Rain() {
 
 export function Clima({ data, live, durationSec }: { data: ClimaData; live?: ClimaPayload; durationSec?: number }) {
   const { cls } = useLife(durationSec, 1.1);
-  const { custom, loaded } = useClimaIcons();
+  const { custom, day, loaded } = useClimaIcons();
   // Franja del estado: velocidad pareja y lenta (~45 px/s) sea cual sea el largo del texto (se mide la mitad del recorrido).
   const trkRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -66,10 +66,11 @@ export function Clima({ data, live, durationSec }: { data: ClimaData; live?: Cli
     );
   }
 
-  const slot = climaSlotKey(c.code, c.isDay);
-  const sun = slot === "soleado";
-  const wet = ["llovizna", "lluvia", "tormenta"].includes(weatherIconKey(c.code));
-  const bolt = ["lluvia", "tormenta"].includes(weatherIconKey(c.code));
+  const estado = climaEstado(c.code);
+  const night = c.isDay === false;
+  const sun = estado === "despejado" && !night;
+  const wet = /llovizna|lluvia|chaparrones$|tormenta/.test(estado);
+  const bolt = /^lluvia|chaparrones$|tormenta/.test(estado);
   const days = c.days.slice(0, 3);
   const cityName = c.city === "Buenos Aires" ? "CABA" : c.city;
   const citySize = cityName.length > 26 ? 24 : cityName.length > 16 ? 30 : 40;
@@ -106,7 +107,7 @@ export function Clima({ data, live, durationSec }: { data: ClimaData; live?: Cli
             <div key={d.date} className="nmw-d" style={{ ["--dl" as string]: `${1.25 + i * 0.15}s`, ["--xo" as string]: `${0.2 - i * 0.1}s` }}>
               <div className="nm-panel">
                 <div className="nmw-dn">{i === 0 ? "HOY" : i === 1 ? "MAÑANA" : DIAS[new Date(d.date + "T12:00:00").getDay()]}</div>
-                <img src={CLIMA_ICON[weatherIconKey(d.code)]} alt="" />
+                <img src={climaDayUrl(climaEstado(d.code), day)} alt="" />
                 <div className="nmw-cond">{d.desc}</div>
                 <div className="nmw-dt">{n(d.max)} <small>/ {n(d.min)}</small></div>
               </div>
@@ -117,7 +118,7 @@ export function Clima({ data, live, durationSec }: { data: ClimaData; live?: Cli
       {/* El ícono grande va en su propia capa, por encima de todas las cards. */}
       <div className="nmw-big">
         {sun && <div className="nmw-rays" />}
-        {loaded && <img src={resolveBig(slot, custom)} alt="" />}
+        {loaded && <img src={climaBigUrl(estado, night, custom)} alt="" />}
       </div>
       <ModernChrome />
     </div>

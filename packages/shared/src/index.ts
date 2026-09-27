@@ -92,63 +92,133 @@ export interface ClimaPayload {
   updatedAt: string;
 }
 
-// Íconos disponibles (BIG y de card) por condición. weatherIconKey mapea el
-// weather_code de Open-Meteo (WMO) a una de estas claves.
-export type ClimaIconKey = "soleado" | "nublado" | "llovizna" | "lluvia" | "nieve" | "tormenta";
-export function weatherIconKey(code: number | null): ClimaIconKey {
-  if (code == null) return "nublado";
-  // 1 y 2 = "Parcialmente nublado" (como lo describe la fuente): el ícono chico de nublado es sol con nube.
-  if (code === 0) return "soleado";
-  if (code === 1 || code === 2 || code === 3 || code === 45 || code === 48) return "nublado";
-  if ([51, 53, 55, 56, 57].includes(code)) return "llovizna";
-  if ([61, 63, 65, 66, 67, 80, 81, 82].includes(code)) return "lluvia";
-  if ([71, 73, 75, 77, 85, 86].includes(code)) return "nieve";
-  if ([95, 96, 99].includes(code)) return "tormenta";
-  return "nublado";
-}
+// ---- Estados del clima (Open-Meteo, weather_code WMO) ----
+// Cada código se muestra con el nombre que le da Open-Meteo (traducido) y pertenece a un ESTADO: la familia de
+// íconos (las intensidades leve / moderada / fuerte de un mismo fenómeno comparten ícono).
+export type ClimaEstado =
+  | "despejado" | "mayormente_despejado" | "parcial" | "cubierto" | "niebla" | "niebla_escarcha"
+  | "llovizna" | "llovizna_helada" | "lluvia" | "lluvia_helada" | "nevada" | "granos_nieve"
+  | "chaparrones" | "chaparrones_nieve" | "tormenta" | "tormenta_granizo";
 
-// ---- Íconos BIG del clima (configurables en Ajustes) ----
-// Cada "slot" es una situación del cielo que el sistema distingue a partir de lo que manda la API
-// (weather_code WMO + is_day). El editor carga la imagen de cada slot en Ajustes; si un slot no
-// tiene imagen propia se usa la predeterminada (o la del slot de reserva).
-export type ClimaSlotKey =
-  | "soleado" | "despejado_noche" | "parcial" | "parcial_noche"
-  | "nublado" | "nublado_noche" | "niebla" | "llovizna" | "lluvia" | "nieve" | "tormenta";
+// Tabla de Open-Meteo (https://open-meteo.com/en/docs, "WMO Weather interpretation codes"), código por código.
+export const CLIMA_WMO: Record<number, { desc: string; estado: ClimaEstado }> = {
+  0: { desc: "Despejado", estado: "despejado" },
+  1: { desc: "Mayormente despejado", estado: "mayormente_despejado" },
+  2: { desc: "Parcialmente nublado", estado: "parcial" },
+  3: { desc: "Cubierto", estado: "cubierto" },
+  45: { desc: "Niebla", estado: "niebla" },
+  48: { desc: "Niebla con escarcha", estado: "niebla_escarcha" },
+  51: { desc: "Llovizna leve", estado: "llovizna" },
+  53: { desc: "Llovizna moderada", estado: "llovizna" },
+  55: { desc: "Llovizna densa", estado: "llovizna" },
+  56: { desc: "Llovizna helada leve", estado: "llovizna_helada" },
+  57: { desc: "Llovizna helada densa", estado: "llovizna_helada" },
+  61: { desc: "Lluvia leve", estado: "lluvia" },
+  63: { desc: "Lluvia moderada", estado: "lluvia" },
+  65: { desc: "Lluvia fuerte", estado: "lluvia" },
+  66: { desc: "Lluvia helada leve", estado: "lluvia_helada" },
+  67: { desc: "Lluvia helada fuerte", estado: "lluvia_helada" },
+  71: { desc: "Nevada leve", estado: "nevada" },
+  73: { desc: "Nevada moderada", estado: "nevada" },
+  75: { desc: "Nevada fuerte", estado: "nevada" },
+  77: { desc: "Granos de nieve", estado: "granos_nieve" },
+  80: { desc: "Chaparrones leves", estado: "chaparrones" },
+  81: { desc: "Chaparrones moderados", estado: "chaparrones" },
+  82: { desc: "Chaparrones violentos", estado: "chaparrones" },
+  85: { desc: "Chaparrones de nieve leves", estado: "chaparrones_nieve" },
+  86: { desc: "Chaparrones de nieve fuertes", estado: "chaparrones_nieve" },
+  95: { desc: "Tormenta leve o moderada", estado: "tormenta" },
+  96: { desc: "Tormenta con granizo leve", estado: "tormenta_granizo" },
+  99: { desc: "Tormenta con granizo fuerte", estado: "tormenta_granizo" },
+};
+export const climaDesc = (code: number | null | undefined): string => (code == null ? "" : CLIMA_WMO[code]?.desc ?? "");
+// Código desconocido o sin dato: cubierto.
+export const climaEstado = (code: number | null | undefined): ClimaEstado => (code == null ? "cubierto" : CLIMA_WMO[code]?.estado ?? "cubierto");
 
-export const CLIMA_SLOTS: { key: ClimaSlotKey; label: string; when: string; fallback: ClimaSlotKey | null; hasDefault: boolean }[] = [
-  { key: "soleado", label: "Soleado", when: "Cielo despejado de día (código 0)", fallback: null, hasDefault: true },
-  { key: "despejado_noche", label: "Despejado de noche", when: "Cielo despejado de noche (código 0)", fallback: "soleado", hasDefault: true },
-  { key: "parcial", label: "Parcialmente nublado", when: "Algo de nubes de día (códigos 1-2)", fallback: "nublado", hasDefault: true },
-  { key: "parcial_noche", label: "Parcialmente nublado de noche", when: "Algo de nubes de noche (códigos 1-2)", fallback: "nublado_noche", hasDefault: true },
-  { key: "nublado", label: "Nublado", when: "Cubierto de día (código 3)", fallback: null, hasDefault: true },
-  { key: "nublado_noche", label: "Nublado de noche", when: "Cubierto de noche (código 3)", fallback: "nublado", hasDefault: true },
-  { key: "niebla", label: "Niebla", when: "Niebla o niebla escarchada (códigos 45, 48)", fallback: "nublado", hasDefault: false },
-  { key: "llovizna", label: "Llovizna", when: "Llovizna y llovizna helada (códigos 51-57)", fallback: null, hasDefault: true },
-  { key: "lluvia", label: "Lluvia", when: "Lluvia, lluvia helada y chaparrones (códigos 61-67, 80-82)", fallback: null, hasDefault: true },
-  { key: "nieve", label: "Nieve", when: "Nevadas y chaparrones de nieve (códigos 71-77, 85-86)", fallback: null, hasDefault: true },
-  { key: "tormenta", label: "Tormenta", when: "Tormenta eléctrica, con o sin granizo (códigos 95-99)", fallback: null, hasDefault: true },
+// Estados en el orden de Ajustes. `parent`: el estado más parecido, que se usa si éste no tiene imagen.
+export const CLIMA_ESTADOS: { key: ClimaEstado; label: string; codes: string; parent: ClimaEstado | null }[] = [
+  { key: "despejado", label: "Despejado", codes: "0", parent: null },
+  { key: "mayormente_despejado", label: "Mayormente despejado", codes: "1", parent: "parcial" },
+  { key: "parcial", label: "Parcialmente nublado", codes: "2", parent: null },
+  { key: "cubierto", label: "Cubierto", codes: "3", parent: null },
+  { key: "niebla", label: "Niebla", codes: "45", parent: "cubierto" },
+  { key: "niebla_escarcha", label: "Niebla con escarcha", codes: "48", parent: "niebla" },
+  { key: "llovizna", label: "Llovizna", codes: "51, 53, 55", parent: null },
+  { key: "llovizna_helada", label: "Llovizna helada", codes: "56, 57", parent: "llovizna" },
+  { key: "lluvia", label: "Lluvia", codes: "61, 63, 65", parent: null },
+  { key: "lluvia_helada", label: "Lluvia helada", codes: "66, 67", parent: "lluvia" },
+  { key: "nevada", label: "Nevada", codes: "71, 73, 75", parent: null },
+  { key: "granos_nieve", label: "Granos de nieve", codes: "77", parent: "nevada" },
+  { key: "chaparrones", label: "Chaparrones", codes: "80, 81, 82", parent: "lluvia" },
+  { key: "chaparrones_nieve", label: "Chaparrones de nieve", codes: "85, 86", parent: "nevada" },
+  { key: "tormenta", label: "Tormenta", codes: "95", parent: null },
+  { key: "tormenta_granizo", label: "Tormenta con granizo", codes: "96, 99", parent: "tormenta" },
 ];
-export const CLIMA_SLOT_KEYS = CLIMA_SLOTS.map((s) => s.key);
+const ESTADO_PARENT = Object.fromEntries(CLIMA_ESTADOS.map((e) => [e.key, e.parent])) as Record<ClimaEstado, ClimaEstado | null>;
+export const climaEstadoLabel = (e: ClimaEstado): string => CLIMA_ESTADOS.find((x) => x.key === e)?.label ?? e;
 
-// weather_code (WMO) + día/noche → slot del ícono BIG.
-export function climaSlotKey(code: number | null, isDay: boolean | null | undefined): ClimaSlotKey {
-  const day = isDay !== false; // sin dato = de día
-  if (code == null) return "nublado";
-  // El 1 ("mayormente despejado") lo describimos como "Parcialmente nublado": lleva el ícono con nubes, no el
-  // despejado (si no, de noche aparecía sólo la luna con el texto "Parcialmente nublado").
-  if (code === 0) return day ? "soleado" : "despejado_noche";
-  if (code <= 2) return day ? "parcial" : "parcial_noche";
-  if (code === 3) return day ? "nublado" : "nublado_noche";
-  if (code === 45 || code === 48) return "niebla";
-  if ([51, 53, 55, 56, 57].includes(code)) return "llovizna";
-  if ([61, 63, 65, 66, 67, 80, 81, 82].includes(code)) return "lluvia";
-  if ([71, 73, 75, 77, 85, 86].includes(code)) return "nieve";
-  if ([95, 96, 99].includes(code)) return "tormenta";
-  return "nublado";
+// ---- Íconos grandes (BIG): uno por estado de día y otro de noche, todos cargables en Ajustes ----
+export type ClimaSlotKey = ClimaEstado | `${ClimaEstado}_noche`;
+export const CLIMA_SLOT_KEYS: ClimaSlotKey[] = CLIMA_ESTADOS.flatMap((e) => [e.key, `${e.key}_noche` as ClimaSlotKey]);
+// Imágenes que vienen con el sistema (apps/output/public/clima/). Los demás casilleros usan el más parecido.
+export const CLIMA_BIG_DEFAULT: Partial<Record<ClimaSlotKey, string>> = {
+  despejado: "big-soleado.png", despejado_noche: "big-despejado_noche.png",
+  parcial: "big-parcial.png", parcial_noche: "big-parcial_noche.png",
+  cubierto: "big-nublado.png", cubierto_noche: "big-nublado_noche.png",
+  llovizna: "big-llovizna.png", lluvia: "big-lluvia.png", nevada: "big-nieve.png", tormenta: "big-tormenta.png",
+};
+// Orden en que se busca imagen para un estado: de noche, primero las versiones de noche (el estado y sus
+// parecidos) y después las de día; al final, cubierto (que siempre tiene imagen).
+export function climaSlotChain(estado: ClimaEstado, night: boolean): ClimaSlotKey[] {
+  const fam: ClimaEstado[] = [];
+  for (let e: ClimaEstado | null = estado; e && !fam.includes(e); e = ESTADO_PARENT[e]) fam.push(e);
+  return [...(night ? fam.map((e) => `${e}_noche` as ClimaSlotKey) : []), ...fam, "cubierto"];
+}
+export const climaSlotKey = (code: number | null, isDay: boolean | null | undefined): ClimaSlotKey =>
+  (isDay === false ? `${climaEstado(code)}_noche` : climaEstado(code)) as ClimaSlotKey;
+export const climaSlotLabel = (k: ClimaSlotKey): string =>
+  k.endsWith("_noche") ? `${climaEstadoLabel(k.slice(0, -6) as ClimaEstado)} (noche)` : climaEstadoLabel(k as ClimaEstado);
+
+// Imágenes elegidas en Ajustes: casillero → URL (los que no tienen entrada usan la predeterminada o la más parecida).
+export type ClimaIconsConfig = Partial<Record<ClimaSlotKey, string>>;
+// Claves viejas (antes de separar todos los estados) → nuevas, para no perder lo que ya se cargó.
+const CLIMA_LEGACY_KEYS: Record<string, ClimaSlotKey> = { soleado: "despejado", nublado: "cubierto", nublado_noche: "cubierto_noche", nieve: "nevada" };
+export function normalizeClimaIcons(raw: unknown): ClimaIconsConfig {
+  const out: ClimaIconsConfig = {};
+  if (!raw || typeof raw !== "object") return out;
+  for (const [k, v] of Object.entries(raw as Record<string, unknown>)) {
+    const key = (CLIMA_LEGACY_KEYS[k] ?? k) as ClimaSlotKey;
+    if (typeof v === "string" && v && CLIMA_SLOT_KEYS.includes(key) && !(key in out && k !== key)) out[key] = v;
+  }
+  return out;
 }
 
-// Imágenes elegidas en Ajustes: slot → URL (los slots sin entrada usan la predeterminada).
-export type ClimaIconsConfig = Partial<Record<ClimaSlotKey, string>>;
+// ---- Íconos chicos de los días del pronóstico (sin día/noche), también cargables en Ajustes ----
+export type ClimaDayIconsConfig = Partial<Record<ClimaEstado, string>>;
+export const CLIMA_DAY_DEFAULT: Record<ClimaEstado, string> = {
+  despejado: "ic-soleado.png", mayormente_despejado: "ic-nublado.png", parcial: "ic-nublado.png", cubierto: "ic-nublado.png",
+  niebla: "ic-nublado.png", niebla_escarcha: "ic-nublado.png", llovizna: "ic-llovizna.png", llovizna_helada: "ic-llovizna.png",
+  lluvia: "ic-lluvia.png", lluvia_helada: "ic-lluvia.png", nevada: "ic-nieve.png", granos_nieve: "ic-nieve.png",
+  chaparrones: "ic-lluvia.png", chaparrones_nieve: "ic-nieve.png", tormenta: "ic-tormenta.png", tormenta_granizo: "ic-tormenta.png",
+};
+export function normalizeClimaDayIcons(raw: unknown): ClimaDayIconsConfig {
+  const out: ClimaDayIconsConfig = {};
+  if (!raw || typeof raw !== "object") return out;
+  for (const [k, v] of Object.entries(raw as Record<string, unknown>)) if (typeof v === "string" && v && k in CLIMA_DAY_DEFAULT) out[k as ClimaEstado] = v;
+  return out;
+}
+// URL de cada ícono, dada la carpeta base donde están los predeterminados (…/clima/).
+export function resolveClimaBig(estado: ClimaEstado, night: boolean, custom: ClimaIconsConfig, base: string): { url: string; from: ClimaSlotKey } {
+  for (const k of climaSlotChain(estado, night)) {
+    if (custom[k]) return { url: custom[k]!, from: k };
+    if (CLIMA_BIG_DEFAULT[k]) return { url: base + CLIMA_BIG_DEFAULT[k], from: k };
+  }
+  return { url: base + CLIMA_BIG_DEFAULT.cubierto, from: "cubierto" };
+}
+export function resolveClimaDay(estado: ClimaEstado, custom: ClimaDayIconsConfig, base: string): { url: string; from: ClimaEstado | null } {
+  for (const k of climaSlotChain(estado, false) as ClimaEstado[]) if (custom[k]) return { url: custom[k]!, from: k };
+  return { url: base + CLIMA_DAY_DEFAULT[estado], from: null };
+}
 
 // Datos del tipo "clima": qué ciudad (de las capitales de la fuente `clima`)
 // muestra la placa. El resto (temperatura, pronóstico) sale en vivo de la API.

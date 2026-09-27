@@ -1,51 +1,35 @@
 import { useEffect, useMemo, useState } from "react";
-import type { ClimaData, ClimaPayload, ClimaCiudad, ClimaIconKey, ClimaIconsConfig, ClimaSlotKey } from "@newsroller/shared";
-import { weatherIconKey, climaSlotKey, CLIMA_SLOTS } from "@newsroller/shared";
+import type { ClimaData, ClimaPayload, ClimaCiudad, ClimaDayIconsConfig, ClimaEstado, ClimaIconsConfig } from "@newsroller/shared";
+import { climaEstado, normalizeClimaDayIcons, normalizeClimaIcons, resolveClimaBig, resolveClimaDay } from "@newsroller/shared";
 import { API_BASE } from "../lib/scene";
 import fondo from "../assets/fondo2.jpg";
 import { Chrome } from "./Chrome";
-
-import icSoleado from "../assets/clima/ic-soleado.png";
-import icNublado from "../assets/clima/ic-nublado.png";
-import icLluvia from "../assets/clima/ic-lluvia.png";
-import icLlovizna from "../assets/clima/ic-llovizna.png";
-import icNieve from "../assets/clima/ic-nieve.png";
-import icTormenta from "../assets/clima/ic-tormenta.png";
 import { IS_VERTICAL } from "../lib/orientation";
 
-// Íconos BIG: cada slot (situación del cielo) tiene una imagen predeterminada en /public/clima y el
-// editor puede reemplazarla desde Ajustes (settings.climaIcons). Si un slot no tiene ninguna, se usa
-// la del slot de reserva (ej. niebla → nublado).
-const DEFAULT_BIG = (k: ClimaSlotKey) => `${import.meta.env.BASE_URL}clima/big-${k}.png`;
-export function resolveBig(key: ClimaSlotKey, custom: ClimaIconsConfig): string {
-  let k: ClimaSlotKey | null = key;
-  const seen = new Set<string>();
-  while (k && !seen.has(k)) {
-    seen.add(k);
-    const slot = CLIMA_SLOTS.find((x) => x.key === k)!;
-    if (custom[k]) return custom[k]!;
-    if (slot.hasDefault) return DEFAULT_BIG(k);
-    k = slot.fallback;
-  }
-  return DEFAULT_BIG("nublado");
-}
+// Íconos: cada estado del cielo (según el código de Open-Meteo) tiene un ícono grande de día y otro de noche, y uno
+// chico para los días del pronóstico. El editor puede cargar cualquiera en Ajustes; lo que no cargó usa la imagen
+// predeterminada (en /public/clima) o la del estado más parecido.
+const CLIMA_BASE = `${import.meta.env.BASE_URL}clima/`;
+export const climaBigUrl = (estado: ClimaEstado, night: boolean, custom: ClimaIconsConfig) => resolveClimaBig(estado, night, custom, CLIMA_BASE).url;
+export const climaDayUrl = (estado: ClimaEstado, custom: ClimaDayIconsConfig) => resolveClimaDay(estado, custom, CLIMA_BASE).url;
 
-export const CLIMA_ICON: Record<ClimaIconKey, string> = {
-  soleado: icSoleado, nublado: icNublado, lluvia: icLluvia,
-  llovizna: icLlovizna, nieve: icNieve, tormenta: icTormenta,
-};
-
-// Íconos BIG cargados en Ajustes: hasta saber cuáles hay no se muestra ninguno (si no, se ve primero el
-// predeterminado de fábrica y después el que cargó el editor). Lo usan las dos colecciones.
-export function useClimaIcons(): { custom: ClimaIconsConfig; loaded: boolean } {
+// Íconos cargados en Ajustes: hasta saber cuáles hay no se muestra el grande (si no, se ve primero el predeterminado
+// de fábrica y después el que cargó el editor). Lo usan las dos colecciones.
+export function useClimaIcons(): { custom: ClimaIconsConfig; day: ClimaDayIconsConfig; loaded: boolean } {
   const [custom, setCustom] = useState<ClimaIconsConfig>({});
+  const [day, setDay] = useState<ClimaDayIconsConfig>({});
   const [loaded, setLoaded] = useState(false);
   useEffect(() => {
     let on = true;
-    fetch(`${API_BASE}/api/settings`).then((r) => r.json()).then((s) => { if (!on) return; setCustom(s?.climaIcons ?? {}); setLoaded(true); }).catch(() => on && setLoaded(true));
+    fetch(`${API_BASE}/api/settings`).then((r) => r.json()).then((s) => {
+      if (!on) return;
+      setCustom(normalizeClimaIcons(s?.climaIcons));
+      setDay(normalizeClimaDayIcons(s?.climaDayIcons));
+      setLoaded(true);
+    }).catch(() => on && setLoaded(true));
     return () => { on = false; };
   }, []);
-  return { custom, loaded };
+  return { custom, day, loaded };
 }
 
 const DIAS = ["DOM", "LUN", "MAR", "MIÉ", "JUE", "VIE", "SÁB"];
@@ -63,7 +47,7 @@ export function Clima({ data, live, durationSec }: { data: ClimaData; live?: Cli
 
   const [play, setPlay] = useState(false);
   const [exiting, setExiting] = useState(false);
-  const { custom, loaded: iconsLoaded } = useClimaIcons();
+  const { custom, day, loaded: iconsLoaded } = useClimaIcons();
   useEffect(() => {
     const id = requestAnimationFrame(() => setPlay(true));
     return () => cancelAnimationFrame(id);
@@ -86,7 +70,6 @@ export function Clima({ data, live, durationSec }: { data: ClimaData; live?: Cli
   const condText = city.desc.toUpperCase();
   const unitPx = condText.length * 19 + 110; // ancho aproximado de una repetición (texto + separador)
   const copies = Math.max(2, Math.ceil(1000 / unitPx)); // mitad del carrusel ≥ ancho de la franja (900px)
-  const bigKey = climaSlotKey(city.code, city.isDay);
   const days = city.days.slice(0, 3);
 
   return (
@@ -95,7 +78,7 @@ export function Clima({ data, live, durationSec }: { data: ClimaData; live?: Cli
       <img className="cw-bg" src={fondo} alt="" />
       <Chrome hideTemp hideLogo />
 
-      {iconsLoaded && <img className="cw-big" src={resolveBig(bigKey, custom)} alt="" />}
+      {iconsLoaded && <img className="cw-big" src={climaBigUrl(climaEstado(city.code), city.isDay === false, custom)} alt="" />}
 
       <div className="cw-main cw-flip">
         <div className="cw-t">{city.tempC != null ? `${city.tempC}°` : "--"}</div>
@@ -120,11 +103,10 @@ export function Clima({ data, live, durationSec }: { data: ClimaData; live?: Cli
       <div className="cw-pill cw-flip">EL CLIMA</div>
 
       {days.map((d, i) => {
-        const dKey = weatherIconKey(d.code);
         const label = i === 0 ? "HOY" : i === 1 ? "MAÑANA" : DIAS[new Date(d.date + "T12:00:00").getDay()];
         return (
           <div key={d.date} className={`cw-day cw-day-d${i + 1} cw-flip`}>
-            <img className="cw-day-ic" src={CLIMA_ICON[dKey]} alt="" />
+            <img className="cw-day-ic" src={climaDayUrl(climaEstado(d.code), day)} alt="" />
             <div className="cw-day-tmp">{d.max ?? "--"}°</div>
             <div className="cw-day-name">{label}</div>
           </div>

@@ -1,4 +1,5 @@
 import type { ClimaDia as DiaPronostico, ClimaCiudad, ClimaPayload } from "@newsroller/shared";
+import { climaDesc } from "@newsroller/shared";
 import { env } from "../config/env.js";
 import { fetchJson, type DataSource } from "./types.js";
 
@@ -47,19 +48,8 @@ const CAPITALES: { city: string; province: string; lat: number; lon: number }[] 
   { city: "Viedma", province: "Río Negro", lat: -40.8135, lon: -62.9967 },
 ];
 
-function wmoDesc(code: number | null): string {
-  if (code == null) return "";
-  if (code === 0) return "Despejado";
-  if (code <= 2) return "Parcialmente nublado";
-  if (code === 3) return "Nublado";
-  if (code <= 48) return "Niebla";
-  if (code <= 67) return "Lluvia";
-  if (code <= 77) return "Nieve";
-  if (code <= 82) return "Chaparrones";
-  if (code <= 86) return "Nieve"; // chaparrones de nieve
-  if (code <= 99) return "Tormenta";
-  return "";
-}
+// Nombre del estado: el que le da Open-Meteo a cada código WMO (tabla en shared).
+const wmoDesc = (code: number | null): string => climaDesc(code);
 
 const r = (n: number | null | undefined): number | null => (n != null ? Math.round(n) : null);
 

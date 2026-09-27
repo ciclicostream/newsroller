@@ -44,6 +44,7 @@ const DEMOS: Record<string, { type: string; data: Record<string, any>; dur?: num
   clima: { type: "clima", dur: 12, data: { city: "Buenos Aires" } },
   clima_lluvia: { type: "clima", dur: 12, data: { city: "Posadas" } },
   clima_parcial: { type: "clima", dur: 12, data: { city: "Paraná" } },
+  clima_neuquen: { type: "clima", dur: 12, data: { city: "Neuquén" } },
   clima_largo: { type: "clima", dur: 12, data: { city: "San Fernando del Valle de Catamarca" } },
   dolar: {
     type: "dolar", dur: 12,

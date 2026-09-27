@@ -107,7 +107,7 @@ Todos los contenidos tienen además una **Duración** (manual, en segundos). Los
 | **Clima** | Ciudad | Manual | Una de las 24 capitales |
 | | Temperatura, estado, sensación, humedad, viento | Automático | Desde Open-Meteo |
 | | Pronóstico de 3 días | Automático | Máxima, mínima y estado |
-| | Ilustración del clima | Automático | Según el estado |
+| | Ilustración del clima | Automático | Según el estado que informa Open-Meteo (con su nombre); de día o de noche. Cada ícono, grande y chico, se puede cargar en Ajustes → Íconos del clima |
 | **Promos / Avances** | Video | Manual o automático | A mano o por hashtag |
 | | Formato | Manual | 9:16 o 4:3 |
 | | Título | Manual | Pill, máx. 24 |

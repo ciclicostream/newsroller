@@ -3,7 +3,7 @@ import { getSupabase } from "../db/supabase.js";
 import { requireAuth, requirePerm } from "../auth/middleware.js";
 import { clearLimitsCache } from "../auth/sessions.js";
 import { logActivity } from "../activity.js";
-import { CLIMA_SLOT_KEYS, PLATAFORMAS_DEFAULT, IDLE_MINUTES_DEFAULT, MUSIC_DEFAULT, ROLES, DEFAULT_COLLECTION, SUITE_DEFAULT, SUITE_NAME_RE, collectionById, can, type Suite, type Plataforma, type Role, type MusicSettings } from "@newsroller/shared";
+import { CLIMA_SLOT_KEYS, CLIMA_DAY_DEFAULT, normalizeClimaIcons, PLATAFORMAS_DEFAULT, IDLE_MINUTES_DEFAULT, MUSIC_DEFAULT, ROLES, DEFAULT_COLLECTION, SUITE_DEFAULT, SUITE_NAME_RE, collectionById, can, type Suite, type Plataforma, type Role, type MusicSettings } from "@newsroller/shared";
 import type { IO } from "../realtime/socket.js";
 
 // Preferencias del sistema (key/value). Defaults + validación por clave.
@@ -20,6 +20,8 @@ const DEFAULTS = {
   airPausedAt: "" as string,
   // Íconos BIG del clima cargados por el editor: { [slot]: url }. Vacío = predeterminados.
   climaIcons: {} as Record<string, string>,
+  // Íconos chicos de los días del pronóstico cargados por el editor: { [estado]: url }. Vacío = predeterminados.
+  climaDayIcons: {} as Record<string, string>,
   // Plataformas de streaming (Cartelera → series): { id, name, logo? }. Se administran en Ajustes → Plataformas.
   plataformas: PLATAFORMAS_DEFAULT as Plataforma[],
   // Minutos de inactividad para cerrar la sesión, por rol (sólo lo cambia el Master).
@@ -81,11 +83,14 @@ function coerce(key: SettingsKey, raw: unknown): SettingsValue | null {
     if (typeof raw !== "string" || Number.isNaN(Date.parse(raw))) return null;
     return raw;
   }
-  if (key === "climaIcons") {
+  if (key === "climaIcons" || key === "climaDayIcons") {
     if (typeof raw !== "object" || raw === null || Array.isArray(raw)) return null;
     const out: Record<string, string> = {};
-    for (const [k, v] of Object.entries(raw as Record<string, unknown>)) {
-      if (!CLIMA_SLOT_KEYS.includes(k as never)) return null;
+    // climaIcons acepta también las claves viejas (soleado, nublado, nieve…) y las pasa a las nuevas.
+    const src = key === "climaIcons" ? { ...(raw as Record<string, unknown>), ...normalizeClimaIcons(raw) } : (raw as Record<string, unknown>);
+    for (const [k, v] of Object.entries(src)) {
+      if (key === "climaIcons" && ["soleado", "nublado", "nublado_noche", "nieve"].includes(k)) continue;
+      if (key === "climaIcons" ? !CLIMA_SLOT_KEYS.includes(k as never) : !(k in CLIMA_DAY_DEFAULT)) return null;
       if (v == null || v === "") continue; // sin valor = volver al predeterminado
       if (typeof v !== "string" || !/^https?:\/\//.test(v)) return null;
       out[k] = v;
