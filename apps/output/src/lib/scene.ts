@@ -53,6 +53,7 @@ export interface Scene {
   cameras: Camera[];
   updatedAt: string;
   active?: boolean; // sólo en la escena de una Sesión (false = detenida)
+  airSince?: string | null; // sólo en el aire principal: desde cuándo está esta parrilla al aire (para arrancar en el punto real)
 }
 
 export const API_BASE = (import.meta.env.VITE_API_URL as string | undefined) ?? "";

@@ -31,6 +31,14 @@ function sessionPlayable(blocks: Block[], vertical: boolean): Block[] {
   return blocks.filter((b) => b.item && (!vertical || supportsVertical(b.item.type, b.item.data)));
 }
 
+// Duración real de un bloque en el aire: la propia, o la suma de lo reproducible (según orientación) si es
+// una Sesión, que no tiene duración fija. La usan tanto el timer de avance como el cálculo de "dónde va" abajo.
+function blockDur(b: Block, vertical: boolean): number {
+  return b.session
+    ? Math.max(2, sessionPlayable(b.session.items, vertical).reduce((s, x) => s + Math.max(2, x.duration_sec ?? 8), 0))
+    : Math.max(2, b.duration_sec ?? 8);
+}
+
 // Heurística de si el bloque actual trae audio propio (para el fadeout de la música de fondo).
 // No es una medición real, es la misma idea que ya usa la telemetría del Monitor.
 function blockHasAudio(b: Block | null): boolean {
@@ -153,6 +161,28 @@ export function Output() {
   const indexRef = useRef(index);
   indexRef.current = index;
 
+  // Al abrir (o refrescar) el link, arranca en el bloque y el momento que le tocarían AHORA según hace cuánto
+  // se publicó la parrilla (airSince), no siempre desde el bloque 0 — así el output se comporta como una señal
+  // en vivo real: da igual cuándo se lo mire, muestra lo mismo que ya se estaba viendo. Sólo una vez por
+  // airSince (no en cada poll de la escena, para no saltar de contenido cada 60s).
+  const pendingOffsetRef = useRef(0);
+  const syncedAirSince = useRef<string | null>(null);
+  useEffect(() => {
+    if (SESSION_ID || DRAFT_AIR) return;
+    const airSince = scene?.airSince;
+    if (!airSince || !items.length || syncedAirSince.current === airSince) return;
+    syncedAirSince.current = airSince;
+    const cycle = items.reduce((s, b) => s + blockDur(b, IS_VERTICAL), 0);
+    if (cycle <= 0) return;
+    const elapsedTotal = (Date.now() - new Date(airSince).getTime()) / 1000;
+    let pos = elapsedTotal % cycle;
+    if (pos < 0) pos += cycle; // airSince en el futuro (relojes desincronizados): no rompe, arranca del bloque 0
+    let i = 0;
+    while (i < items.length - 1 && pos >= blockDur(items[i]!, IS_VERTICAL)) { pos -= blockDur(items[i]!, IS_VERTICAL); i++; }
+    pendingOffsetRef.current = pos;
+    setIndex(i);
+  }, [scene?.airSince, items]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const advanced = useRef(false);
   const advance = useCallback(() => {
     if (advanced.current) return;
@@ -181,13 +211,14 @@ export function Output() {
   useEffect(() => {
     advanced.current = false;
     if (!current) return;
-    // Sesión: no tiene una duración propia — se calcula sumando lo que realmente va a reproducir (según
-    // orientación). Es sólo la red de seguridad: quien manda el avance en la práctica es SessionRunner
-    // al completar su vuelta; este timer existe por si algo se traba adentro.
-    const dur = current.session
-      ? Math.max(2, sessionPlayable(current.session.items, IS_VERTICAL).reduce((s, b) => s + Math.max(2, b.duration_sec ?? 8), 0))
-      : Math.max(2, current.duration_sec ?? 8);
-    const t = setTimeout(advance, dur * 1000);
+    // Sesión: la duración es sólo la red de seguridad (quien manda el avance en la práctica es SessionRunner
+    // al completar su vuelta; este timer existe por si algo se traba adentro).
+    const dur = blockDur(current, IS_VERTICAL);
+    // Recién abierto (o refrescado) en el bloque que "le tocaba" según airSince: no le da la duración
+    // completa de nuevo, sólo lo que le queda — si no, la señal se atrasaría un poco en cada apertura.
+    const offset = pendingOffsetRef.current;
+    pendingOffsetRef.current = 0;
+    const t = setTimeout(advance, Math.max(1, dur - offset) * 1000);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [current?.id, current?.duration_sec, advance]);

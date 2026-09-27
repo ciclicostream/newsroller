@@ -6,6 +6,7 @@ import { rateLimited } from "../util/rateLimit.js";
 import { outputIncident } from "../incidents.js";
 import { resolveSceneItems } from "../db/scene.js";
 import { resolveOutputLink } from "./output-links.js";
+import { readAll } from "./settings.js";
 
 // Escena pública para el output (vMix). Sin auth: sólo lectura de lo activo.
 export function outputRouter(): Router {
@@ -24,13 +25,19 @@ export function outputRouter(): Router {
       return res.json({ background: null, logos: [], items: [], data, updatedAt: new Date().toISOString() });
     }
 
-    const [{ data: playlist }, { data: cameras }] = await Promise.all([
+    const [{ data: playlist }, { data: cameras }, settings] = await Promise.all([
       sb.from("playlist_items").select("*").eq("enabled", true).order("sort"),
       sb.from("cameras").select("*"),
+      readAll(),
     ]);
     const { items, background, logos } = await resolveSceneItems(sb, playlist ?? []);
 
-    res.json({ background, logos, items, data, cameras: cameras ?? [], updatedAt: new Date().toISOString() });
+    // `airSince`: desde cuándo está esta parrilla al aire (se estampa al publicar, ver parrilla.ts). El output
+    // lo usa para arrancar en el bloque y el momento que corresponden AHORA, no siempre desde el bloque 0 — así
+    // un link recién abierto (o refrescado) muestra lo mismo que ya se estaba viendo, como una señal en vivo real.
+    const airSince = typeof settings.airSince === "string" && settings.airSince ? settings.airSince : null;
+
+    res.json({ background, logos, items, data, cameras: cameras ?? [], airSince, updatedAt: new Date().toISOString() });
   });
 
   // Escena del BORRADOR (parrilla_draft, lo que todavía no se publicó al aire). Misma forma que /scene;
