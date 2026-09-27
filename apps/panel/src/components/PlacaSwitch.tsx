@@ -1,8 +1,11 @@
 import { Link } from "react-router-dom";
 
+// Mismo lugar y estilo que el toggle de Cartelera (teatro/cine/eventos), Shorts (1/2) o Promos (9:16/4:3): un campo
+// más, arriba del todo en la card del formulario. La diferencia es que acá cada pestaña es en realidad OTRO tipo de
+// contenido (navega a su propia página) — Efemérides y Retro (o Informe y Lista) siguen siendo bancos separados.
 function Switch({ tabs, active }: { tabs: { key: string; to: string; label: string }[]; active: string }) {
   return (
-    <div className="tabs" style={{ marginBottom: 16 }}>
+    <div className="tabs" style={{ marginBottom: 0 }}>
       {tabs.map((t) => <Link key={t.key} to={t.to} className={"tab" + (active === t.key ? " active" : "")}>{t.label}</Link>)}
     </div>
   );

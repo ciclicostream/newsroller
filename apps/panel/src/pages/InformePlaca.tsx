@@ -99,8 +99,6 @@ export function InformePlaca() {
         </div>
       </div>
 
-      <InformesSwitch active="informe" />
-
       {err && <div className="alert error">{err}</div>}
       {msg && <div className="alert">{msg}</div>}
 
@@ -109,6 +107,11 @@ export function InformePlaca() {
           <div style={{ fontWeight: 500, marginBottom: 14, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             {editingId ? "Editar informe" : "Nuevo informe"}
             {editingId && <button type="button" className="btn" onClick={cancelEdit}>Cancelar</button>}
+          </div>
+
+          <div className="field" style={{ marginBottom: 14 }}>
+            <label>Tipo</label>
+            <InformesSwitch active="informe" />
           </div>
 
           <div className="field">

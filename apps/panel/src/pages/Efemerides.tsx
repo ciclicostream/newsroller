@@ -202,8 +202,6 @@ export function Efemerides() {
         </div>
       </div>
 
-      <EfemeridesSwitch active="efemerides" />
-
       {err && <div className="alert error">{err}</div>}
       {msg && <div className="alert">{msg}</div>}
 
@@ -212,6 +210,11 @@ export function Efemerides() {
           <div style={{ fontWeight: 500, marginBottom: 14, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             {editingId ? "Editar efeméride" : "Nueva efeméride"}
             {editingId && <button type="button" className="btn" onClick={cancelEdit}>Cancelar</button>}
+          </div>
+
+          <div className="field" style={{ marginBottom: 14 }}>
+            <label>Tipo</label>
+            <EfemeridesSwitch active="efemerides" />
           </div>
 
           <button type="button" className="btn" style={{ width: "100%", justifyContent: "center", marginBottom: 14 }} onClick={() => setWikiOpen(true)}>

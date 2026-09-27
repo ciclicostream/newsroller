@@ -134,8 +134,6 @@ export function RetroPlaca() {
         </div>
       </div>
 
-      <EfemeridesSwitch active="retro" />
-
       {err && <div className="alert error">{err}</div>}
       {msg && <div className="alert">{msg}</div>}
 
@@ -144,6 +142,11 @@ export function RetroPlaca() {
           <div style={{ fontWeight: 500, marginBottom: 14, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             {editingId ? "Editar retro" : "Nuevo retro"}
             {editingId && <button type="button" className="btn" onClick={cancelEdit}>Cancelar</button>}
+          </div>
+
+          <div className="field" style={{ marginBottom: 14 }}>
+            <label>Tipo</label>
+            <EfemeridesSwitch active="retro" />
           </div>
 
           <div className="field">
