@@ -290,7 +290,7 @@ export function Radio({ visible = true }: { visible?: boolean }) {
           <CardHead icon={RadioTower} title="Al aire">
             <span className={"rd-tally " + state}><i />{state === "air" ? "AL AIRE" : state === "plate" ? "PLACA FIJA" : "CORTADA"}</span>
           </CardHead>
-          <div className="rd-nowname">{cur ? cur.label : live ? "Elegí un botón para poner al aire" : "Activá el stream"}</div>
+          <div className="rd-nowname"><span>{cur ? cur.label : live ? "Elegí un botón para poner al aire" : "Activá el stream"}</span></div>
           <div className="rd-clocks">
             <div className="rd-clk g">
               <span className="lb">stream</span>
@@ -299,7 +299,7 @@ export function Radio({ visible = true }: { visible?: boolean }) {
             </div>
             <div className="rd-clk r">
               <span className="lb">{cur?.kind === "cam" ? "cámara" : clips.length > 1 ? `clip ${clipIdx + 1} de ${clips.length}` : "clip al aire"}</span>
-              <span className="dg">{cur?.kind === "cam" ? "--:--" : fmtMS(clipLeft)}</span>
+              <span className="dg">{cur?.kind === "cam" ? "--:--" : (cur ? "-" : "") + fmtMS(clipLeft)}</span>
               <span className="ft">{cur?.kind === "cam" ? "en directo" : cur ? "le queda" : "—"}</span>
             </div>
           </div>
@@ -345,7 +345,7 @@ export function Radio({ visible = true }: { visible?: boolean }) {
         <div className={"pv-card rd-card rd-mic" + (mic.on ? " on" : "")}>
           <CardHead icon={Mic} title="Micrófono y cámara">
             <span className={"rd-rx" + (viewers > 0 ? " on" : "") + (linkErr ? " err" : "")} title={linkErr ?? (viewers > 0 ? "El output del estudio está conectado" : "Ningún output abierto con tu enlace: abrí el link en OBS o vMix")}>
-              <i />{linkErr ? "Sin enlace" : viewers > 0 ? "Estudio conectado" : "Sin receptor"}
+              <i />{linkErr ? "Sin enlace" : viewers > 0 ? "Conectado" : "Sin receptor"}
             </span>
           </CardHead>
           <button type="button" className="rd-micbtn" onClick={mic.toggle} aria-pressed={mic.on}
