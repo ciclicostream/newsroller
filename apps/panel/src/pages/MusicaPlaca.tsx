@@ -62,6 +62,7 @@ export function MusicaPlaca() {
   const [date, setDate] = useState("");
   const [genres, setGenres] = useState<string[]>([]);
   const [title, setTitle] = useState("");
+  const [artist, setArtist] = useState("");
   const [credits, setCredits] = useState("");
   const [instagram, setInstagram] = useState("");
   const [lyricsText, setLyricsText] = useState("");
@@ -111,7 +112,7 @@ export function MusicaPlaca() {
   });
   // Vacía sólo lo del tema (para seguir con el próximo del mismo álbum).
   function resetSong() {
-    setEditingId(null); setTitle(""); setCredits(""); setLyricsText(""); setTimes([]); setCursor(0); setDur(180); clearAudio();
+    setEditingId(null); setTitle(""); setArtist(""); setCredits(""); setLyricsText(""); setTimes([]); setCursor(0); setDur(180); clearAudio();
   }
 
   const load = () => contentItems.list("musica").then(setItems).catch((e) => setErr(e.message));
@@ -210,6 +211,7 @@ export function MusicaPlaca() {
     release_date: date || undefined,
     genres,
     title: title.trim(),
+    artist: artist.trim(),
     credits: credits.trim() || undefined,
     instagram: instagram.trim() ? "@" + instagram.trim().replace(/^@+/, "") : undefined,
     lyrics: lines.length ? lines.map((text, i): MusicaLine => ({ t: times[i] ?? null, text })) : undefined,
@@ -219,7 +221,7 @@ export function MusicaPlaca() {
   async function save(e: React.FormEvent) {
     e.preventDefault();
     setErr(null); setMsg(null);
-    if (!album.trim() || !title.trim()) return setErr("Álbum y nombre del tema son obligatorios.");
+    if (!album.trim() || !title.trim() || !artist.trim()) return setErr("Álbum, nombre del tema y artista son obligatorios.");
     if (!coverUrl) return setErr("La portada es obligatoria.");
     if (!genres.length) return setErr("Elegí al menos un género.");
     if (!audioUrl) return setErr("La pista de audio es obligatoria.");
@@ -261,7 +263,7 @@ export function MusicaPlaca() {
     setEditingId(it.id);
     setAlbumKey(albumKeyOf(d.album)); setSyncOthers(false);
     setAlbum(d.album ?? ""); setDescription(d.description ?? ""); setCoverUrl(d.cover_url ?? null); setPhotos(d.photos ?? []); setDate(d.release_date ?? "");
-    setGenres(d.genres ?? []); setTitle(d.title ?? ""); setCredits(d.credits ?? ""); setInstagram(d.instagram ?? "");
+    setGenres(d.genres ?? []); setTitle(d.title ?? ""); setArtist(d.artist ?? ""); setCredits(d.credits ?? ""); setInstagram(d.instagram ?? "");
     const ls = d.lyrics ?? [];
     setLyricsText(ls.map((l) => l.text).join("\n"));
     setTimes(ls.map((l) => l.t));
@@ -272,7 +274,7 @@ export function MusicaPlaca() {
   function cancelEdit() {
     setEditingId(null);
     setAlbumKey(""); setSyncOthers(false);
-    setAlbum(""); setDescription(""); setCoverUrl(null); setPhotos([]); setDate(""); setGenres([]); setTitle(""); setCredits(""); setInstagram("");
+    setAlbum(""); setDescription(""); setCoverUrl(null); setPhotos([]); setDate(""); setGenres([]); setTitle(""); setArtist(""); setCredits(""); setInstagram("");
     setLyricsText(""); setTimes([]); setCursor(0); setDur(180);
     if (coverRef.current) coverRef.current.value = "";
     clearAudio();
@@ -291,7 +293,7 @@ export function MusicaPlaca() {
 
   // Los géneros ya cargados que salieron de la lista siguen apareciendo (para poder quitarlos).
   const opciones = [...new Set([...genres, ...generos])].sort((a, b) => a.localeCompare(b, "es"));
-  const ready = !!album.trim() && !!title.trim() && !!coverUrl && genres.length > 0;
+  const ready = !!album.trim() && !!title.trim() && !!artist.trim() && !!coverUrl && genres.length > 0;
 
   return (
     <>
@@ -391,6 +393,7 @@ export function MusicaPlaca() {
 
           <div className="mu-sec">Tema</div>
           <div className="field"><label>Nombre del tema</label><input value={title} maxLength={TITLE_MAX} onChange={(e) => setTitle(e.target.value)} required /></div>
+          <div className="field"><label>Artista</label><input value={artist} maxLength={TITLE_MAX} onChange={(e) => setArtist(e.target.value)} placeholder="Quién lo interpreta" required /></div>
 
           <div className="field">
             <label>Pista de audio (obligatoria)</label>

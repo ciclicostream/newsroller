@@ -525,7 +525,7 @@ export const MUSICA_MAX_FOTOS = 5; // fotos extra que rotan con la portada
 // Una línea de la letra. `t` = segundo en que empieza a cantarse (null = sin sincronizar).
 export interface MusicaLine { t: number | null; text: string }
 
-// Datos del tipo "musica": una canción con portada, ficha y letra sincronizada. Álbum, portada, géneros, tema y pista
+// Datos del tipo "musica": una canción con portada, ficha y letra sincronizada. Álbum, portada, géneros, tema, artista y pista
 // de audio son obligatorios; fecha, créditos y letra son opcionales. La duración del bloque es la del audio.
 export interface MusicaData {
   album: string;
@@ -535,6 +535,7 @@ export interface MusicaData {
   release_date?: string; // ISO "YYYY-MM-DD"
   genres: string[]; // 1 a MUSICA_MAX_GENEROS, de Ajustes → Géneros musicales
   title: string; // nombre del tema
+  artist: string; // artista o banda que lo interpreta (va debajo del tema, "Intérprete: …")
   credits?: string; // texto libre, puede llevar saltos de línea
   instagram?: string; // usuario de Instagram de la banda, ej. "@losbandaloschinos"
   lyrics?: MusicaLine[]; // una línea por renglón, sin renglones vacíos

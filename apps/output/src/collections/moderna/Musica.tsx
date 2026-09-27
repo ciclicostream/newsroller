@@ -15,7 +15,25 @@ const START_AT = Number(P.get("t")) || 0;
 // Segundo de la canción en cada cuadro. Con el audio sonando manda su reloj; si todavía no arrancó (o se cortó) sigue
 // el reloj del navegador desde donde estaba, así la letra no se traba y en el monitor de edición (sin audio) también corre.
 // También mueve la barra de avance directo en el DOM (sin re-renderizar).
-function useSong(audio: React.RefObject<HTMLAudioElement>, bar: React.RefObject<HTMLDivElement>, lines: MusicaData["lyrics"], total: number): number {
+// Ángulo del disco en el segundo `sec`: gira a velocidad pareja y frena como un tocadiscos real en los últimos
+// `BRAKE_S` segundos (o menos si el tema dura menos), hasta quedar del todo detenido justo al terminar. La
+// desaceleración es cuadrática (r² con r = tiempo que falta / ventana de frenado): arranca suave, sin salto de
+// velocidad al entrar en la frenada, y llega a velocidad 0 exactamente en total.
+const DISC_SPEED = 180; // grados/seg a velocidad plena (2s por vuelta, igual que antes)
+const BRAKE_S = 30;
+function discAngle(sec: number, total: number): number {
+  const t = Math.min(sec, total);
+  const bw = Math.max(0.001, Math.min(BRAKE_S, total)); // ventana de frenado (no más larga que el propio tema)
+  const brakeStart = Math.max(0, total - bw);
+  if (t <= brakeStart) return DISC_SPEED * t;
+  const r = Math.max(0, (total - t) / bw);
+  return DISC_SPEED * brakeStart + (DISC_SPEED * bw / 3) * (1 - r ** 3);
+}
+
+// Segundo de la canción en cada cuadro. Con el audio sonando manda su reloj; si todavía no arrancó (o se cortó) sigue
+// el reloj del navegador desde donde estaba, así la letra no se traba y en el monitor de edición (sin audio) también corre.
+// También mueve la barra de avance y el giro del disco directo en el DOM (sin re-renderizar).
+function useSong(audio: React.RefObject<HTMLAudioElement>, bar: React.RefObject<HTMLDivElement>, disc: React.RefObject<HTMLDivElement>, lines: MusicaData["lyrics"], total: number): number {
   const [idx, setIdx] = useState(-1);
   useEffect(() => {
     let raf = 0;
@@ -26,6 +44,7 @@ function useSong(audio: React.RefObject<HTMLAudioElement>, bar: React.RefObject<
       if (a && !a.paused && a.currentTime > 0) { sec = a.currentTime; t0 = now - sec * 1000; }
       else sec = (now - t0) / 1000;
       if (bar.current) bar.current.style.transform = `scaleX(${Math.min(1, Math.max(0, sec / Math.max(1, total)))})`;
+      if (disc.current) disc.current.style.transform = `rotate(${discAngle(Math.max(0, sec), total)}deg)`;
       if (lines?.length) {
         const i = musicaLineIndex(lines, sec, total);
         setIdx((cur) => (cur === i ? cur : i));
@@ -34,7 +53,7 @@ function useSong(audio: React.RefObject<HTMLAudioElement>, bar: React.RefObject<
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [audio, bar, lines, total]);
+  }, [audio, bar, disc, lines, total]);
   return idx;
 }
 
@@ -58,10 +77,11 @@ function Line({ text, old }: { text: string; old: boolean }) {
 // La letra va de a una línea, sin resaltado, sincronizada con el audio, dentro de un panel con una barra de avance del
 // tema; mientras no se canta (intro, pausas o sin letra) late un ecualizador.
 export function Musica({ data, durationSec }: { data: MusicaData; durationSec?: number }) {
-  const { cls } = useLife(durationSec, 1.3);
+  const { cls } = useLife(durationSec, 3);
   const audioRef = useRef<HTMLAudioElement>(null);
   const barRef = useRef<HTMLDivElement>(null);
   const eqRef = useRef<HTMLDivElement>(null);
+  const discSpinRef = useRef<HTMLDivElement>(null);
   const [noCors, setNoCors] = useState(false);
   const titleRef = useRef<HTMLDivElement>(null);
   const credRef = useRef<HTMLDivElement>(null);
@@ -104,7 +124,7 @@ export function Musica({ data, durationSec }: { data: MusicaData; durationSec?: 
   }, [data.audio_url, noCors]);
 
   const lines = data.lyrics?.filter((l) => l.text.trim());
-  const idx = useSong(audioRef, barRef, lines?.length ? lines : undefined, durationSec ?? 180);
+  const idx = useSong(audioRef, barRef, discSpinRef, lines?.length ? lines : undefined, durationSec ?? 180);
   const credits = data.credits?.trim();
   const ig = data.instagram?.trim().replace(/^@*/, "");
   const desc = data.description?.trim().slice(0, DESC_MAX);
@@ -163,7 +183,7 @@ export function Musica({ data, durationSec }: { data: MusicaData; durationSec?: 
         <div className="nmm-cg b"><img src={data.cover_url} alt="" /></div>
         <div className="nmm-cg c"><img src={data.cover_url} alt="" /></div>
       </>}
-      <div className="nmm-disc"><div className="nmm-spin"><div className="nmm-label"><img src={data.cover_url} alt="" /></div></div></div>
+      <div className="nmm-disc"><div className="nmm-spin" ref={discSpinRef}><div className="nmm-label"><img src={data.cover_url} alt="" /></div></div></div>
 
       {/* Portada (y en 16:9 la card de la letra) en un solo plano con perspectiva. Lo demás va fuera de la escena 3D. */}
       <div className="nm-sc" style={IS_VERTICAL ? undefined : { perspectiveOrigin: `50% ${170 + slabH / 2}px` }}>
@@ -181,6 +201,7 @@ export function Musica({ data, durationSec }: { data: MusicaData; durationSec?: 
         <div className="nmm-head">
           <div className="nm-kick nmm-k"><span className="rule" /><span className="nmm-alb">{data.album}</span></div>
           <div className="nmm-tw" ref={titleRef}><Words text={data.title} t0={1.15} /></div>
+          {data.artist && <div className="nmm-artist"><Words text={data.artist} t0={1.3} /></div>}
         </div>
         {(data.genres?.length > 0 || date) && (
           <div className="nmm-gens">
@@ -254,13 +275,12 @@ const CSS = `
 .nmm-disc::before{content:"";position:absolute;inset:-70px;border-radius:50%;background:radial-gradient(closest-side,rgba(47,107,255,.5),rgba(47,107,255,.12) 62%,transparent)}
 .in .nmm-disc{animation:nmm-discIn 1.2s cubic-bezier(.2,.8,.2,1) 1s both}
 @keyframes nmm-discIn{from{opacity:0;transform:translateX(-220px)}to{opacity:1;transform:none}}
-.nmm-spin{position:absolute;inset:0;border-radius:50%;animation:nmm-rot 2s linear infinite;
+.nmm-spin{position:absolute;inset:0;border-radius:50%;will-change:transform;
   background:conic-gradient(from 0deg,rgba(255,255,255,0) 0 18%,rgba(160,190,255,.32) 25%,rgba(255,255,255,0) 32% 68%,rgba(160,190,255,.32) 75%,rgba(255,255,255,0) 82%),
     repeating-radial-gradient(circle at 50% 50%,#070a14 0 3px,#14204a 3px 4px);
   box-shadow:inset 0 0 0 2px rgba(127,162,255,.35)}
 .nmm-label{position:absolute;left:50%;top:50%;width:170px;height:170px;margin:-85px 0 0 -85px;border-radius:50%;overflow:hidden;box-shadow:0 0 0 6px #050B1F,0 0 0 8px rgba(127,162,255,.5)}
 .nmm-label img{width:100%;height:100%;object-fit:cover;display:block}
-@keyframes nmm-rot{to{transform:rotate(360deg)}}
 
 /* Portada: el único módulo girado. */
 .nmm-slab{position:absolute;left:130px;top:170px;width:560px;height:728px;transform-style:preserve-3d;transform-origin:0 50%;transform:rotateY(21deg);will-change:transform}
@@ -288,6 +308,9 @@ const CSS = `
 .nmm-k .rule{box-shadow:0 0 16px 2px rgba(47,107,255,.95)}
 .nmm-alb{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-shadow:0 0 22px rgba(47,107,255,.7)}
 .nmm-tw{width:100%;font-size:92px}
+.nmm-artist{width:100%;font-size:30px;font-weight:700;color:#9fb4ff;letter-spacing:.01em;margin-top:6px}
+.nmm-artist .nm-ttl{font-size:inherit;line-height:1.2}
+.nmm-artist::before{content:"Intérprete: "}
 .nmm-tw .nm-ttl{font-size:inherit;line-height:1.02;text-shadow:0 0 44px rgba(47,107,255,.35),0 4px 0 rgba(0,0,0,.18)}
 .nmm-gens{position:absolute;left:940px;top:386px;width:880px;display:flex;flex-wrap:wrap;gap:10px}
 .nmm-g{padding:8px 18px 7px;border-radius:999px;border:1px solid rgba(127,162,255,.55);

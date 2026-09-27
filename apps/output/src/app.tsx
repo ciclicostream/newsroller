@@ -44,7 +44,7 @@ const DEMOS: Record<string, { type: string; data: Record<string, any>; dur?: num
   musica: {
     type: "musica", dur: 60,
     data: {
-      album: "10 Obras Argentinas para Guitarra", title: "Girls in the party con el auto rojo", cover_url: "https://picsum.photos/seed/guitarra/900/900", photos: ["https://picsum.photos/seed/guitarra2/900/900", "https://picsum.photos/seed/guitarra3/900/900"], release_date: "2026-06-26",
+      album: "10 Obras Argentinas para Guitarra", title: "Girls in the party con el auto rojo", artist: "Juan Pablo Ferreyra", cover_url: "https://picsum.photos/seed/guitarra/900/900", photos: ["https://picsum.photos/seed/guitarra2/900/900", "https://picsum.photos/seed/guitarra3/900/900"], release_date: "2026-06-26",
       description: "10 obras argentinas para guitarra contiene las obras del libro homónimo publicado en 2023 por el compositor Juan Pablo Ferreyra, con el apoyo de Fondo Nacional de Las Artes y Municipio de Pilar. Contiene 10 obras originales para guitarra solista y dúo de guitarras sobre ritmos característicos del folklore argentino como chamamé, bailecito y milonga.",
       genres: ["Chamamé", "Folclore nacional"], credits: "Letra y música: Juan Pablo Ferreyra", instagram: "@losbandaloschinos",
       audio_url: "", lyrics: [
@@ -63,22 +63,22 @@ const DEMOS: Record<string, { type: string; data: Record<string, any>; dur?: num
   musica_largo: {
     type: "musica", dur: 20,
     data: {
-      album: "Un álbum con un nombre larguísimo para probar la volanta", title: "Un título de tema muy largo que ocupa varias líneas en la pantalla completa", cover_url: "https://picsum.photos/seed/portada3/900/900",
+      album: "Un álbum con un nombre larguísimo para probar la volanta", title: "Un título de tema muy largo que ocupa varias líneas en la pantalla completa", artist: "Un nombre de artista también bastante largo para probar cómo se acomoda", cover_url: "https://picsum.photos/seed/portada3/900/900",
       genres: ["Académica - Clásica", "Contemporánea - experimental", "Folclore latinoamericano"], audio_url: "",
       lyrics: [{ t: 0, text: "Y una línea muy larga para ver cómo se acomoda cuando el verso no entra en un solo renglón de la pantalla y hay que achicarlo bastante más" }],
     },
   },
   musica_creditos: {
     type: "musica", dur: 20,
-    data: { album: "Sin letra ni descripción", title: "Tema con créditos", cover_url: "https://picsum.photos/seed/portada4/900/900", genres: ["Tango"], credits: "Letra y música: A. Pérez", audio_url: "" },
+    data: { album: "Sin letra ni descripción", title: "Tema con créditos", artist: "A. Pérez", cover_url: "https://picsum.photos/seed/portada4/900/900", genres: ["Tango"], credits: "Letra y música: A. Pérez", audio_url: "" },
   },
   musica_ig: {
     type: "musica", dur: 20,
-    data: { album: "Sólo Instagram", title: "Tema con Instagram", cover_url: "https://picsum.photos/seed/portada5/900/900", genres: ["Rock"], instagram: "losbandaloschinos", audio_url: "", lyrics: [{ t: 0, text: "Una línea de prueba" }] },
+    data: { album: "Sólo Instagram", title: "Tema con Instagram", artist: "Los Banda Los Chinos", cover_url: "https://picsum.photos/seed/portada5/900/900", genres: ["Rock"], instagram: "losbandaloschinos", audio_url: "", lyrics: [{ t: 0, text: "Una línea de prueba" }] },
   },
   musica_min: {
     type: "musica", dur: 20,
-    data: { album: "Sin letra", title: "Tema instrumental", cover_url: "https://picsum.photos/seed/portada2/900/900", genres: ["Jazz"], audio_url: "" },
+    data: { album: "Sin letra", title: "Tema instrumental", artist: "Trío Jazz", cover_url: "https://picsum.photos/seed/portada2/900/900", genres: ["Jazz"], audio_url: "" },
   },
   clima: { type: "clima", dur: 12, data: { city: "Buenos Aires" } },
   clima_lluvia: { type: "clima", dur: 12, data: { city: "Posadas" } },
