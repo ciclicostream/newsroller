@@ -12,7 +12,6 @@ import { contentItems as contentItemsApi } from "../lib/content-items";
 import { settingsApi } from "../lib/settings";
 import { radioApi } from "../lib/radioLink";
 import { camerasApi, youtubeTitle } from "../lib/cameras";
-import { collectionLabel, useActiveSuite } from "../lib/collections";
 import { outputLinksApi } from "../lib/outputLinks";
 import type { OutputLink } from "@newsroller/shared";
 import { AvailablePanel } from "../components/AvailablePanel";
@@ -258,8 +257,6 @@ export function Programacion() {
   const [monSound, toggleMonSound] = useMonitorAudio();
   const soundOn = monSound && mode !== "aire";
   const [monVertical, toggleMonVertical] = useMonitorVertical(); // 16:9 o 9:16
-  // Suite activa: el Programador ve con qué suite sale el canal (sólo el nombre; la cambia el Admin en Ajustes → Suites).
-  const activeSuite = useActiveSuite();
   // AIRE muestra la salida del canal tal cual (Copiloto, o Stream si el Host transmite), por su link y sin sonido.
   const [canal, setCanal] = useState<OutputLink[]>([]);
   useEffect(() => { outputLinksApi.list().then(setCanal).catch(() => setCanal([])); }, []);
@@ -278,7 +275,8 @@ export function Programacion() {
 
   const cicloSec = draft.filter((r) => r.enabled).reduce((a, r) => a + r.duration_sec, 0);
 
-  const fmt = (s: number) => [Math.floor(s / 3600), Math.floor((s % 3600) / 60), s % 60].map((n) => String(n).padStart(2, "0")).join(":");
+  // Pasadas las 24 h el reloj no crece a lo ancho: "2d 14:23:05".
+  const fmt = (s: number) => (s >= 86400 ? `${Math.floor(s / 86400)}d ` : "") + [Math.floor((s % 86400) / 3600), Math.floor((s % 3600) / 60), s % 60].map((n) => String(n).padStart(2, "0")).join(":");
   // Tiempo real al aire desde la última publicación (persiste entre refrescos:
   // se calcula contra airSince, no contra un contador local que arranca de 0).
   void tick; // sólo dispara el re-render de 1x/seg; el valor en sí no se usa
@@ -318,7 +316,6 @@ export function Programacion() {
             <div className="pv-card pv-mon-card">
               <div className="pv-mon-hd">
                 <span className="pv-ct">Monitor</span>
-                {activeSuite && <span className="pv-suite" title="Colección con la que sale el canal (Copiloto y Stream)">{collectionLabel(activeSuite.style)}</span>}
                 <div className="pv-seg">
                   {(["aire", "clip"] as const).map((m) => (
                     <button key={m} className={"pv-segb" + (mode === m ? " on " + m : "")} onClick={() => setMode(m)}>{m.toUpperCase()}</button>
@@ -356,13 +353,13 @@ export function Programacion() {
 
           <div className="pv-airrow">
             <div className="pv-airmeta">
-              <div>Actualizado a: <b>{airChangedAt ? fmtUpdatedAt(airChangedAt) : "—"}</b></div>
-              <div>Próximo item: <b>{
+              <div className="r"><span>Actualizado</span><b>{airChangedAt ? fmtUpdatedAt(airChangedAt) : "—"}</b></div>
+              <div className="r"><span>Próximo</span><b>{
                 liveStatus?.next
                   ? (TYPE_LABEL[liveStatus.next.itemType ?? ""] ?? liveStatus.next.itemType ?? "—") + " · " + liveStatus.next.durationSec + "s"
                   : draft[0] ? (itemById.get(draft[0].content_id ?? "") ? TYPE_LABEL[itemById.get(draft[0].content_id!)!.type] : draft[0].content_type) + " · " + draft[0].duration_sec + "s" : "—"
               }</b></div>
-              <div>Salida: <b>1920×1080</b> · FPS: <b>{liveStatus ? liveStatus.fps : "—"}</b></div>
+              <div className="r"><span>Salida</span><b>1920×1080 · {liveStatus ? liveStatus.fps : "—"} FPS</b></div>
             </div>
             <div className="pv-clock"><span className="lb">al aire</span><span className="dg">{fmt(airSec)}</span>{streamTx && <span className="ft">Stream tiene la señal</span>}</div>
           </div>

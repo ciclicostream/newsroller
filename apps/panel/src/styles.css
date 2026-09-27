@@ -540,11 +540,15 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 6px
 .pv-vulb{font-size:8.5px;color:var(--dim);font-weight:800;text-align:center;line-height:1.15;white-space:pre-line}
 
 .pv-airrow{display:flex;gap:12px;align-items:stretch}
-.pv-airmeta{flex:1;display:flex;flex-direction:column;justify-content:center;gap:6px;font-size:12.5px;color:var(--dim);background:#fff;border:1px solid var(--ln);border-radius:14px;padding:12px 16px}
-.pv-airmeta b{color:var(--tx);font-weight:700}
-.pv-clock{background:#160404;border:1px solid #3a0d0d;border-radius:14px;display:flex;align-items:center;gap:14px;padding:12px 22px}
+.pv-airmeta{flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;font-size:12px;color:var(--dim);background:#fff;border:1px solid var(--ln);border-radius:14px;padding:4px 16px}
+.pv-airmeta .r{display:flex;align-items:baseline;gap:10px;padding:7px 0;min-width:0}
+.pv-airmeta .r+.r{border-top:1px solid var(--ln)}
+.pv-airmeta .r span{flex:none;width:74px;font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase}
+.pv-airmeta b{flex:1;min-width:0;color:var(--tx);font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:right}
+.pv-clock{flex:none;background:#160404;border:1px solid #3a0d0d;border-radius:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:12px 22px;white-space:nowrap}
 .pv-clock .lb{font-size:10px;color:#a15;letter-spacing:.12em;font-weight:800;text-transform:uppercase}
-.pv-clock .dg{font-family:"Share Tech Mono",ui-monospace,monospace;font-size:36px;color:#ff2b2b;letter-spacing:4px;text-shadow:0 0 10px rgba(255,43,43,.7)}
+.pv-clock .dg{font-family:"Share Tech Mono",ui-monospace,monospace;font-size:34px;line-height:1;color:#ff2b2b;letter-spacing:3px;text-shadow:0 0 10px rgba(255,43,43,.7)}
+.pv-clock .ft{font-size:10px;font-weight:700;color:#d1607a}
 .pv-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
 .pv-kpi{background:#fff;border:1px solid var(--ln);border-radius:12px;padding:10px;text-align:center;box-shadow:0 3px 12px rgba(20,30,60,.05)}
 .pv-kpi .v{font-size:22px;font-weight:800;line-height:1}.pv-kpi .l{font-size:10px;color:var(--dim);margin-top:3px;font-weight:600}

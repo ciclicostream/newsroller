@@ -13,7 +13,6 @@ import { sessions as sessionsApi, type SessionRow } from "../lib/sessions";
 import { contentItems as contentItemsApi } from "../lib/content-items";
 import { camerasApi } from "../lib/cameras";
 import { createRadioLink, radioApi, type RadioConfig, type RadioLink } from "../lib/radioLink";
-import { collectionLabel, useActiveSuite } from "../lib/collections";
 import offAir from "../assets/off-air.jpg";
 import { CAT, CAT_ICON, CAT_ORDER, SESSION_COLOR, SESSION_ICON, TYPE_LABEL, catOf, iconOf, itemText } from "../lib/contentCatalog";
 
@@ -266,8 +265,6 @@ export function Radio({ visible = true }: { visible?: boolean }) {
     return () => window.removeEventListener("keydown", onKey);
   }, [mic.toggle, visible]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Suite activa: el Host ve con qué suite sale el canal (sólo el nombre; la cambia el Admin en Ajustes → Suites).
-  const activeSuite = useActiveSuite();
   const orient = monVertical ? "&orientation=vertical" : "";
   const monUrl = visible && cur && cur.kind !== "cam"
     ? cur.kind === "session"
@@ -329,7 +326,6 @@ export function Radio({ visible = true }: { visible?: boolean }) {
               title={!hasTrack ? "Elegí un tema en Ajustes → Música primero" : musicOn ? "Apagar la música de fondo" : "Encender la música de fondo (se apaga sola con contenido con audio y baja con el micrófono)"}>
               <Music size={14} />
             </button>
-            {activeSuite && <span className="pv-suite" title="Colección con la que sale el canal (Copiloto y Stream)">{collectionLabel(activeSuite.style)}</span>}
             <button type="button" className={"pv-snd" + (monSound ? " on" : "")} onClick={toggleMonSound} aria-pressed={monSound}
               aria-label={monSound ? "Silenciar el monitor" : "Escuchar el monitor"} title={monSound ? "Silenciar el monitor" : "Escuchar el monitor"}>
               {monSound ? <Volume2 size={14} /> : <VolumeX size={14} />}
