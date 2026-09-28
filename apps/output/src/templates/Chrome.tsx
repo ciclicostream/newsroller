@@ -3,6 +3,7 @@ import { API_BASE } from "../lib/scene";
 import qrCiclico from "../assets/qr-ciclico.png";
 import ciclicoWhite from "../assets/ciclico-white.png";
 import { IS_VERTICAL } from "../lib/orientation";
+import { ZocaloOverlay } from "./Zocalo";
 
 const MESES = ["ENE", "FEB", "MAR", "ABR", "MAY", "JUN", "JUL", "AGO", "SEP", "OCT", "NOV", "DIC"];
 
@@ -126,6 +127,7 @@ export function Chrome({ tickerSpeed = 90, hideClock = false, hideTemp = false, 
         </div>
       </div>
       <img className="ck-qr" src={qrCiclico} alt="Somos Cíclico" />
+      <ZocaloOverlay />
     </>
   );
 }

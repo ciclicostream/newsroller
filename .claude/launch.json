@@ -19,7 +19,8 @@
         "--workspace",
         "@newsroller/output"
       ],
-      "port": 5174
+      "port": 5174,
+      "autoPort": true
     },
     {
       "name": "panel",

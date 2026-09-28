@@ -488,6 +488,22 @@ export const PLATAFORMAS_DEFAULT: Plataforma[] = [
   { id: "flow", name: "Flow" },
 ];
 
+// Zócalo del newsticker (Ajustes → Newsticker → Zócalo): un PNG con una pastilla de texto que
+// entra sobre el newsticker real (el del feed de somosciclico.com), programado por día/horario.
+// No sale en placas sin ese newsticker (Última Hora, Video Full, Obituario, "Ahora" de Modernas).
+export interface ZocaloItem {
+  id: string;
+  name: string;         // etiqueta interna, sólo para identificarlo en la lista (no se ve en pantalla)
+  imageUrl: string;      // PNG (con transparencia)
+  position: "derecha" | "centro";
+  pillText: string;      // texto libre de la pastilla, ej. "Ya viene EPA! a las 12:00"
+  days: number[];        // 0=domingo … 6=sábado; vacío = todos los días
+  startTime: string;     // "HH:mm", hora de entrada
+  endTime: string;       // "HH:mm", hora de salida
+  active: boolean;
+}
+export const ZOCALOS_DEFAULT: ZocaloItem[] = [];
+
 // Música de fondo continua (Ajustes → Música): suena mientras el aire no tiene
 // contenido con audio propio, y hace fadeout/fadein al cruzarse con uno que sí
 // (mp3, short, video con sonido). Sólo puede sonar un tema a la vez; el volumen

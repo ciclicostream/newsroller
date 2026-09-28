@@ -1,5 +1,5 @@
 import { api } from "./api";
-import type { Plataforma, MusicSettings, Suite } from "@newsroller/shared";
+import type { Plataforma, MusicSettings, Suite, ZocaloItem } from "@newsroller/shared";
 
 export interface AppSettings {
   tickerSpeed: number; // segundos por vuelta del newsticker (mayor = más lento)
@@ -17,6 +17,7 @@ export interface AppSettings {
   suites?: Suite[]; // suites (nombre + colección)
   activeSuite?: string; // id de la suite activa: la salida del canal emite con su colección
   legacyLinks?: boolean; // false = los links viejos con variables ya no emiten
+  zocalos?: ZocaloItem[]; // zócalos del newsticker: PNG + pastilla programados por día/horario (Ajustes → Newsticker)
 }
 
 export const settingsApi = {

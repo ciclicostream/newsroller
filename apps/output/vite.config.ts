@@ -6,7 +6,7 @@ export default defineConfig({
   base: "/output/",
   plugins: [react()],
   server: {
-    port: 5174,
+    port: Number(process.env.PORT) || 5174,
     proxy: {
       "/api": "http://localhost:4000",
       "/socket.io": { target: "http://localhost:4000", ws: true },

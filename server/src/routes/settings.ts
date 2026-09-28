@@ -3,7 +3,7 @@ import { getSupabase } from "../db/supabase.js";
 import { requireAuth, requirePerm } from "../auth/middleware.js";
 import { clearLimitsCache } from "../auth/sessions.js";
 import { logActivity } from "../activity.js";
-import { CLIMA_SLOT_KEYS, CLIMA_DAY_DEFAULT, normalizeClimaIcons, PLATAFORMAS_DEFAULT, IDLE_MINUTES_DEFAULT, MUSIC_DEFAULT, GENEROS_MUSICALES_DEFAULT, ROLES, DEFAULT_COLLECTION, SUITE_DEFAULT, SUITE_NAME_RE, collectionById, can, type Suite, type Plataforma, type Role, type MusicSettings } from "@newsroller/shared";
+import { CLIMA_SLOT_KEYS, CLIMA_DAY_DEFAULT, normalizeClimaIcons, PLATAFORMAS_DEFAULT, IDLE_MINUTES_DEFAULT, MUSIC_DEFAULT, GENEROS_MUSICALES_DEFAULT, ZOCALOS_DEFAULT, ROLES, DEFAULT_COLLECTION, SUITE_DEFAULT, SUITE_NAME_RE, collectionById, can, type Suite, type Plataforma, type Role, type MusicSettings, type ZocaloItem } from "@newsroller/shared";
 import type { IO } from "../realtime/socket.js";
 
 // Preferencias del sistema (key/value). Defaults + validación por clave.
@@ -41,10 +41,13 @@ const DEFAULTS = {
   activeSuite: SUITE_DEFAULT.id as string,
   // Links viejos con variables (/output/?orientation=…): se apagan cuando todos los outputs usan links con nombre.
   legacyLinks: true,
+  // Zócalos del newsticker (Ajustes → Newsticker → Zócalo): PNG + pastilla programados por día/horario,
+  // que entran sobre el newsticker real del feed. Se administran en Ajustes → Newsticker.
+  zocalos: ZOCALOS_DEFAULT as ZocaloItem[],
 };
 
 type SettingsKey = keyof typeof DEFAULTS;
-type SettingsValue = number | boolean | string | string[] | Suite[] | Record<string, string> | Record<string, number> | Plataforma[] | MusicSettings;
+type SettingsValue = number | boolean | string | string[] | Suite[] | Record<string, string> | Record<string, number> | Plataforma[] | MusicSettings | ZocaloItem[];
 
 // Fallback en memoria cuando no hay Supabase (dev local sin credenciales).
 const memory: Record<string, unknown> = {};
@@ -134,6 +137,36 @@ function coerce(key: SettingsKey, raw: unknown): SettingsValue | null {
       if (logo != null && logo !== "" && (typeof logo !== "string" || !/^https?:\/\//.test(logo))) return null;
       ids.add(id);
       out.push({ id, name, ...(typeof logo === "string" && logo ? { logo } : {}) });
+    }
+    return out;
+  }
+  if (key === "zocalos") {
+    if (!Array.isArray(raw) || raw.length > 20) return null;
+    const out: ZocaloItem[] = [];
+    const ids = new Set<string>();
+    const hhmm = /^([01]\d|2[0-3]):[0-5]\d$/;
+    for (const it of raw as Record<string, unknown>[]) {
+      const id = typeof it?.id === "string" ? it.id : "";
+      const name = typeof it?.name === "string" ? it.name.trim().slice(0, 40) : "";
+      const imageUrl = it?.imageUrl;
+      const position = it?.position;
+      const pillText = typeof it?.pillText === "string" ? it.pillText.trim().slice(0, 80) : "";
+      const startTime = it?.startTime;
+      const endTime = it?.endTime;
+      const active = typeof it?.active === "boolean" ? it.active : true;
+      if (!/^[a-z0-9_-]{1,40}$/.test(id) || !name || ids.has(id)) return null;
+      if (imageUrl != null && imageUrl !== "" && (typeof imageUrl !== "string" || !/^https?:\/\//.test(imageUrl))) return null;
+      if (position !== "derecha" && position !== "centro") return null;
+      if (typeof startTime !== "string" || !hhmm.test(startTime)) return null;
+      if (typeof endTime !== "string" || !hhmm.test(endTime)) return null;
+      let days: number[] = [];
+      if (it?.days != null) {
+        if (!Array.isArray(it.days)) return null;
+        days = [...new Set(it.days.map(Number))];
+        if (days.some((d) => !Number.isInteger(d) || d < 0 || d > 6)) return null;
+      }
+      ids.add(id);
+      out.push({ id, name, imageUrl: typeof imageUrl === "string" ? imageUrl : "", position, pillText, days, startTime, endTime, active });
     }
     return out;
   }

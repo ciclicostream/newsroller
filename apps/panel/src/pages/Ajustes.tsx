@@ -116,6 +116,7 @@ export function Ajustes() {
                     {busy === "ticker" ? "Guardando…" : "Guardar"}
                   </button>
                 )}
+                <Link to="/ajustes/zocalo" className="btn aj-save" style={{ justifyContent: "center" }}>Zócalo <ChevronRight size={14} /></Link>
               </>
             )}
           </AjCard>
