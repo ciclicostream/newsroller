@@ -18,6 +18,9 @@ export interface AppSettings {
   activeSuite?: string; // id de la suite activa: la salida del canal emite con su colección
   legacyLinks?: boolean; // false = los links viejos con variables ya no emiten
   zocalos?: ZocaloItem[]; // zócalos del newsticker: PNG + pastilla programados por día/horario (Ajustes → Newsticker)
+  zocaloDurationSec?: number; // segundos que queda en pantalla cada entrada del Zócalo
+  zocaloIntervalSec?: number; // segundos de pausa entre una salida del Zócalo y la siguiente entrada
+  zocaloEffects?: boolean; // false = sin animación de entrada/salida ni parpadeo
 }
 
 export const settingsApi = {

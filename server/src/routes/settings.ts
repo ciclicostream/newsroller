@@ -44,6 +44,12 @@ const DEFAULTS = {
   // Zócalos del newsticker (Ajustes → Newsticker → Zócalo): PNG + pastilla programados por día/horario,
   // que entran sobre el newsticker real del feed. Se administran en Ajustes → Newsticker.
   zocalos: ZOCALOS_DEFAULT as ZocaloItem[],
+  // Cuánto tiempo (segundos) queda en pantalla cada entrada del Zócalo.
+  zocaloDurationSec: 15,
+  // Pausa (segundos) entre una salida del Zócalo y la siguiente entrada.
+  zocaloIntervalSec: 60,
+  // false = sin animación de entrada/salida ni parpadeo: aparece y desaparece seco.
+  zocaloEffects: true,
 };
 
 type SettingsKey = keyof typeof DEFAULTS;
@@ -170,6 +176,17 @@ function coerce(key: SettingsKey, raw: unknown): SettingsValue | null {
     }
     return out;
   }
+  if (key === "zocaloDurationSec") {
+    const n = Number(raw);
+    if (!Number.isFinite(n)) return null;
+    return Math.round(Math.min(120, Math.max(5, n)));
+  }
+  if (key === "zocaloIntervalSec") {
+    const n = Number(raw);
+    if (!Number.isFinite(n)) return null;
+    return Math.round(Math.min(600, Math.max(5, n)));
+  }
+  if (key === "zocaloEffects") return typeof raw === "boolean" ? raw : null;
   if (key === "music") {
     if (typeof raw !== "object" || raw === null || Array.isArray(raw)) return null;
     const m = raw as Record<string, unknown>;
