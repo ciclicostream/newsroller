@@ -1,0 +1,507 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Brasil Vota · Especial Cíclico</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--brand:#0f3785;--brand-d:#0a2a68;--ink:#14213D;--mut:#68748F;--paper:#fff;--card:#F3F6FB;--band:#EAEFF8;--line:#DAE2F0;--gold:#F1D26A;--green:#4DB680;
+  --f:"Inter","Helvetica Neue",Arial,sans-serif}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:var(--paper);color:var(--ink);font-family:var(--f);-webkit-font-smoothing:antialiased}
+button{font-family:var(--f)}
+:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.bv{max-width:1040px;margin:0 auto;background:var(--paper);border:1px solid var(--line);border-radius:6px;overflow:hidden}
+
+/* ===== Card principal ===== */
+.hd{cursor:pointer;padding:22px 28px 0;color:#fff;background:var(--brand);user-select:none;-webkit-tap-highlight-color:transparent}
+.kick{font-size:11px;font-weight:700;letter-spacing:.24em;text-transform:uppercase;color:#C9D7F5;display:flex;align-items:center;gap:10px}
+.kick::before{content:"";width:22px;height:2px;background:var(--gold)}
+.ttl{display:flex;align-items:center;gap:16px;margin-top:12px}
+.flag{width:clamp(38px,7vw,52px);height:auto;flex:none;border-radius:3px;box-shadow:0 0 0 1px rgba(255,255,255,.4);transition:transform .35s}
+.hd:hover .flag{transform:rotate(-4deg) scale(1.05)}
+h1{font-weight:800;font-size:clamp(32px,7.4vw,56px);line-height:1;letter-spacing:.01em;text-transform:uppercase;white-space:nowrap}
+h1 span{display:inline-block;color:#fff;animation:lt 16s ease-in-out infinite}
+h1 span.sp{width:.3em}
+@keyframes lt{0%,24%{color:#fff}44%{color:var(--gold)}64%{color:var(--green)}84%,100%{color:#fff}}
+
+/* Línea de tiempo: cómo avanza el asunto, con la etapa actual resaltada */
+.tl{list-style:none;display:flex;position:relative;margin-top:22px;--k:0}
+.tl::before,.tl::after{content:"";position:absolute;top:5px;left:10%;height:2px;border-radius:1px}
+.tl::before{right:10%;background:rgba(255,255,255,.22)}
+.tl::after{width:calc((100% - 20%) * var(--k));background:var(--gold);transition:width 1s cubic-bezier(.2,.8,.2,1)}
+.tl li{flex:1;text-align:center;position:relative;z-index:1;min-width:0}
+.tl i{display:block;width:12px;height:12px;border-radius:50%;margin:0 auto;background:var(--brand);border:2px solid rgba(255,255,255,.45);transition:all .35s}
+.tl span{display:block;margin-top:9px;font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,.55);padding:0 3px;line-height:1.25;transition:color .3s}
+.tl li.done i{background:var(--gold);border-color:var(--gold)}
+.tl li.done span{color:rgba(255,255,255,.8)}
+.tl li.on i{width:16px;height:16px;margin-top:-2px;background:#fff;border-color:var(--gold);box-shadow:0 0 0 4px rgba(241,210,106,.35);animation:ring 2.2s ease-in-out infinite}
+.tl li.on span{color:#fff;font-weight:800}
+.tl li.next i{border-style:dashed;border-color:var(--gold)}
+.tl li:hover i{transform:scale(1.25)}
+@keyframes ring{0%,100%{box-shadow:0 0 0 4px rgba(241,210,106,.35)}50%{box-shadow:0 0 0 8px rgba(241,210,106,.1)}}
+
+.row{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:16px;padding:13px 0 14px;border-top:1px solid rgba(255,255,255,.18)}
+.status{font-size:12px;color:#DCE6FB;min-width:0}
+.status b{font-weight:700;color:#fff}
+.more{display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.28);border-radius:999px;color:#fff;font:600 12px var(--f);padding:7px 14px 7px 16px;cursor:pointer;flex:none;transition:background .2s,transform .2s}
+.more:hover{background:rgba(255,255,255,.2)}
+.more:active{transform:scale(.96)}
+.more svg{width:16px;height:16px;transition:transform .45s}
+.hd:hover .more svg{transform:translateY(2px)}
+.open .more svg,.open .hd:hover .more svg{transform:rotate(180deg)}
+.more.new{background:var(--gold);border-color:var(--gold);color:#0a2a68}
+.more.new svg{animation:bounce 1.3s ease-in-out infinite}
+@keyframes bounce{0%,100%{transform:translateY(-1px)}50%{transform:translateY(3px)}}
+
+/* Newsticker chico bajo la card */
+.tk{background:var(--brand-d);color:#fff;height:24px;overflow:hidden;display:flex;align-items:center;border-top:1px solid rgba(255,255,255,.12)}
+.tk .lb{flex:none;background:#E5303A;height:100%;display:flex;align-items:center;padding:0 10px;font-size:9px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;gap:6px;position:relative;z-index:1}
+.tk .lb i{width:6px;height:6px;border-radius:50%;background:#fff;animation:blink 1.2s steps(1) infinite}
+@keyframes blink{50%{opacity:.2}}
+.tk .mq{flex:1;overflow:hidden;white-space:nowrap}
+.tk .tr{display:inline-block;padding-left:100%;animation:mq 46s linear infinite;font-size:10px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:#DCE6FB}
+.tk:hover .tr{animation-play-state:paused}
+.tk .tr b{font-weight:800;color:#fff;margin:0 4px}
+@keyframes mq{to{transform:translateX(-100%)}}
+
+/* ===== Cuerpo: cards en columnas ===== */
+.bd{display:grid;grid-template-rows:0fr;transition:grid-template-rows .6s cubic-bezier(.2,.8,.2,1)}
+.open .bd{grid-template-rows:1fr}
+.bd>.in{overflow:hidden;min-height:0}
+.pad{padding:12px 18px 18px}
+.blk{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:18px;min-width:0}
+.sec{font-size:11px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--brand);margin-bottom:14px;display:flex;align-items:center;gap:10px}
+.sec::after{content:"";flex:1;height:1px;background:var(--line)}
+.num{font-variant-numeric:tabular-nums}
+.msg{font-size:17px;line-height:1.55;font-weight:500;color:var(--ink)}
+.solo{display:grid;gap:14px}
+
+/* Menú interno + carrusel horizontal */
+.tabs{position:relative;display:flex;align-items:center;gap:2px;border-bottom:1px solid var(--line);margin:0 0 14px;overflow-x:auto;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tb{background:none;border:0;padding:11px 14px;font:600 13px var(--f);color:var(--mut);cursor:pointer;white-space:nowrap;border-radius:6px 6px 0 0;transition:color .2s,background .2s}
+.tb:hover{color:var(--brand);background:var(--card)}
+.tb.on{color:var(--brand);font-weight:700}
+.tb .ct{display:inline-block;margin-left:6px;font-size:10px;font-weight:700;background:var(--band);color:var(--brand);border-radius:9px;padding:1px 6px}
+.ink{position:absolute;left:0;bottom:0;height:3px;background:var(--brand);border-radius:2px;width:var(--w,0);transform:translateX(var(--x,0));transition:transform .5s cubic-bezier(.2,.8,.2,1),width .5s cubic-bezier(.2,.8,.2,1)}
+.arr{margin-left:auto;display:flex;gap:6px;padding:0 0 0 12px;flex:none;position:sticky;right:0;background:linear-gradient(90deg,rgba(255,255,255,0),#fff 14px)}
+.arr button{width:28px;height:28px;border-radius:50%;border:1px solid var(--line);background:#fff;color:var(--brand);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .2s,color .2s,transform .2s}
+.arr button:hover:not(:disabled){background:var(--brand);color:#fff;transform:scale(1.1)}
+.arr button:active:not(:disabled){transform:scale(.94)}
+.arr button:disabled{opacity:.3;cursor:default}
+.arr svg{width:14px;height:14px}
+.vp{overflow:hidden;transition:height .5s cubic-bezier(.2,.8,.2,1);touch-action:pan-y}
+.trk2{display:flex;align-items:flex-start;transition:transform .6s cubic-bezier(.2,.8,.2,1);will-change:transform}
+.pn{flex:0 0 100%;min-width:0;display:grid;gap:14px;grid-template-columns:1fr;visibility:hidden;transition:visibility 0s .6s}
+.pn.on{visibility:visible;transition-delay:0s}
+@media (min-width:820px){
+  .pn.p-res{grid-template-columns:1fr 1fr}
+  .pn.p-res .blk.top{grid-column:1/-1}
+  .map .mp{grid-template-columns:minmax(0,1.5fr) minmax(0,1fr)!important;gap:30px!important}
+}
+
+.top .tp{display:grid;grid-template-columns:1fr;gap:16px;align-items:center}
+@media (min-width:820px){.top .tp{grid-template-columns:1.4fr 1fr;gap:28px}}
+.verdict{border-left:4px solid var(--c,var(--brand));padding:2px 0 2px 16px}
+.verdict .tg{font-size:11px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--c,var(--brand))}
+.verdict h3{font-weight:700;font-size:clamp(19px,3.4vw,25px);line-height:1.22;margin-top:5px;text-wrap:balance;letter-spacing:-.01em}
+.verdict p{font-size:12.5px;color:var(--mut);margin-top:6px}
+.cnt .l{display:flex;justify-content:space-between;align-items:baseline;gap:10px;font-size:12px;color:var(--mut)}
+.cnt .l b{font-size:30px;font-weight:800;color:var(--ink);letter-spacing:-.02em}
+.cnt .l b small{font-size:.55em;color:var(--brand)}
+.prog{height:6px;background:#fff;border:1px solid var(--line);margin-top:8px;border-radius:3px;overflow:hidden}
+.prog i{display:block;height:100%;background:var(--brand);transform-origin:left}
+.cnt .w{font-size:11.5px;color:var(--mut);margin-top:7px}
+
+/* Podio con fotos redondas y pestaña con el porcentaje */
+.pod{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.pod .p{display:flex;flex-direction:column;align-items:center;text-align:center;cursor:pointer;transition:transform .25s;padding:4px 2px;border-radius:8px}
+.pod .p:hover{transform:translateY(-4px)}
+.pod .ph{width:clamp(74px,12vw,100px);height:clamp(74px,12vw,100px);border-radius:50%;object-fit:cover;object-position:50% 14%;border:3px solid var(--brand);background:#cfd8ea;position:relative;z-index:1;transition:transform .3s,box-shadow .3s}
+.pod .p:hover .ph{transform:scale(1.06);box-shadow:0 10px 22px rgba(15,55,133,.28)}
+.pod .tab{margin-top:-16px;min-width:clamp(70px,11vw,92px);background:var(--brand);color:#fff;border-radius:0 0 12px 12px;padding:20px 8px 7px;font-weight:800;font-size:clamp(16px,2.6vw,20px);transition:background .2s}
+.pod .tab small{font-size:.62em;font-weight:700}
+.pod h4{font-weight:700;font-size:clamp(13px,2vw,15px);line-height:1.2;color:var(--brand);margin-top:9px}
+.pod .pt{font-size:11.5px;font-weight:600;color:var(--ink);margin-top:2px}
+.pod .vt{font-size:11px;color:var(--mut);margin-top:1px}
+.pod .p.first .ph{border-color:var(--gold);box-shadow:0 0 0 2px var(--brand)}
+.pod .p.sel .ph{box-shadow:0 0 0 3px #fff,0 0 0 6px var(--c)}
+.pod .p.sel .tab{background:var(--c)}
+
+.rows{display:flex;flex-direction:column;gap:5px;margin-top:14px}
+.rw{position:relative;display:grid;grid-template-columns:minmax(0,1fr) 54px 92px;align-items:center;gap:8px;background:#fff;border:1px solid var(--line);padding:8px 12px;border-radius:4px;font-size:13px;cursor:pointer;transition:transform .2s,border-color .2s,background .2s;overflow:hidden}
+.rw::after{content:"";position:absolute;left:0;bottom:0;height:2px;width:calc(var(--w,0) * 1%);background:var(--c);transform:scaleX(0);transform-origin:left;transition:transform .45s cubic-bezier(.2,.8,.2,1)}
+.rw:hover{transform:translateX(3px);border-color:var(--brand)}
+.rw:hover::after,.rw.sel::after{transform:scaleX(1)}
+.rw.sel{border-color:var(--c);background:#F8FAFE}
+.rw .n{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rw .n b{font-weight:700}
+.rw .n span{color:var(--mut)}
+.rw .pc{font-weight:800;text-align:right;font-size:14px}
+.rw .v{text-align:right;color:var(--mut);font-size:11px}
+.rw .sw{display:inline-block;width:9px;height:9px;margin-right:8px;border-radius:2px;background:var(--c)}
+.hint{font-size:12px;color:var(--mut);margin-top:14px;min-height:20px}
+.hint b{color:var(--ink)}
+.go{background:none;border:0;color:var(--brand);font:700 12px var(--f);cursor:pointer;padding:0;transition:transform .2s;display:inline-block}
+.go:hover{transform:translateX(3px);text-decoration:underline}
+.c5{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.cc{background:#fff;border:1px solid var(--line);border-top:4px solid var(--c);border-radius:6px;padding:16px 12px 14px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:6px;transition:transform .25s,box-shadow .25s}
+.cc:hover{transform:translateY(-5px);box-shadow:0 12px 24px rgba(15,55,133,.14)}
+.cc>b{font-size:17px;font-weight:800;letter-spacing:-.01em}
+.cc img,.cc .ini{width:70px;height:70px;border-radius:50%;object-fit:cover;object-position:50% 14%;border:3px solid var(--c);background:#cfd8ea;margin-top:4px;transition:transform .3s}
+.cc:hover img{transform:scale(1.08)}
+.cc .wn{font-size:12.5px;font-weight:600;line-height:1.2;min-height:30px}
+.cc .pc{font-size:30px;font-weight:800;letter-spacing:-.02em}
+.cc .pc small{font-size:.5em;color:var(--brand)}
+.cc .bar{width:100%;height:5px;border-radius:3px;background:var(--band);overflow:hidden}
+.cc .bar i{display:block;height:100%;background:var(--c);border-radius:3px;transform-origin:left}
+
+/* Mapa */
+.map .mp{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:16px;align-items:center}
+.map svg{width:100%;height:auto;max-height:360px;display:block;margin:0 auto}
+.map path{stroke:#fff;stroke-width:1.1;stroke-linejoin:round;cursor:pointer;transition:opacity .25s,filter .2s}
+.map path:hover{filter:brightness(.88);stroke:var(--ink)}
+.map path.dim{opacity:.18}
+.leg{display:flex;flex-direction:column;gap:6px}
+.leg .it{display:flex;align-items:center;gap:9px;font-size:12.5px;line-height:1.2;padding:6px 8px;border-radius:4px;cursor:pointer;transition:background .2s}
+.leg .it:hover,.leg .it.sel{background:#fff}
+.leg .it i{width:12px;height:12px;border-radius:2px;flex:none}
+.leg .it em{margin-left:auto;font-style:normal;font-weight:800;font-size:18px}
+.leg .n{font-size:11px;color:var(--mut);line-height:1.4;margin-top:4px}
+
+/* Tablas de ganador por ciudad */
+.tbl{background:#fff;border:1px solid var(--line);border-radius:4px}
+.tr2{display:grid;grid-template-columns:minmax(80px,120px) minmax(0,1fr) 52px;align-items:center;gap:10px;padding:8px 12px;font-size:13px;transition:background .2s}
+.tr2+.tr2{border-top:1px solid var(--line)}
+.tr2:hover{background:#F7F9FD}
+.tr2 .c{font-weight:700;font-size:14px}
+.tr2 .w{display:flex;align-items:center;gap:9px;min-width:0}
+.tr2 .w img,.tr2 .w .ini{width:28px;height:28px;border-radius:50%;object-fit:cover;object-position:50% 14%;border:2px solid var(--c);flex:none;background:#cfd8ea;transition:transform .25s}
+.tr2:hover .w img{transform:scale(1.18)}
+.tr2 .w span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tr2 .pc{font-weight:800;text-align:right;font-size:14px}
+
+.ab{display:grid;gap:14px}
+@media (min-width:820px){.ab{grid-template-columns:.9fr 1.1fr 1.1fr;align-items:start}}
+.box{display:grid;grid-template-columns:1fr 1fr;background:#fff;border:1px solid var(--line);border-radius:4px}
+.box div{padding:10px 12px;text-align:center;border-bottom:1px solid var(--line)}
+.box div:nth-child(odd){border-right:1px solid var(--line)}
+.box div:nth-last-child(-n+2){border-bottom:0}
+.box span{display:block;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--brand)}
+.box b{display:block;font-size:17px;font-weight:800;margin-top:2px}
+.ab .rows{margin-top:0}
+
+.grid2{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:16px 10px}
+.cand{display:flex;flex-direction:column;align-items:center;text-align:center;gap:6px;cursor:default;transition:transform .25s}
+.cand:hover{transform:translateY(-3px)}
+.cand img,.cand .ini{width:78px;height:78px;border-radius:50%;object-fit:cover;object-position:50% 14%;border:3px solid var(--brand);background:#cfd8ea;transition:box-shadow .3s}
+.cand:hover img{box-shadow:0 8px 18px rgba(15,55,133,.25)}
+.cand b{font-weight:700;font-size:13px;line-height:1.2;color:var(--brand)}
+.cand small{font-size:11px;color:var(--mut);line-height:1.25}
+.ini{display:flex;align-items:center;justify-content:center;color:#fff;font:700 15px var(--f);background:var(--brand)}
+
+.foot{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin:0 18px;padding:12px 0 16px;border-top:1px solid var(--ink);font-size:11.5px;color:var(--mut)}
+.foot a{color:var(--ink);font-weight:700;text-decoration:none;transition:color .2s}
+.foot a:hover{color:var(--brand)}
+
+/* Entrada de cada panel al mostrarse */
+.pn.show .blk{animation:up .6s cubic-bezier(.2,.8,.2,1) both}
+.pn.show .blk:nth-child(2){animation-delay:.09s}.pn.show .blk:nth-child(3){animation-delay:.18s}
+.pn.show .prog i,.pn.show .cc .bar i{animation:grow 1.2s .35s cubic-bezier(.2,.8,.2,1) both}
+.pn.show .pod .p{animation:up .55s cubic-bezier(.2,.8,.2,1) both;animation-delay:calc(.25s + var(--j,0) * 110ms)}
+.pn.show .rw,.pn.show .tr2{animation:up .45s ease both;animation-delay:calc(.4s + var(--j,0) * 45ms)}
+.pn.show .cc{animation:up .55s cubic-bezier(.2,.8,.2,1) both;animation-delay:calc(.15s + var(--j,0) * 90ms)}
+.pn.show .map path{animation:fadeIn .6s ease both;animation-delay:calc(.1s + var(--j,0) * 22ms)}
+@keyframes up{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@keyframes grow{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@media (max-width:520px){.hd{padding:20px 18px 0}.tl span{font-size:9px;letter-spacing:.04em}.tl li:not(.on) span{display:none}.pad{padding:12px}.blk{padding:14px}.map .mp{grid-template-columns:1fr}.rw{grid-template-columns:minmax(0,1fr) 50px}.rw .v{display:none}.tr2{grid-template-columns:90px minmax(0,1fr) 46px}.foot{margin:0 12px}.status{font-size:11px}}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+.static *,.static *::before,.static *::after{animation:none!important;transition:none!important}
+</style>
+</head>
+<body>
+<div class="bv" id="bv">
+  <header class="hd" id="hd" role="button" tabindex="0" aria-expanded="false" aria-controls="bd">
+    <div class="kick">Especial Cíclico</div>
+    <div class="ttl">
+      <svg class="flag" viewBox="0 0 72 50" aria-hidden="true"><rect width="72" height="50" fill="#009C3B"/><polygon points="36,4 68,25 36,46 4,25" fill="#FFDF00"/><circle cx="36" cy="25" r="11" fill="#002776"/><path d="M25.2 22.5c7-2 15-.6 21.4 3.6" stroke="#fff" stroke-width="2.2" fill="none"/></svg>
+      <h1 id="t" aria-label="Brasil Vota"></h1>
+    </div>
+    <ol class="tl" id="tl" aria-label="Etapas de la elección"></ol>
+    <div class="row">
+      <div class="status" id="status">Cargando…</div>
+      <button class="more" id="more" type="button" aria-label="Abrir o cerrar resultados"><span id="moreTxt">Ver resultados</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>
+    </div>
+  </header>
+  <div class="tk" role="marquee" aria-label="Noticia en desarrollo"><div class="lb"><i></i>Noticia en desarrollo</div><div class="mq"><div class="tr" id="tr"></div></div></div>
+  <section class="bd" id="bd"><div class="in"><div class="pad" id="content"></div>
+    <div class="foot"><span id="src">Fuente: TSE · Tribunal Superior Eleitoral</span><a href="https://www.somosciclico.com" target="_blank" rel="noopener">Cíclico · www.somosciclico.com</a></div>
+  </div></section>
+</div>
+<script>
+(function () {
+  var Q = new URLSearchParams(location.search);
+  var API = (Q.get("api") || location.origin).replace(/\/+$/, "");
+  var DEMO = Q.get("demo"); // pre | lidera | runoff | ganador: datos de muestra con los 12 candidatos (sólo para revisar el diseño)
+  var POLL = 30000;
+  var $ = function (id) { return document.getElementById(id); };
+  if (Q.get("static")) document.body.className = "static"; // sólo para capturas de pantalla
+  var data = null, open = false, mapa = null, seenKey = "bv:seen", focus = -1, hover = -1;
+
+  // Título: cada letra recorre blanco → dorado → verde → blanco, desfasadas.
+  var t = $("t"); "BRASIL VOTA".split("").forEach(function (ch, i) {
+    var s = document.createElement("span");
+    if (ch === " ") { s.className = "sp"; s.innerHTML = "&nbsp;"; } else { s.textContent = ch; s.style.animationDelay = (-i * 1.1) + "s"; }
+    t.appendChild(s);
+  });
+
+  // Línea de tiempo
+  var STEPS = [["apertura", "Se abren los comicios"], ["cierre", "Se cierran las urnas"], ["resultados", "Primeros resultados"], ["preliminar", "Conteo preliminar"], ["definitivo", "Resultado final"]];
+  $("tl").innerHTML = STEPS.map(function (s, i) { return '<li title="' + s[1] + '" data-i="' + i + '"><i></i><span>' + s[1] + "</span></li>"; }).join("");
+  function drawTimeline(phase) {
+    var idx = STEPS.map(function (s) { return s[0]; }).indexOf(phase), tl = $("tl");
+    tl.style.setProperty("--k", Math.max(0, idx) / (STEPS.length - 1));
+    Array.prototype.forEach.call(tl.children, function (li, i) { li.className = idx < 0 ? (i === 0 ? "next" : "") : i < idx ? "done" : i === idx ? "on" : ""; });
+  }
+
+  var esc = function (s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); };
+  var pct = function (n) { return (Math.round(n * 10) / 10).toFixed(1).replace(".", ","); };
+  var num = function (n) { return n == null ? "—" : Number(n).toLocaleString("es-AR"); };
+  var abs = function (p) { return p ? new URL(p, API + "/").href : ""; };
+  var ini = function (n) { return String(n).split(/\s+/).filter(Boolean).slice(0, 2).map(function (w) { return w[0]; }).join("").toUpperCase(); };
+  var norm = function (s) { return String(s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim(); };
+  var hm = function (iso) { return iso ? iso.slice(8, 10) + "/" + iso.slice(5, 7) + " · " + iso.slice(11, 16) + " hs" : "—"; };
+  var tone = function (hex, a) { // colores de candidato apagados para la web, sólidos sobre blanco
+    var m = /^#?([0-9a-f]{6})$/i.exec(hex); if (!m) return "#0f3785"; var n = parseInt(m[1], 16), ink = [20, 33, 61], k = 0.18;
+    var c = [n >> 16, (n >> 8) & 255, n & 255].map(function (v, i) { return v * (1 - k) + ink[i] * k; });
+    a = a == null ? 1 : a; return "rgb(" + c.map(function (v) { return Math.round(255 * (1 - a) + v * a); }).join(",") + ")";
+  };
+  var photo = function (c, cls) { return c.photo_url ? '<img class="' + (cls || "") + '" src="' + esc(abs(c.photo_url)) + '" alt="' + esc(c.name) + '">' : '<div class="ini ' + (cls || "") + '">' + esc(ini(c.name)) + "</div>"; };
+  var shortName = function (n) { if (/\blula\b/i.test(n)) return "Lula da Silva"; var p = String(n).split(" "); return p.length > 2 ? p[0] + " " + p[p.length - 1] : n; };
+  var cu = function (v, extra) { return '<span class="cu" data-v="' + v + '">' + pct(v) + "</span>" + (extra || ""); };
+
+  function verdict(d) {
+    var cs = d.candidates; if (cs.length < 2) return "";
+    var win = d.winner_override ? cs.filter(function (c) { return norm(c.name) === norm(d.winner_override); })[0] : null, h;
+    if (d.outcome === "winner" || win) {
+      var w = win || cs[0], fin = d.phase === "definitivo";
+      h = [tone(w.color), fin ? "Ganador" : "Conteo preliminar", esc(w.name) + (fin ? " es el ganador de las elecciones" : " gana según el conteo preliminar"), pct(w.pct) + "% de los votos válidos · " + num(w.votes) + " votos"];
+    } else if (d.outcome === "runoff") {
+      h = [tone(cs[0].color), "Segunda vuelta", esc(shortName(cs[0].name)) + " y " + esc(shortName(cs[1].name)) + " irán a segunda vuelta", "Ningún candidato superó el 50 % de los votos válidos."];
+    } else {
+      h = [tone(cs[0].color), "Va primero", esc(cs[0].name) + " lidera el conteo con " + pct(cs[0].pct) + " %", "Le sigue " + esc(cs[1].name) + " con " + pct(cs[1].pct) + " %."];
+    }
+    return '<div class="verdict" style="--c:' + h[0] + '"><div class="tg">' + h[1] + "</div><h3>" + h[2] + "</h3><p>" + h[3] + "</p></div>";
+  }
+
+  function topBlock(d) {
+    return '<div class="tp">' + verdict(d) + '<div class="cnt"><div class="l"><b class="num">' + cu(d.counted_pct, "<small> %</small>") + "</b><span>escrutado</span></div>" +
+      '<div class="prog"><i style="width:' + Math.min(100, d.counted_pct) + '%"></i></div><div class="w">Actualizado ' + hm(d.updated_at) + " · hora de Brasilia</div></div></div>";
+  }
+
+  function podiumBlock(d) {
+    var rows = d.candidates, three = rows.slice(0, 3);
+    return '<div class="sec">Los tres primeros · votos válidos</div><div class="pod">' + three.map(function (c, i) {
+      return '<div class="p' + (i === 0 ? " first" : "") + '" data-cand="' + i + '" style="--c:' + tone(c.color) + ";--j:" + i + '" title="Ver los estados que ganó">' + photo(c, "ph") + '<div class="tab num">' + cu(c.pct, "<small>%</small>") + "</div><h4>" + esc(c.name) + '</h4><div class="pt">' + esc(c.party || "") + '</div><div class="vt num">Votos: ' + num(c.votes) + "</div></div>";
+    }).join("") + '</div><div class="hint" id="hint"></div>';
+  }
+  function rowsBlock(d) {
+    var rows = d.candidates, rest = rows.slice(3, 9), others = rows.slice(9), max = Math.max.apply(null, rows.map(function (c) { return c.pct; }).concat([1]));
+    var h = '<div class="sec">Resto de los candidatos</div><div class="rows" style="margin-top:0">' + rest.map(function (c, k) {
+      return '<div class="rw" data-cand="' + (k + 3) + '" style="--c:' + tone(c.color) + ";--w:" + (c.pct / max) * 100 + ";--j:" + k + '"><div class="n"><i class="sw"></i><b>' + esc(c.name) + "</b> <span>| " + esc(c.party || "") + '</span></div><div class="pc num">' + pct(c.pct) + '%</div><div class="v num">Votos: ' + num(c.votes) + "</div></div>";
+    }).join("");
+    if (others.length) h += '<div class="rw" style="--c:#9AA6C0;--j:7;cursor:default"><div class="n"><i class="sw"></i><b>Otros</b> <span>| ' + others.length + ' candidatos</span></div><div class="pc num">' + pct(others.reduce(function (a, c) { return a + c.pct; }, 0)) + '%</div><div class="v num">Votos: ' + num(others.reduce(function (a, c) { return a + c.votes; }, 0)) + "</div></div>";
+    return h + "</div>";
+  }
+
+  function mapBlock(d) {
+    if (!d.states.length) return "";
+    var by = {}; d.states.forEach(function (s) { by[s.id] = s; });
+    var wins = {}; d.states.forEach(function (s) { if (s.winner >= 0) wins[s.winner] = (wins[s.winner] || 0) + 1; });
+    var leg = Object.keys(wins).map(function (i) { return { i: +i, c: d.candidates[i], n: wins[i] }; }).filter(function (x) { return x.c; }).sort(function (a, b) { return b.n - a.n; }).slice(0, 4);
+    var k2 = 0, svg = mapa ? '<svg viewBox="' + mapa.viewBox.join(" ") + '" role="img" aria-label="Mapa de Brasil: ganador por estado">' + mapa.regions.map(function (r) {
+      var s = by[r.id], c = s && s.winner >= 0 ? d.candidates[s.winner] : null, k = c ? Math.min(1, Math.max(0, ((s.pct || 55) - 30) / 40)) : 0;
+      return '<path style="--j:' + k2++ + '" data-w="' + (c ? s.winner : -1) + '" d="' + r.d + '" fill="' + (c ? tone(c.color, 0.55 + 0.45 * k) : "#E3E8F2") + '"><title>' + esc(r.name) + (c ? " · " + esc(c.name) + " " + pct(s.pct || 0) + "%" : "") + "</title></path>";
+    }).join("") + "</svg>" : '<div style="height:200px"></div>';
+    return '<div class="sec">Ganador por estado</div><div class="mp"><div>' + svg + '</div><div class="leg">' + leg.map(function (x) {
+      return '<div class="it" data-cand="' + x.i + '"><i style="background:' + tone(x.c.color) + '"></i><span>' + esc(x.c.name) + "</span><em>" + x.n + "</em></div>";
+    }).join("") + '<div class="n">Estados y Distrito Federal ganados. Cuanto más intenso el color, mayor la ventaja.</div></div></div>';
+  }
+
+  function winnerRow(d, name, t0, j) {
+    var c = d.candidates[t0.i]; if (!c) return "";
+    return '<div class="tr2" style="--c:' + tone(c.color) + ";--j:" + j + '"><div class="c">' + esc(name) + '</div><div class="w">' + photo(c) + "<span>" + esc(c.name) + '</span></div><div class="pc num">' + pct(t0.pct) + "%</div></div>";
+  }
+  function citiesBlock(d) {
+    if (!d.cities.length) return "";
+    return '<div class="sec">Principales ciudades · ganador</div><div class="c5">' + d.cities.map(function (ct, j) {
+      var t0 = ct.top[0], c = t0 && d.candidates[t0.i]; if (!c) return "";
+      return '<div class="cc" style="--c:' + tone(c.color) + ";--j:" + j + '"><b>' + esc(ct.name) + "</b>" + photo(c) + '<span class="wn">' + esc(c.name) + '</span><div class="pc num">' + pct(t0.pct) + "<small>%</small></div><div class=\"bar\"><i style=\"width:" + t0.pct + '%"></i></div></div>';
+    }).join("") + "</div>";
+  }
+  function abroadBlock(d) {
+    var a = d.abroad; if (!a || !a.candidates.length) return "";
+    return '<div class="sec">Brasileños en ' + esc(a.country_name) + '</div><div class="ab"><div class="box"><div><span>Electores</span><b class="num">' + num(a.electorate) + '</b></div><div><span>Boletines</span><b class="num">' + num(a.bulletins_totalized) + " / " + num(a.bulletins_expected) + '</b></div><div><span>Totalizado</span><b class="num">' + (a.totalized_pct == null ? "—" : pct(a.totalized_pct) + " %") + '</b></div><div><span>Actualizado</span><b class="num">' + (a.updated_at ? a.updated_at.slice(11, 16) + " hs" : "—") + "</b></div></div>" +
+      '<div class="tbl">' + a.cities.map(function (ct, j) { return ct.top[0] ? winnerRow(d, ct.name, ct.top[0], j) : ""; }).join("") + '</div><div class="rows">' + a.candidates.slice(0, 3).map(function (r, i) {
+        var c = d.candidates[r.i]; return c ? '<div class="rw" data-cand="' + r.i + '" style="--c:' + tone(c.color) + ";--w:" + r.pct + ";--j:" + i + '"><div class="n"><i class="sw"></i><b>' + (i + 1) + ". " + esc(c.name) + '</b></div><div class="pc num">' + pct(r.pct) + '%</div><div class="v num">Votos: ' + num(r.votes) + "</div></div>" : "";
+      }).join("") + "</div></div>";
+  }
+  function candidatesGrid(d) {
+    var list = d.candidates.length ? d.candidates : d.preload;
+    return '<div class="sec">Los candidatos</div><div class="grid2">' + list.map(function (c) { return '<div class="cand">' + photo(c) + "<b>" + esc(c.name) + "</b><small>" + esc(c.party || "") + "</small></div>"; }).join("") + "</div>";
+  }
+
+  var PRE = {
+    pre: "Domingo 4 de octubre: Brasil elige presidente. Los comicios abren a las 8:00 y cierran a las 17:00 (hora de Brasilia). Seguí acá los resultados en vivo.",
+    apertura: "Se abrieron los comicios en todo Brasil. Los resultados llegan después del cierre de las urnas, a las 17:00 (hora de Brasilia).",
+    cierre: "Se cerraron las urnas. En unos minutos el Tribunal Superior Electoral empieza a publicar el escrutinio."
+  };
+
+  function ticker(d, hasRes) {
+    var bits = [d.phase_label];
+    if (hasRes) bits.push("Escrutinio al " + pct(d.counted_pct) + " %", "Actualizado " + (d.updated_at ? d.updated_at.slice(11, 16) + " hs (Brasilia)" : ""));
+    else bits.push("Los comicios abren a las 8:00 y cierran a las 17:00 (hora de Brasilia)");
+    bits.push("Fuente: TSE", "La información se actualiza sola cada 30 segundos");
+    var one = bits.map(function (b) { return "<b>·</b>" + esc(b); }).join(" ");
+    $("tr").innerHTML = one + " " + one;
+  }
+
+  function panelsFor(d) {
+    var ps = [{ k: "res", label: "Resultados", cls: "p-res", html: '<section class="blk top">' + topBlock(d) + '</section><section class="blk">' + podiumBlock(d) + '</section><section class="blk">' + rowsBlock(d) + "</section>" }];
+    if (d.states.length) ps.push({ k: "map", label: "Mapa por estado", html: '<section class="blk map">' + mapBlock(d) + "</section>" });
+    if (d.cities.length) ps.push({ k: "cit", label: "Ciudades", ct: d.cities.length, html: '<section class="blk cit">' + citiesBlock(d) + "</section>" });
+    if (d.abroad && d.abroad.candidates.length) ps.push({ k: "arg", label: "Argentina", html: '<section class="blk arg">' + abroadBlock(d) + "</section>" });
+    return ps;
+  }
+  var CH = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>';
+  var CR = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>';
+
+  var animNext = false, startTab = Q.get("tab");
+  function render() {
+    var d = data; if (!d) return;
+    drawTimeline(d.phase);
+    var hasRes = d.available && d.candidates.length >= 2 && d.counted_pct > 0, html;
+    $("status").innerHTML = "<b>" + esc(d.phase_label) + "</b>" + (hasRes ? " · escrutinio " + pct(d.counted_pct) + " %" : "");
+    $("src").textContent = "Fuente: " + d.source;
+    ticker(d, hasRes);
+    if (hasRes) {
+      var ps = panelsFor(d); if (tab > ps.length - 1) tab = 0;
+      if (startTab) { var si = ps.map(function (p) { return p.k; }).indexOf(startTab); if (si >= 0) tab = si; startTab = null; } // ?tab=map|cit|arg: abre en ese panel
+      html = '<div class="tabs" role="tablist" id="tabs">' + ps.map(function (p, i) { return '<button class="tb" role="tab" data-tab="' + i + '">' + p.label + (p.ct ? '<span class="ct">' + p.ct + "</span>" : "") + "</button>"; }).join("") + '<i class="ink" id="ink"></i><div class="arr"><button type="button" data-dir="-1" aria-label="Anterior">' + CH + '</button><button type="button" data-dir="1" aria-label="Siguiente">' + CR + "</button></div></div>" +
+        '<div class="vp" id="vp"><div class="trk2" id="trk2">' + ps.map(function (p) { return '<div class="pn ' + (p.cls || "") + '" data-k="' + p.k + '">' + p.html + "</div>"; }).join("") + "</div></div>";
+    } else {
+      html = '<div class="solo"><section class="blk"><p class="msg">' + esc(PRE[d.phase] || PRE.pre) + '</p></section><section class="blk">' + candidatesGrid(d) + "</section></div>";
+    }
+    $("content").innerHTML = html;
+    var fresh = hasRes && !open && localStorage.getItem(seenKey) !== d.version;
+    $("more").className = "more" + (fresh ? " new" : "");
+    $("moreTxt").textContent = open ? "Cerrar" : fresh ? "Información actualizada" : hasRes ? "Ver resultados" : "Ver candidatos";
+    if (open) { try { localStorage.setItem(seenKey, d.version); } catch (e) {} }
+    if (hasRes) {
+      var a = animNext; animNext = false;
+      go(tab, { instant: true, anim: a, count: a });
+      if (window.ResizeObserver) { if (panelRO) panelRO.disconnect(); panelRO = new ResizeObserver(fitHeight); Array.prototype.forEach.call(document.querySelectorAll("#content .pn"), function (p) { panelRO.observe(p); }); }
+    }
+    applyFocus();
+    report();
+  }
+  var panelRO = null, tab = 0;
+  function fitHeight() { var pn = document.querySelectorAll("#content .pn"), vp = $("vp"); if (vp && pn[tab]) vp.style.height = pn[tab].offsetHeight + "px"; }
+  // Cambia de panel: el carrusel corre en horizontal, la altura se ajusta y el indicador del menú se desliza.
+  function go(i, o) {
+    o = o || {}; var pn = document.querySelectorAll("#content .pn"), trk = $("trk2"); if (!pn.length || !trk) return;
+    i = Math.max(0, Math.min(pn.length - 1, i)); tab = i;
+    if (o.instant) { trk.style.transition = "none"; $("vp").style.transition = "none"; }
+    trk.style.transform = "translateX(" + (-i * 100) + "%)";
+    Array.prototype.forEach.call(pn, function (p, k) { p.classList.toggle("on", k === i); p.classList.remove("show"); });
+    if (o.anim) { void pn[i].offsetWidth; pn[i].classList.add("show"); setTimeout(function () { pn[i].classList.remove("show"); }, 2000); }
+    var tb = document.querySelectorAll("#tabs .tb"), ink = $("ink");
+    Array.prototype.forEach.call(tb, function (b, k) { b.classList.toggle("on", k === i); b.setAttribute("aria-selected", k === i); });
+    if (tb[i] && ink) { ink.style.setProperty("--x", tb[i].offsetLeft + "px"); ink.style.setProperty("--w", tb[i].offsetWidth + "px"); if (o.instant) { ink.style.transition = "none"; } if (tb[i].scrollIntoView && !o.instant) tb[i].scrollIntoView({ inline: "nearest", block: "nearest", behavior: "smooth" }); }
+    var arrows = document.querySelectorAll("#tabs .arr button"); if (arrows.length) { arrows[0].disabled = i === 0; arrows[1].disabled = i === pn.length - 1; }
+    fitHeight();
+    if (o.instant) requestAnimationFrame(function () { requestAnimationFrame(function () { trk.style.transition = ""; $("vp").style.transition = ""; if (ink) ink.style.transition = ""; }); });
+    if (o.count && i === 0) countUp();
+    applyFocus(); setTimeout(report, 700);
+  }
+
+  // Microinteracciones ---------------------------------------------------------------------------------------------
+  // 1) Tocar un candidato (podio, fila o leyenda) resalta en el mapa los estados que ganó; al pasar el mouse por la leyenda, lo mismo en vista previa.
+  function applyFocus() {
+    var f = hover >= 0 ? hover : focus;
+    Array.prototype.forEach.call(document.querySelectorAll("#content .map path"), function (p) { p.classList.toggle("dim", f >= 0 && +p.getAttribute("data-w") !== f); });
+    Array.prototype.forEach.call(document.querySelectorAll("#content [data-cand]"), function (el) { el.classList.toggle("sel", focus >= 0 && +el.getAttribute("data-cand") === focus); });
+    var h = $("hint"); if (h && data) h.innerHTML = focus >= 0 && data.candidates[focus] ? "Seleccionaste a <b>" + esc(shortName(data.candidates[focus].name)) + '</b> · <button class="go" type="button" data-go="map">Ver los estados que ganó →</button>' : "Tocá un candidato para ver en el mapa los estados que ganó.";
+  }
+  $("content").addEventListener("click", function (e) {
+    var t = e.target.closest("[data-tab]"); if (t) return go(+t.getAttribute("data-tab"), { anim: true });
+    var ar = e.target.closest("[data-dir]"); if (ar) return go(tab + +ar.getAttribute("data-dir"), { anim: true });
+    var g = e.target.closest("[data-go]"); if (g) { var idx = Array.prototype.map.call(document.querySelectorAll("#content .pn"), function (p) { return p.getAttribute("data-k"); }).indexOf(g.getAttribute("data-go")); if (idx >= 0) go(idx, { anim: true }); return; }
+    var el = e.target.closest("[data-cand]"); if (!el) return;
+    var i = +el.getAttribute("data-cand"); focus = focus === i ? -1 : i; applyFocus();
+  });
+  // Deslizar con el dedo (o arrastrar) entre paneles; flechas del teclado en el menú.
+  var sx = 0, sy = 0;
+  $("content").addEventListener("touchstart", function (e) { sx = e.touches[0].clientX; sy = e.touches[0].clientY; }, { passive: true });
+  $("content").addEventListener("touchend", function (e) { var dx = e.changedTouches[0].clientX - sx, dy = e.changedTouches[0].clientY - sy; if (Math.abs(dx) > 55 && Math.abs(dx) > Math.abs(dy) * 1.4 && e.target.closest("#vp")) go(tab + (dx < 0 ? 1 : -1), { anim: true }); }, { passive: true });
+  $("content").addEventListener("keydown", function (e) { if (e.target.closest("#tabs") && (e.key === "ArrowRight" || e.key === "ArrowLeft")) { e.preventDefault(); go(tab + (e.key === "ArrowRight" ? 1 : -1), { anim: true }); var b = document.querySelectorAll("#tabs .tb")[tab]; if (b) b.focus(); } });
+  $("content").addEventListener("mouseover", function (e) { var el = e.target.closest(".leg [data-cand]"); var h = el ? +el.getAttribute("data-cand") : -1; if (h !== hover) { hover = h; applyFocus(); } });
+  $("content").addEventListener("mouseleave", function () { if (hover !== -1) { hover = -1; applyFocus(); } });
+  // 2) Al abrir, los porcentajes cuentan desde cero.
+  function countUp() {
+    if (Q.get("static") || matchMedia("(prefers-reduced-motion:reduce)").matches) return;
+    Array.prototype.forEach.call(document.querySelectorAll("#content .cu"), function (el) {
+      var v = parseFloat(el.getAttribute("data-v")), t0 = performance.now() + 250;
+      (function step(now) { var k = Math.min(1, Math.max(0, (now - t0) / 1100)); el.textContent = pct(v * (1 - Math.pow(1 - k, 3))); if (k < 1) requestAnimationFrame(step); })(t0);
+    });
+  }
+
+  function setOpen(v) {
+    open = v; $("bv").classList.toggle("open", open); $("hd").setAttribute("aria-expanded", open);
+    if (open) animNext = true;
+    if (open && !mapa) fetch(API + "/widgets/brasil-mapa.json").then(function (r) { return r.json(); }).then(function (m) {
+      mapa = m; var el = document.querySelector("#content .blk.map"); if (el && data) { el.innerHTML = mapBlock(data); applyFocus(); fitHeight(); }
+    }).catch(function () {});
+    render(); setTimeout(report, 700);
+  }
+  $("hd").addEventListener("click", function () { setOpen(!open); });
+  $("hd").addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setOpen(!open); } });
+
+  function report() { try { parent.postMessage({ type: "brasil-vota:height", height: Math.ceil(document.documentElement.getBoundingClientRect().height) }, "*"); } catch (e) {} }
+  if (window.ResizeObserver) new ResizeObserver(report).observe($("bv"));
+  window.addEventListener("resize", report);
+
+  // ---- Datos de muestra (sólo ?demo=...): los 12 candidatos reales con cifras inventadas ----
+  function demo(kind, base) {
+    var P = [41.2, 37.8, 7.9, 4.1, 3.3, 2.2, 1.4, 0.8, 0.5, 0.4, 0.2, 0.2], pre = base.preload;
+    if (kind === "ganador") P = [52.6, 33.1, 5.2, 3.0, 2.4, 1.4, 0.8, 0.5, 0.4, 0.3, 0.2, 0.1];
+    var TOT = 118400000, cands = pre.map(function (c, i) { return { name: c.name, party: c.party, color: c.color, photo_url: c.photo_url, pct: P[i], votes: Math.round(TOT * P[i] / 100) }; });
+    var UF = { AC: [1, 58], AL: [0, 61], AP: [0, 52], AM: [0, 49], BA: [0, 64], CE: [0, 66], DF: [1, 54], ES: [1, 51], GO: [1, 56], MA: [0, 69], MT: [1, 60], MS: [1, 57], MG: [0, 48], PA: [0, 50], PB: [0, 62], PR: [1, 55], PE: [0, 63], PI: [0, 71], RJ: [1, 47], RN: [0, 59], RS: [1, 50], RO: [1, 62], RR: [1, 65], SC: [1, 63], SP: [1, 46], SE: [0, 60], TO: [1, 53] };
+    var states = Object.keys(UF).map(function (id) { return { id: id, winner: UF[id][0], pct: UF[id][1], votes: 1000000 }; });
+    var cities = [["São Paulo", 1, 44.3], ["Rio de Janeiro", 1, 46.8], ["Salvador", 0, 66.1], ["Belo Horizonte", 0, 45.2], ["Brasília", 1, 52.7]].map(function (x, i) { return { id: String(i), name: x[0], uf: "", counted_pct: 99, top: [{ i: x[1], pct: x[2], votes: 0 }] }; });
+    var abroad = { country_name: "Argentina", electorate: 13138, cities: [{ name: "Buenos Aires", electorate: 9612, top: [{ i: 0, votes: 2540, pct: 49.2 }] }, { name: "Córdoba", electorate: 1894, top: [{ i: 1, votes: 520, pct: 41.3 }] }, { name: "Otras ciudades", electorate: 1632, top: [{ i: 0, votes: 402, pct: 44.8 }] }],
+      bulletins_expected: 41, bulletins_received: 37, bulletins_totalized: 34, totalized_pct: 82.9, updated_at: "2026-10-04T18:42:10-03:00", candidates: [{ i: 0, votes: 3412, pct: 47.9 }, { i: 1, votes: 2305, pct: 32.4 }, { i: 2, votes: 598, pct: 8.4 }] };
+    var d = { phase: "resultados", phase_label: "Primeros resultados", outcome: "open", available: true, counted_pct: 91.3, updated_at: "2026-10-04T18:42:10-03:00", version: "demo-" + kind, candidates: cands, states: states, cities: cities, abroad: abroad, preload: pre, source: base.source };
+    if (kind === "runoff") { d.phase = "preliminar"; d.phase_label = "Conteo preliminar"; d.outcome = "runoff"; }
+    if (kind === "ganador") { d.phase = "definitivo"; d.phase_label = "Resultado final"; d.outcome = "winner"; d.counted_pct = 100; }
+    if (kind === "pre") { d.available = false; d.candidates = []; d.states = []; d.cities = []; d.abroad = null; d.phase = "pre"; d.phase_label = "Elecciones el domingo 4 de octubre"; }
+    if (kind === "apertura") { d.available = false; d.candidates = []; d.states = []; d.cities = []; d.abroad = null; d.phase = "apertura"; d.phase_label = "Se abren los comicios"; }
+    return d;
+  }
+
+  function load() {
+    fetch(API + "/api/tse/widget/br-presidente", { cache: "no-store" }).then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
+      .then(function (j) { data = DEMO ? demo(DEMO, j) : j; render(); }).catch(function () { if (!data) { $("status").textContent = "Brasil vota"; } });
+  }
+  load(); if (!DEMO) setInterval(load, POLL);
+  if (Q.get("open") === "1") setOpen(true);
+})();
+</script>
+</body>
+</html>

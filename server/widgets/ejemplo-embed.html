@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Ejemplo: Brasil Vota embebido</title>
+<style>body{font:16px/1.5 Georgia,serif;max-width:860px;margin:30px auto;padding:0 16px;color:#222}</style></head>
+<body>
+<h2>Así queda dentro de una nota de la web</h2>
+<p>Texto de la nota, arriba del widget. El iframe empieza cerrado (sólo el título y la etapa) y crece solo cuando se abre.</p>
+
+<!-- ===== PEGAR EN LA WEB (bloque HTML) ===== -->
+<iframe id="brasil-vota" src="/widgets/brasil-vota" title="Brasil Vota" style="width:100%;border:0;height:150px;display:block" scrolling="no"></iframe>
+<script>
+  window.addEventListener("message", function (e) {
+    if (e.data && e.data.type === "brasil-vota:height") document.getElementById("brasil-vota").style.height = e.data.height + "px";
+  });
+</script>
+<!-- ===== FIN ===== -->
+
+<p>Texto de la nota, abajo del widget.</p>
+</body></html>

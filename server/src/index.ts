@@ -81,6 +81,8 @@ app.use("/api/output-links", outputLinksRouter(io)); // links con nombre: admini
 const tseCfg = tseConfig();
 const tse = new TseCollector(tseCfg);
 app.use("/api/tse", tseRouter(tse));
+// Widget "Brasil Vota" para embeber en la web de Cíclico como iframe: /widgets/brasil-vota (ver server/widgets/README.md).
+app.use("/widgets", express.static(path.resolve(fileURLToPath(import.meta.url), "../../widgets"), { extensions: ["html"], setHeaders: (res, f) => res.set("Cache-Control", f.endsWith(".html") ? "no-cache" : "public, max-age=86400") }));
 app.use("/api/radio", radioRouter(io)); // Stream (radio manual): panel autenticado; output con clave
 
 // En producción, servir los builds del front (mismo origen que la API y el socket).

@@ -1,6 +1,7 @@
 import { Router } from "express";
 import type { TseCollector } from "../tse/collector.js";
 import { buildElectionLive } from "../tse/live.js";
+import { buildWidget, readOverride } from "../tse/widget.js";
 
 // API interna de resultados del TSE. La capa de adquisición (server/src/tse) no sabe nada de la presentación:
 // esto sólo expone lo que el colector ya guardó. Público y de sólo lectura (lo consume el output / vMix).
@@ -49,6 +50,8 @@ export function tseRouter(c: TseCollector): Router {
   });
 
   // Para la placa de Elecciones en modo auto.
+  // Widget embebible de la web (iframe): datos + etapa. Público, con CORS abierto y cache corta.
+  r.get("/widget/br-presidente", (_req, res) => { res.set("Cache-Control", "public, max-age=15"); res.json(buildWidget(c, readOverride(c.cfg.dataDir))); });
   r.get("/live/br-presidente", (_req, res) => { res.set("Cache-Control", "public, max-age=10"); res.json(buildElectionLive(c)); });
   return r;
 }
