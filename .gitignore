@@ -7,3 +7,6 @@ build/
 .DS_Store
 coverage/
 .vite/
+
+# Colector del TSE: snapshots, JSON crudos y auditoría de resultados
+server/.tse-data/

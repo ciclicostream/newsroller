@@ -55,6 +55,7 @@ export function itemText(ci: ContentItem, ctx: TextCtx): string {
       if (d.media_kind === "youtube") return d.title || ctx.yt[d.media_url] || `YouTube · ${d.media_url}`;
       return d.media_url ? fileName(d.media_url) : fallback;
     }
+    case "elecciones": return d.title ? String(d.title) : `${d.country ?? ""} ${d.year ?? ""}`.trim() || fallback;
     case "lista": case "retro": return d.title ? String(d.title) : fallback;
     case "musica": return (d.title ? `${d.title}${d.album ? " · " + d.album : ""}` : fallback).toString();
     case "obituario": return d.name ? String(d.name) : fallback;

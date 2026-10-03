@@ -12,10 +12,11 @@ function Switch({ tabs, active }: { tabs: { key: string; to: string; label: stri
 }
 
 // "Informes" es una sola card del submenú de Contenido; adentro se elige la forma: Carrusel de slides o Lista.
-export function InformesSwitch({ active }: { active: "informe" | "lista" }) {
+export function InformesSwitch({ active }: { active: "informe" | "lista" | "elecciones" }) {
   return <Switch active={active} tabs={[
     { key: "informe", to: "/contenido/informe", label: "Carrusel" },
     { key: "lista", to: "/contenido/lista", label: "Lista" },
+    { key: "elecciones", to: "/contenido/elecciones", label: "Elecciones" },
   ]} />;
 }
 

@@ -32,6 +32,9 @@ import { getStore } from "./db/store.js";
 import { getSupabase } from "./db/supabase.js";
 import { ensureAdmins } from "./auth/bootstrap.js";
 import { syncShorts } from "./content/youtube.js";
+import { tseConfig } from "./tse/config.js";
+import { TseCollector } from "./tse/collector.js";
+import { tseRouter } from "./routes/tse.js";
 
 const app = express();
 app.use(cors({ origin: env.corsOrigin === "*" ? true : env.corsOrigin.split(",") }));
@@ -74,6 +77,10 @@ app.use("/api/parrilla", parrillaRouter(io));
 app.use("/api/templates", templatesRouter());
 app.use("/api/output", outputRouter()); // público (sin auth) para vMix
 app.use("/api/output-links", outputLinksRouter(io)); // links con nombre: administración desde el panel
+// Resultados electorales del TSE (Brasil): el colector corre salvo TSE_ENABLED=0; la API siempre responde (503 sin datos).
+const tseCfg = tseConfig();
+const tse = new TseCollector(tseCfg);
+app.use("/api/tse", tseRouter(tse));
 app.use("/api/radio", radioRouter(io)); // Stream (radio manual): panel autenticado; output con clave
 
 // En producción, servir los builds del front (mismo origen que la API y el socket).
@@ -105,6 +112,7 @@ http.listen(env.port, () => {
   void ensureAdmins();
   void closeOrphanIncidents();
   registry.start();
+  if (tseCfg.enabled) { tse.start(); console.log(`[tse] colector activo (${tseCfg.env}, cada ${tseCfg.pollMs / 1000}s)`); }
   startTrashPurger();
 
   // Auto-sync de shorts de YouTube (si hay key + Supabase).
@@ -122,6 +130,7 @@ http.listen(env.port, () => {
 const shutdown = () => {
   console.log("\n[server] cerrando...");
   registry.stop();
+  tse.stop();
   http.close(() => process.exit(0));
 };
 process.on("SIGINT", shutdown);

@@ -1,4 +1,5 @@
 import { P } from "./lib/params";
+import { BR_CANDIDATES } from "@newsroller/shared";
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { Output } from "./Output";
@@ -14,6 +15,31 @@ const preview = params.get("preview");
 const draft = params.get("draft"); // monitor de edición de los formularios del panel
 const radio = params.get("radio"); // Stream (radio manual): recibe mic/cámara del Host por WebRTC
 const demo = params.get("demo"); // vista local SIN Supabase (para revisar placas portadas)
+
+// Demo "Brasil con candidatos reales precargados" (cifras ficticias): para revisar el diseño con nombres y fotos finales.
+const BR_PCT = [41.2, 37.8, 7.9, 4.1, 3.3, 2.2, 1.4, 0.8, 0.5, 0.4, 0.2, 0.2];
+const BR_TOTAL = 118_400_000;
+const brCands = (pcts: number[] = BR_PCT) => BR_CANDIDATES.map((c, i) => ({ name: c.name, party: c.party, color: c.color, photo_url: c.photo_url, pct: pcts[i] ?? 0, votes: pcts[i] ? Math.round(BR_TOTAL * pcts[i]! / 100) : undefined }));
+const BR_UF_WIN: Record<string, [number, number, number]> = { AC: [1, 58, 330000], AL: [0, 61, 1150000], AP: [0, 52, 280000], AM: [0, 49, 1250000], BA: [0, 64, 5100000], CE: [0, 66, 4300000], DF: [1, 54, 1450000], ES: [1, 51, 1500000], GO: [1, 56, 3000000], MA: [0, 69, 3150000], MT: [1, 60, 1700000], MS: [1, 57, 1200000], MG: [0, 48, 6900000], PA: [0, 50, 3200000], PB: [0, 62, 1800000], PR: [1, 55, 4300000], PE: [0, 63, 3900000], PI: [0, 71, 1700000], RJ: [1, 47, 5600000], RN: [0, 59, 1400000], RS: [1, 50, 4200000], RO: [1, 62, 620000], RR: [1, 65, 260000], SC: [1, 63, 3100000], SP: [1, 46, 14300000], SE: [0, 60, 900000], TO: [1, 53, 600000] };
+const brStates = () => Object.entries(BR_UF_WIN).map(([id, [winner, pct, votes]]) => ({ id, winner, pct, votes }));
+const brCities = () => [
+  { id: "71072", name: "São Paulo", uf: "SP", counted_pct: 99.1, top: [{ i: 1, pct: 44.3, votes: 3200000 }, { i: 0, pct: 41.9, votes: 3030000 }, { i: 2, pct: 6.1, votes: 440000 }, { i: 3, pct: 3.2, votes: 230000 }] },
+  { id: "60011", name: "Rio de Janeiro", uf: "RJ", counted_pct: 98.7, top: [{ i: 1, pct: 46.8, votes: 1700000 }, { i: 0, pct: 40.2, votes: 1460000 }, { i: 2, pct: 5.4, votes: 196000 }, { i: 4, pct: 3.1, votes: 112000 }] },
+  { id: "38490", name: "Salvador", uf: "BA", counted_pct: 97.9, top: [{ i: 0, pct: 66.1, votes: 1200000 }, { i: 1, pct: 25.7, votes: 466000 }, { i: 2, pct: 3.9, votes: 70000 }, { i: 3, pct: 2.0, votes: 36000 }] },
+  { id: "41238", name: "Belo Horizonte", uf: "MG", counted_pct: 98.4, top: [{ i: 0, pct: 45.2, votes: 740000 }, { i: 1, pct: 38.9, votes: 637000 }, { i: 2, pct: 8.8, votes: 144000 }, { i: 3, pct: 3.6, votes: 59000 }] },
+  { id: "97012", name: "Brasília", uf: "DF", counted_pct: 99.6, top: [{ i: 1, pct: 52.7, votes: 770000 }, { i: 0, pct: 37.5, votes: 548000 }, { i: 2, pct: 4.4, votes: 64000 }, { i: 4, pct: 2.6, votes: 38000 }] },
+];
+const brAbroad = () => ({
+  country_name: "Argentina", electorate: 13138,
+  cities: [
+    { name: "Buenos Aires", electorate: 9612, top: [{ i: 0, votes: 2540, pct: 49.2 }, { i: 1, votes: 1630, pct: 31.6 }, { i: 2, votes: 410, pct: 7.9 }] },
+    { name: "Córdoba", electorate: 1894, top: [{ i: 1, votes: 520, pct: 41.3 }, { i: 0, votes: 470, pct: 37.3 }, { i: 2, votes: 120, pct: 9.5 }] },
+    { name: "Otras ciudades", electorate: 1632, top: [{ i: 0, votes: 402, pct: 44.8 }, { i: 1, votes: 255, pct: 28.4 }, { i: 3, votes: 70, pct: 7.8 }] },
+  ],
+  bulletins_expected: 41, bulletins_received: 37, bulletins_totalized: 34, totalized_pct: 82.9, updated_at: "2026-10-04T18:42:10-03:00",
+  candidates: [{ i: 0, votes: 3412, pct: 47.9 }, { i: 1, votes: 2305, pct: 32.4 }, { i: 2, votes: 598, pct: 8.4 }, { i: 3, votes: 321, pct: 4.5 }, { i: 4, votes: 187, pct: 2.6 }, { i: 5, votes: 122, pct: 1.7 }, { i: 6, votes: 64, pct: 0.9 }, { i: 7, votes: 41, pct: 0.6 }, { i: 8, votes: 28, pct: 0.4 }, { i: 9, votes: 22, pct: 0.3 }, { i: 10, votes: 14, pct: 0.2 }, { i: 11, votes: 11, pct: 0.2 }],
+});
+const brBase = { country: "br", kind: "presidencial", round: 1, year: "2026", intro: "con", source: "TSE · Tribunal Superior Eleitoral", counted_pct: 91.3, states: brStates(), cities: brCities(), abroad: brAbroad() };
 
 // Datos de ejemplo para el modo demo.
 const DEMOS: Record<string, { type: string; data: Record<string, any>; dur?: number }> = {
@@ -118,6 +144,78 @@ const DEMOS: Record<string, { type: string; data: Record<string, any>; dur?: num
         { dateKind: "full", day: 21, month: 8, year: 1937, title: "Tolkien publica El Hobbit", body: "Se publica en Londres la novela de J. R. R. Tolkien, que abre la saga de la Tierra Media.", media_url: "https://picsum.photos/seed/hobbit/600/800", media_kind: "image" },
         { dateKind: "full", day: 21, month: 8, year: 1964, title: "Malta se independiza del Reino Unido", body: "Malta obtiene la independencia del Reino Unido y pasa a integrar la Commonwealth.", media_url: "https://picsum.photos/seed/malta/600/800", media_kind: "image" },
       ],
+    },
+  },
+  elecciones_presidencial: {
+    type: "elecciones", dur: 190,
+    data: {
+      country: "ar", kind: "presidencial", round: 1, year: "2027", phase: "preliminar", counted_pct: 87.4,
+      source: "Cámara Nacional Electoral · escrutinio provisorio",
+      candidates: [
+        { name: "Lucía Ferrante", party: "Frente Horizonte", color: "#2F6BFF", photo_url: "https://picsum.photos/seed/cand1/700/900", pct: 38.4, votes: 9984000 },
+        { name: "Martín Olivera", party: "Alianza Futuro Común", color: "#E0553A", photo_url: "https://picsum.photos/seed/cand2/700/900", pct: 31.7, votes: 8242000 },
+        { name: "Camila Brandt", party: "Partido del Sur", color: "#2BB673", photo_url: "https://picsum.photos/seed/cand3/700/900", pct: 14.2, votes: 3692000 },
+        { name: "Ignacio Duarte", party: "Convergencia Libre", color: "#F2B134", photo_url: null, pct: 9.6, votes: 2496000 },
+        { name: "Sofía Navarro", party: "Unidad Federal", color: "#A66BFF", photo_url: "https://picsum.photos/seed/cand5/700/900", pct: 4.1, votes: 1066000 },
+      ],
+      states: [
+        { id: "B", winner: 0, pct: 36.9, votes: 3920000 },
+        { id: "C", winner: 1, pct: 41.2, votes: 610000 },
+        { id: "S", winner: 1, pct: 40.3, votes: 1010000 },
+        { id: "X", winner: 1, pct: 44.8, votes: 1290000 },
+        { id: "M", winner: 0, pct: 39.5, votes: 590000 },
+        { id: "T", winner: 0, pct: 45.1, votes: 540000 },
+        { id: "E", winner: 1, pct: 37.7, votes: 430000 },
+        { id: "N", winner: 0, pct: 48.2, votes: 260000 },
+        { id: "H", winner: 0, pct: 43.6, votes: 310000 },
+        { id: "W", winner: 0, pct: 41.4, votes: 300000 },
+        { id: "A", winner: 0, pct: 42.3, votes: 420000 },
+        { id: "Y", winner: 0, pct: 38.9, votes: 215000 },
+        { id: "P", winner: 0, pct: 46.0, votes: 170000 },
+        { id: "K", winner: 0, pct: 40.8, votes: 120000 },
+        { id: "F", winner: 1, pct: 39.9, votes: 115000 },
+        { id: "J", winner: 1, pct: 42.7, votes: 230000 },
+        { id: "Q", winner: 2, pct: 35.1, votes: 260000 },
+        { id: "U", winner: 2, pct: 37.4, votes: 210000 },
+        { id: "R", winner: 1, pct: 36.2, votes: 250000 },
+        { id: "Z", winner: 2, pct: 41.8, votes: 95000 },
+        { id: "V", winner: 2, pct: 39.2, votes: 55000 },
+        { id: "G", winner: 0, pct: 52.4, votes: 320000 },
+        { id: "D", winner: 1, pct: 38.5, votes: 180000 },
+        { id: "L", winner: 1, pct: 40.1, votes: 145000 }
+      ],
+    },
+  },
+  elecciones_arranque: {
+    type: "elecciones", dur: 49,
+    data: {
+      country: "br", kind: "presidencial", round: 1, year: "2026", phase: "apertura", intro: "solo", counted_pct: 0,
+      voting_hours: "08:00 a 17:00 hs", electorate: "156 millones de electores", source: "TSE · Tribunal Superior Eleitoral",
+      candidates: brCands([]),
+      states: [],
+    },
+  },
+  elecciones_auto_br: {
+    type: "elecciones", dur: 237,
+    data: {
+      country: "br", kind: "presidencial", round: 1, year: "2026", phase: "apertura", intro: "con", auto: "tse-br", counted_pct: 0,
+      voting_hours: "08:00 a 17:00 hs", electorate: "156 millones de electores", source: "TSE · Tribunal Superior Eleitoral",
+      candidates: brCands([]),
+      states: [],
+    },
+  },
+  elecciones_br_runoff: { type: "elecciones", dur: 330, data: { ...brBase, phase: "preliminar", outcome: "runoff", candidates: brCands() } },
+  elecciones_br_ganador: { type: "elecciones", dur: 330, data: { ...brBase, phase: "preliminar", outcome: "winner", counted_pct: 97.2, candidates: brCands([52.6, 33.1, 5.2, 3.0, 2.4, 1.4, 0.8, 0.5, 0.4, 0.3, 0.2, 0.1]) } },
+  elecciones_balotaje: {
+    type: "elecciones", dur: 143,
+    data: {
+      country: "br", kind: "presidencial", round: 2, year: "2026", phase: "definitivo", counted_pct: 99.1, screens: { states: false },
+      source: "TSE · Tribunal Superior Eleitoral",
+      candidates: [
+        { name: "Helena Vasconcelos", party: "Partido Nova Aliança", color: "#1FA85A", photo_url: "https://picsum.photos/seed/br1/700/900", pct: 52.8, votes: 61200000 },
+        { name: "Rafael Montenegro", party: "Movimento Brasil Unido", color: "#2F6BFF", photo_url: "https://picsum.photos/seed/br2/700/900", pct: 47.2, votes: 54700000 },
+      ],
+      states: [],
     },
   },
   lista_albumes: {

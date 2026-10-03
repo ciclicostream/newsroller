@@ -74,7 +74,9 @@ export function ClasicaItemView({ id, type, data, durationSec, liveData, cameras
     case "promos":
       return <Promos data={data as PromosData} durationSec={durationSec} />;
     // Música todavía no tiene versión Clásica: mientras tanto se ve la Moderna para que la pantalla no quede vacía.
+    // Elecciones: igual, sólo existe en Moderna.
     case "musica":
+    case "elecciones":
       return <ModernaItemView id={id} type={type} data={data} durationSec={durationSec} liveData={liveData} cameras={cameras} />;
     default:
       return null;

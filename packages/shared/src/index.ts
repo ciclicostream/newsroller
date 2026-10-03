@@ -307,6 +307,7 @@ export type ContentItemType =
   | "shorts"
   | "informe"
   | "lista"
+  | "elecciones"
   | "retro"
   | "publicidad"
   | "video_full"
@@ -897,3 +898,7 @@ export function homeFor(role: Role): string {
   if (can(role, "stream")) return "/stream";
   return "/contenido";
 }
+
+export * from "./elecciones";
+export * from "./elecciones-paises";
+export * from "./elecciones-brasil";

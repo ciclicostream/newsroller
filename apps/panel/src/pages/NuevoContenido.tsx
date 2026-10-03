@@ -18,6 +18,7 @@ import { CamarasPlaca } from "./CamarasPlaca";
 import { VideoFullPlaca } from "./VideoFullPlaca";
 import { InformePlaca } from "./InformePlaca";
 import { ListaPlaca } from "./ListaPlaca";
+import { EleccionesPlaca } from "./EleccionesPlaca";
 import { RetroPlaca } from "./RetroPlaca";
 import { ObituarioPlaca } from "./ObituarioPlaca";
 import { MusicaPlaca } from "./MusicaPlaca";
@@ -108,6 +109,7 @@ function TemplateForm({ type }: { type: string }) {
   if (type === "video_full") return <VideoFullPlaca />;
   if (type === "informe") return <InformePlaca />;
   if (type === "lista") return <ListaPlaca />;
+  if (type === "elecciones") return <EleccionesPlaca />;
   if (type === "retro") return <RetroPlaca />;
   if (type === "obituario") return <ObituarioPlaca />;
   if (type === "musica") return <MusicaPlaca />;

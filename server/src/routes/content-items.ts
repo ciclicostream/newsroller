@@ -16,6 +16,7 @@ const TYPES = new Set([
   "shorts",
   "informe",
   "lista",
+  "elecciones",
   "retro",
   "publicidad",
   "video_full",

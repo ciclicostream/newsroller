@@ -1,4 +1,4 @@
-import type { CamarasData, InformeData, ListaData, PromosData, PublicidadData, ShortsData, VideoFullData, CarteleraData, CifrasData, ClimaData, ClimaPayload, DeclaracionesData, DolarData, DolarPayload, EfemeridesData, MusicaData, ObituarioData, PlacasData, RetroData, UltimaHoraData } from "@newsroller/shared";
+import type { ElectionData, CamarasData, InformeData, ListaData, PromosData, PublicidadData, ShortsData, VideoFullData, CarteleraData, CifrasData, ClimaData, ClimaPayload, DeclaracionesData, DolarData, DolarPayload, EfemeridesData, MusicaData, ObituarioData, PlacasData, RetroData, UltimaHoraData } from "@newsroller/shared";
 import type { ItemProps } from "../../templates/items";
 import { Ahora } from "./Ahora";
 import { Obituario } from "./Obituario";
@@ -14,6 +14,7 @@ import { Cartelera } from "./Cartelera";
 import { Shorts } from "./Shorts";
 import { Informe } from "./Informe";
 import { Lista } from "./Lista";
+import { Elecciones } from "./Elecciones";
 import { Promos } from "./Promos";
 import { Camaras } from "./Camaras";
 import { Publicidad } from "./Publicidad";
@@ -51,6 +52,8 @@ export function ModernaItemView({ id, type, cameras, data, durationSec, createdA
       return <Informe data={data as InformeData} durationSec={durationSec} />;
     case "lista":
       return <Lista data={data as ListaData} durationSec={durationSec} />;
+    case "elecciones":
+      return <Elecciones data={data as ElectionData} durationSec={durationSec} />;
     case "promos":
       return <Promos data={data as PromosData} durationSec={durationSec} />;
     case "camaras":
