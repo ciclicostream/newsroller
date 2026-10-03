@@ -10,7 +10,7 @@ import { TseHttp } from "./http.js";
 import { normalizeAccompaniment, normalizeEa12, normalizeEa18, normalizeEa20, ptNum, tseDateTime } from "./normalize.js";
 import { TseStore } from "./store.js";
 import { buildElectionLive } from "./live.js";
-import { BR_CANDIDATES, matchBrCandidate } from "@newsroller/shared";
+import { BR_CANDIDATES, electionScreens, matchBrCandidate } from "@newsroller/shared";
 
 const dir = path.resolve(fileURLToPath(import.meta.url), "../__fixtures__");
 const fx = (n: string) => readFileSync(path.join(dir, n), "utf8");
@@ -263,4 +263,12 @@ test("precarga de candidatos de Brasil: reconoce el nombre de urna del TSE", () 
   assert.equal(matchBrCandidate("GRASSI")?.slug, "wilson");
   assert.equal(matchBrCandidate("CANDIDATO 9999"), null);
   assert.ok(BR_CANDIDATES.every((x) => x.photo_url.startsWith("/output/elecciones/br/")));
+});
+
+test("ganador confirmado por el editor: fuerza la pantalla de ganador aunque el TSE diga 2º turno o la etapa sea anterior", () => {
+  const cands = [{ name: "A", color: "#fff", pct: 52 }, { name: "B", color: "#000", pct: 48 }];
+  const base = { phase: "resultados" as const, intro: "sin" as const, candidates: cands, states: [], counted_pct: 50, country: "br" };
+  assert.ok(!electionScreens({ ...base, outcome: "runoff" }).includes("winner"), "sin override, en 'resultados' no hay ganador");
+  assert.deepEqual(electionScreens({ ...base, outcome: "runoff", winner_override: "A" }).filter((x) => x === "winner" || x === "runoff"), ["winner"]);
+  assert.deepEqual(electionScreens({ ...base, counted_pct: 0, winner_override: "A" }), ["intro"], "sin resultados cargados nunca queda una pantalla vacía");
 });

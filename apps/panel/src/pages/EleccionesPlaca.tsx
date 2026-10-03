@@ -32,6 +32,7 @@ export function EleccionesPlaca() {
   const [hours, setHours] = useState("");
   const [electorate, setElectorate] = useState("");
   const [auto, setAuto] = useState(false);
+  const [winnerOverride, setWinnerOverride] = useState("");
   const [tseInfo, setTseInfo] = useState<string | null>(null);
   const [scrWinner, setScrWinner] = useState(true);
   const [scrTop, setScrTop] = useState(true);
@@ -104,6 +105,7 @@ export function EleccionesPlaca() {
       source: source.trim(),
       counted_pct: Math.min(100, Math.max(0, num(counted) ?? 0)),
       auto: autoOn ? "tse-br" : undefined,
+      winner_override: winnerOverride || undefined,
       phase, intro, voting_hours: hours.trim() || undefined, electorate: electorate.trim() || undefined,
       screens: { winner: scrWinner, top: scrTop, states: scrStates, cities: scrCities, abroad: scrAbroad },
       sec_per_screen: sec,
@@ -111,7 +113,7 @@ export function EleccionesPlaca() {
   }
 
   function reset() {
-    setEditingId(null); setCountry("ar"); setKind("presidencial"); setRound(1); setYear(""); setTitle(""); setSource(""); setCounted("0"); setPhase("apertura"); setIntro("con"); setHours(""); setElectorate(""); setAuto(false);
+    setEditingId(null); setCountry("ar"); setKind("presidencial"); setRound(1); setYear(""); setTitle(""); setSource(""); setCounted("0"); setPhase("apertura"); setIntro("con"); setHours(""); setElectorate(""); setAuto(false); setWinnerOverride("");
     setScrWinner(true); setScrTop(true); setScrStates(true); setScrCities(true); setScrAbroad(true); setSec(ELECTION_HOLD_MIN_SEC); setCands([blankCand(0), blankCand(1)]); setAct(0); setStates({});
   }
 
@@ -137,7 +139,7 @@ export function EleccionesPlaca() {
   function startEdit(it: ContentItem) {
     const d = it.data as ElectionData;
     setEditingId(it.id); setCountry(d.country); setKind(d.kind); setRound(d.round ?? 1); setYear(d.year ?? ""); setTitle(d.title ?? "");
-    setSource(d.source ?? ""); setCounted(String(d.counted_pct ?? 0)); setPhase(d.phase ?? "apertura"); setIntro(d.intro ?? "con"); setHours(d.voting_hours ?? ""); setElectorate(d.electorate ?? ""); setAuto(d.auto === "tse-br");
+    setSource(d.source ?? ""); setCounted(String(d.counted_pct ?? 0)); setPhase(d.phase ?? "apertura"); setIntro(d.intro ?? "con"); setHours(d.voting_hours ?? ""); setElectorate(d.electorate ?? ""); setAuto(d.auto === "tse-br"); setWinnerOverride(d.winner_override ?? "");
     setScrWinner(d.screens?.winner !== false); setScrTop(d.screens?.top !== false); setScrStates(d.screens?.states !== false); setScrCities(d.screens?.cities !== false); setScrAbroad(d.screens?.abroad !== false);
     setSec(Math.max(ELECTION_HOLD_MIN_SEC, d.sec_per_screen ?? ELECTION_HOLD_MIN_SEC));
     setCands(d.candidates?.length ? d.candidates.map((c, i) => ({ ...blankCand(i), ...c })) : [blankCand(0), blankCand(1)]);
@@ -229,6 +231,17 @@ export function EleccionesPlaca() {
               {ELECTION_PHASES.map((p) => <button key={p.id} type="button" className={"tab" + (phase === p.id ? " active" : "")} onClick={() => setPhase(p.id)}>{p.label}</button>)}
             </div>
             <div className="muted-note" style={{ marginTop: 6 }}>{ELECTION_PHASES.find((p) => p.id === phase)?.hint} Avanzá la etapa a medida que cambia la noche; los resultados cargados se mantienen.</div>
+          </div>
+
+          <div className="field">
+            <label>Ganador confirmado por el editor</label>
+            <select value={winnerOverride} onChange={(e) => setWinnerOverride(e.target.value)}>
+              <option value="">Ninguno: lo marca el TSE</option>
+              {(country === "br" ? BR_CANDIDATES.map((c) => c.name) : cands.map((c) => c.name).filter(Boolean)).map((n) => <option key={n} value={n}>{n}</option>)}
+            </select>
+            <div className="muted-note" style={{ marginTop: 6 }}>
+              {winnerOverride ? <b>Sale al aire como GANADOR (etapa definitiva) aunque el TSE no lo haya marcado. Sacalo apenas el TSE confirme algo distinto.</b> : "Para cuando las noticias ya dieron al ganador y el TSE no lo marca o falla. Si el TSE no responde, completá los % a mano abajo (modo Manual) y guardá."}
+            </div>
           </div>
 
           <div className="field">

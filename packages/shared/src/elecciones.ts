@@ -60,6 +60,7 @@ export interface ElectionData {
   intro?: ElectionIntroMode; // placa de arranque: sola, antes de los resultados o sin ella. Por defecto "con"
   voting_hours?: string; // "08:00 a 17:00 hs", sólo en la placa de arranque
   electorate?: string; // "156 millones de electores", sólo en la placa de arranque
+  winner_override?: string; // nombre del candidato que el editor confirma como ganador (por si las noticias lo dan y el TSE no lo marca): fuerza etapa "definitivo" y la tarjeta de ganador
   outcome?: "open" | "winner" | "runoff"; // lo informa el TSE en modo auto: "runoff" = nadie ganó en 1ª vuelta
   auto?: "tse-br"; // datos en vivo del TSE (sólo Brasil): reemplazan candidatos, estados y % escrutado; el resto sigue manual
   abroad?: ElectionAbroad; // en modo auto: paso "Brasileños en Argentina"
@@ -74,8 +75,8 @@ export const electionPhase = (d: Pick<ElectionData, "phase">): ElectionPhase => 
 
 // Fuente única de la lógica de emisión (la usan el panel y el aire): qué pantallas salen, en orden, con los datos que
 // hay hoy. Una pantalla sólo entra si tiene con qué llenarse; sin resultados siempre queda, al menos, el arranque.
-export function electionScreens(d: Pick<ElectionData, "phase" | "intro" | "screens" | "candidates" | "states" | "counted_pct" | "country" | "outcome" | "cities" | "abroad">): ElectionScreen[] {
-  const rank = ELECTION_PHASES.findIndex((p) => p.id === electionPhase(d));
+export function electionScreens(d: Pick<ElectionData, "phase" | "intro" | "screens" | "candidates" | "states" | "counted_pct" | "country" | "outcome" | "cities" | "abroad" | "winner_override">): ElectionScreen[] {
+  const rank = d.winner_override ? ELECTION_PHASES.length - 1 : ELECTION_PHASES.findIndex((p) => p.id === electionPhase(d));
   const mode = d.intro ?? "con";
   const withPct = (d.candidates ?? []).filter((c) => c.name?.trim() && c.pct > 0);
   const hasResults = rank >= 2 && withPct.length >= 2 && (d.counted_pct ?? 0) > 0;
@@ -83,7 +84,7 @@ export function electionScreens(d: Pick<ElectionData, "phase" | "intro" | "scree
   const on = d.screens ?? {};
   const l: ElectionScreen[] = [];
   if (mode === "con") l.push("intro");
-  if (rank >= 3 && on.winner !== false) l.push(d.outcome === "runoff" ? "runoff" : "winner");
+  if (rank >= 3 && on.winner !== false) l.push(d.outcome === "runoff" && !d.winner_override ? "runoff" : "winner");
   if (on.top !== false) l.push("top");
   const hasStates = (d.states ?? []).some((s) => s.winner >= 0) && ELECTION_COUNTRIES_IDS.includes(d.country);
   if (on.states !== false && hasStates) l.push("states");

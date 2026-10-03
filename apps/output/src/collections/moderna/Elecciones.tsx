@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { ElectionCandidate, ElectionData, ElectionLive, ElectionPhase } from "@newsroller/shared";
-import { ELECTION_COUNTRIES, ELECTION_ENTER_SEC, ELECTION_PHASES, ELECTION_TOP_N, electionHold, electionPhase, electionScreens, type ElectionScreen } from "@newsroller/shared";
+import { ELECTION_COUNTRIES, ELECTION_ENTER_SEC, ELECTION_PHASES, normName, ELECTION_TOP_N, electionHold, electionPhase, electionScreens, type ElectionScreen } from "@newsroller/shared";
 import ciclicoWhite from "../../assets/ciclico-white.png";
 import { P } from "../../lib/params";
 import { API_BASE } from "../../lib/scene";
@@ -136,7 +136,10 @@ function VCard({ c, b, k = 0, d: dd, label }: { c: Ranked; b: number; k?: number
 }
 
 // ---- Pantalla 1: ganador ----
-function WinnerScreen({ d, ranked, b }: { d: ElectionData; ranked: Ranked[]; b: number }) {
+function WinnerScreen({ d, ranked: byVotes, b }: { d: ElectionData; ranked: Ranked[]; b: number }) {
+  // Si el editor confirmó a alguien, ése va primero (aunque el conteo lo muestre detrás); el resto, por votos.
+  const forced = d.winner_override ? byVotes.find((c) => normName(c.name) === normName(d.winner_override!)) : undefined;
+  const ranked = forced ? [forced, ...byVotes.filter((c) => c !== forced)] : byVotes;
   const w = ranked[0]!;
   const second = ranked[1];
   const par = d.kind === "parlamentaria";
@@ -144,7 +147,7 @@ function WinnerScreen({ d, ranked, b }: { d: ElectionData; ranked: Ranked[]; b: 
   const final = electionPhase(d) === "definitivo";
   const label = final ? (par ? "PRIMERA FUERZA" : "GANADOR") : "CONTEO PRELIMINAR";
   const lead = second ? w.pct - second.pct : 0;
-  const top = ranked.slice(0, ELECTION_TOP_N);
+  const top = byVotes.slice(0, ELECTION_TOP_N);
   const rest = Math.max(0, 100 - top.reduce((s, c) => s + c.pct, 0));
   return (
     <div className="ne-win" style={{ ["--b" as string]: `${b}s`, ["--c" as string]: w.color }}>
@@ -156,7 +159,7 @@ function WinnerScreen({ d, ranked, b }: { d: ElectionData; ranked: Ranked[]; b: 
         <div className="ne-wpct"><span>{fmtPct(pct)}</span><small>%</small></div>
         <div className="ne-wmeta">
           {w.votes != null && <span><b>{fmtNum(w.votes)}</b> votos</span>}
-          {second && <span className="lead">+{fmtPct(lead)} puntos sobre <b>{second.name}</b></span>}
+          {second && lead > 0 && <span className="lead">+{fmtPct(lead)} puntos sobre <b>{second.name}</b></span>}
         </div>
         <div className="ne-stack">
           {top.map((c) => <i key={c.i} style={{ width: `${c.pct}%`, background: c.color }} />)}
@@ -405,10 +408,16 @@ function mergeLive(d: ElectionData, live: ElectionLive | null): ElectionData {
   return { ...d, candidates: live.candidates, states: live.states, counted_pct: live.counted_pct, cities: live.cities, abroad: live.abroad ?? undefined, outcome: live.outcome, source: live.source, round: live.round, phase };
 }
 
+// Ganador confirmado a mano por el editor (las noticias lo dieron y el TSE no lo marcó): manda sobre lo que diga el TSE.
+function applyOverride(d: ElectionData): ElectionData {
+  if (!d.winner_override) return d;
+  return { ...d, outcome: "winner", phase: "definitivo" };
+}
+
 export function Elecciones({ data: manual, durationSec }: { data: ElectionData; durationSec?: number }) {
   const { cls } = useLife(durationSec, 1);
   const live = useLiveTse(manual.auto);
-  const data = useMemo(() => mergeLive(manual, live), [manual, live]);
+  const data = useMemo(() => applyOverride(mergeLive(manual, live)), [manual, live]);
   const videoRef = useForcePlay<HTMLVideoElement>();
   const country = ELECTION_COUNTRIES.find((c) => c.id === data.country);
   // Tiempo con la placa ya armada: nunca menos de 40 s (`?hold=N` sólo para revisar demos).

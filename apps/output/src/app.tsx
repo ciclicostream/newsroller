@@ -205,6 +205,7 @@ const DEMOS: Record<string, { type: string; data: Record<string, any>; dur?: num
     },
   },
   elecciones_br_runoff: { type: "elecciones", dur: 330, data: { ...brBase, phase: "preliminar", outcome: "runoff", candidates: brCands() } },
+  elecciones_br_confirmado: { type: "elecciones", dur: 330, data: { ...brBase, phase: "resultados", outcome: "runoff", winner_override: "Luiz Inácio Lula da Silva", candidates: brCands() } },
   elecciones_br_ganador: { type: "elecciones", dur: 330, data: { ...brBase, phase: "preliminar", outcome: "winner", counted_pct: 97.2, candidates: brCands([52.6, 33.1, 5.2, 3.0, 2.4, 1.4, 0.8, 0.5, 0.4, 0.3, 0.2, 0.1]) } },
   elecciones_balotaje: {
     type: "elecciones", dur: 143,
