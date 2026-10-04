@@ -50,7 +50,7 @@ function Avatar({ c, size, className = "" }: { c: Ranked; size: number; classNam
 
 // ---- Placa de arranque ----
 const MAX_INTRO_CANDS = 6; // más filas pisarían la leyenda de abajo
-const STATUS: Record<string, string> = { apertura: "SE ABREN LOS COMICIOS", cierre: "SE CIERRAN LAS URNAS", resultados: "PRIMEROS RESULTADOS", preliminar: "CONTEO PRELIMINAR", definitivo: "GANADOR DEFINITIVO" };
+const STATUS: Record<string, string> = { apertura: "COMICIOS ABIERTOS", cierre: "SE CIERRAN LAS URNAS", resultados: "PRIMEROS RESULTADOS", preliminar: "CONTEO PRELIMINAR", definitivo: "GANADOR DEFINITIVO" };
 function IntroScreen({ d, kind }: { d: ElectionData; kind: string }) {
   const country = ELECTION_COUNTRIES.find((c) => c.id === d.country);
   const ph = electionPhase(d);
@@ -58,6 +58,8 @@ function IntroScreen({ d, kind }: { d: ElectionData; kind: string }) {
   const named = (d.candidates ?? []).filter((c) => c.name.trim());
   const ref = useRef<HTMLDivElement>(null);
   const title = d.title?.trim() || `${(country?.name ?? "").toUpperCase()} VOTA`;
+  // Hora de cierre: la última HH:MM del horario cargado ("08:00 a 17:00 hs"); sin horario, 17:00 para Brasil.
+  const closeTime = d.voting_hours?.match(/\d{1,2}:\d{2}(?!.*\d{1,2}:\d{2})/)?.[0] ?? (d.country === "br" ? "17:00" : "");
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
@@ -66,7 +68,8 @@ function IntroScreen({ d, kind }: { d: ElectionData; kind: string }) {
     while (el.scrollWidth > el.clientWidth + 1 && sz > 90) { sz -= 6; el.style.fontSize = sz + "px"; }
   }, [title, named.length >= 2]);
   const facts = [
-    d.voting_hours?.trim() && ["Horario", d.voting_hours.trim()],
+    ph === "apertura" && closeTime && ["Cierre de comicios", closeTime],
+    ph !== "apertura" && d.voting_hours?.trim() && ["Horario", d.voting_hours.trim()],
     d.electorate?.trim() && ["Padrón", d.electorate.trim()],
     named.length >= 2 && ["Candidatos", String(named.length)],
   ].filter(Boolean) as string[][];

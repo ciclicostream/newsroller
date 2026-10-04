@@ -3,7 +3,7 @@
 // Etapas, en orden. Cada una agrega algo a lo anterior; nunca se muestra una pantalla sin datos.
 export type ElectionPhase = "apertura" | "cierre" | "resultados" | "preliminar" | "definitivo";
 export const ELECTION_PHASES: { id: ElectionPhase; label: string; short: string; hint: string }[] = [
-  { id: "apertura", label: "Se abren los comicios", short: "Apertura", hint: "Sólo la placa de arranque." },
+  { id: "apertura", label: "Comicios abiertos", short: "Apertura", hint: "Sólo la placa de arranque." },
   { id: "cierre", label: "Se cierran las urnas", short: "Cierre", hint: "Sólo la placa de arranque, con el cierre y el inicio del escrutinio." },
   { id: "resultados", label: "Primeros resultados", short: "Resultados", hint: "Más votados y votación por estado, a medida que se cargan. Sin ganador." },
   { id: "preliminar", label: "Conteo preliminar", short: "Conteo prelim.", hint: "Suma la pantalla del ganador, marcada como conteo preliminar." },

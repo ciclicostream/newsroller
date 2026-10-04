@@ -267,7 +267,7 @@ h1 span.sp{width:.3em}
   });
 
   // Línea de tiempo
-  var STEPS = [["apertura", "Se abren los comicios"], ["cierre", "Se cierran las urnas"], ["resultados", "Primeros resultados"], ["preliminar", "Conteo preliminar"], ["definitivo", "Resultado final"]];
+  var STEPS = [["apertura", "Comicios abiertos"], ["cierre", "Se cierran las urnas"], ["resultados", "Primeros resultados"], ["preliminar", "Conteo preliminar"], ["definitivo", "Resultado final"]];
   $("tl").innerHTML = STEPS.map(function (s, i) { return '<li title="' + s[1] + '" data-i="' + i + '"><i></i><span>' + s[1] + "</span></li>"; }).join("");
   function drawTimeline(phase) {
     var idx = STEPS.map(function (s) { return s[0]; }).indexOf(phase), tl = $("tl");
@@ -501,7 +501,7 @@ h1 span.sp{width:.3em}
     if (kind === "runoff") { d.phase = "preliminar"; d.phase_label = "Conteo preliminar"; d.outcome = "runoff"; }
     if (kind === "ganador") { d.phase = "definitivo"; d.phase_label = "Resultado final"; d.outcome = "winner"; d.counted_pct = 100; }
     if (kind === "pre") { d.available = false; d.candidates = []; d.states = []; d.cities = []; d.abroad = null; d.phase = "pre"; d.phase_label = "Elecciones el domingo 4 de octubre"; }
-    if (kind === "apertura") { d.available = false; d.candidates = []; d.states = []; d.cities = []; d.abroad = null; d.phase = "apertura"; d.phase_label = "Se abren los comicios"; }
+    if (kind === "apertura") { d.available = false; d.candidates = []; d.states = []; d.cities = []; d.abroad = null; d.phase = "apertura"; d.phase_label = "Comicios abiertos"; }
     return d;
   }
 

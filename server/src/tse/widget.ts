@@ -9,7 +9,7 @@ import { buildElectionLive } from "./live.js";
 export type WidgetPhase = "pre" | "apertura" | "cierre" | "resultados" | "preliminar" | "definitivo";
 export const WIDGET_PHASE_LABEL: Record<WidgetPhase, string> = {
   pre: "Elecciones el domingo 4 de octubre",
-  apertura: "Se abren los comicios",
+  apertura: "Comicios abiertos",
   cierre: "Se cierran las urnas",
   resultados: "Primeros resultados",
   preliminar: "Conteo preliminar",
