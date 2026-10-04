@@ -131,6 +131,13 @@ h1 span.sp{width:.3em}
 .pod .pt{min-height:2.4em;font-size:10.5px;font-weight:600;color:var(--ink);margin-top:2px}
 .pod .vt{font-size:10px;color:var(--mut);margin-top:1px}
 .pod .p.first .ph{border-color:var(--gold);box-shadow:0 0 0 2px var(--brand)}
+/* Podio: el que va primero al centro (más grande y un poco más arriba), el 2º a la izquierda y el 3º a la derecha */
+.pod{align-items:start}
+.pod .p{order:3}.pod .p.first{order:2}.pod .p.second{order:1}
+.pod .p.first{margin-top:-10px}
+.pod .p.first .ph{width:clamp(88px,14vw,118px);height:clamp(88px,14vw,118px)}
+.pod .p.first .tab{min-width:clamp(80px,12.5vw,104px);font-size:clamp(16px,2.6vw,21px)}
+.pod .p.first h4{font-size:clamp(12.5px,2vw,15px)}
 .pod .p.sel .ph{box-shadow:0 0 0 3px #fff,0 0 0 6px var(--c)}
 .pod .p.sel .tab{background:var(--c)}
 
@@ -318,7 +325,7 @@ h1 span.sp{width:.3em}
   function podiumBlock(d) {
     var rows = d.candidates, three = rows.slice(0, 3);
     return '<div class="sec">Los tres primeros · votos válidos</div><div class="pod">' + three.map(function (c, i) {
-      return '<div class="p' + (i === 0 ? " first" : "") + '" data-cand="' + i + '" style="--c:' + tone(c.color) + ";--j:" + i + '" title="Ver los estados que ganó">' + photo(c, "ph") + '<div class="tab num">' + cu(c.pct, "<small>%</small>") + '</div><h4 class="nm2">' + nm2(c.name) + '</h4><div class="pt">' + esc(c.party || "") + '</div><div class="vt num">Votos: ' + num(c.votes) + "</div></div>";
+      return '<div class="p' + (i === 0 ? " first" : i === 1 ? " second" : "") + '" data-cand="' + i + '" style="--c:' + tone(c.color) + ";--j:" + i + '" title="Ver los estados que ganó">' + photo(c, "ph") + '<div class="tab num">' + cu(c.pct, "<small>%</small>") + '</div><h4 class="nm2">' + nm2(c.name) + '</h4><div class="pt">' + esc(c.party || "") + '</div><div class="vt num">Votos: ' + num(c.votes) + "</div></div>";
     }).join("") + '</div><div class="hint" id="hint"></div>';
   }
   function rowsBlock(d) {
