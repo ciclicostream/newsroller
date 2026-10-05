@@ -60,7 +60,8 @@ h1 span.sp{width:.3em}
 .more.new svg{animation:bounce 1.3s ease-in-out infinite}
 @keyframes bounce{0%,100%{transform:translateY(-1px)}50%{transform:translateY(3px)}}
 
-/* Newsticker chico bajo la card */
+/* Newsticker chico bajo la card. OCULTO (ya pasó la jornada): para volver a usarlo, borrar la regla ".tk{display:none!important}" de abajo. */
+.tk{display:none!important}
 .tk{background:var(--card);color:var(--mut);height:24px;overflow:hidden;display:flex;align-items:center;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
 .tk .lb{flex:none;background:#E5303A;color:#fff;height:100%;display:flex;align-items:center;padding:0 10px;font-size:9px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;gap:6px;position:relative;z-index:1}
 .tk .lb i{width:6px;height:6px;border-radius:50%;background:#fff;animation:blink 1.2s steps(1) infinite}
