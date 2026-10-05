@@ -60,10 +60,11 @@ export class TseCollector {
 
   constructor(readonly cfg: TseConfig, http?: TseHttp, store?: TseStore) {
     this.http = http ?? new TseHttp({ minGapMs: cfg.minGapMs, userAgent: cfg.userAgent });
-    this.store = store ?? new TseStore(path.join(cfg.dataDir, cfg.env));
+    this.store = store ?? (cfg.frozen ? TseStore.sealed(cfg.finalDir) : new TseStore(path.join(cfg.dataDir, cfg.env)));
   }
 
   start(): void {
+    if (this.store.frozen) return; // sellado: no se consulta al TSE
     if (this.timer || this.running) return;
     this.phase = "esperando-catalogo";
     const loop = async () => {
@@ -176,7 +177,16 @@ export class TseCollector {
     }
     return sel;
   }
-  trackedMunicipalities(): MunicipalityInfo[] { return this.tracked; }
+  trackedMunicipalities(): MunicipalityInfo[] {
+    if (this.store.frozen && !this.tracked.length) {
+      // Sellado: no hay EA12 (no se consulta al TSE); los municipios se reconstruyen desde los resultados guardados.
+      this.tracked = this.store.all().filter((x) => x.result.geography.type === "MUNICIPIO").map((x) => {
+        const g = x.result.geography;
+        return { uf: g.uf ?? "", code: g.municipality_code ?? "", ibge: g.municipality_ibge ?? "", name: g.name, capital: true, zones: [] };
+      });
+    }
+    return this.tracked;
+  }
   municipality(uf: string, code: string): MunicipalityInfo | undefined {
     const c = code.padStart(5, "0");
     return this.ea12?.municipalities.find((m) => m.uf === uf.toUpperCase() && (m.code === c || m.ibge === code));

@@ -60,8 +60,10 @@ export function buildElectionLive(c: TseCollector): ElectionLive {
   }
   const abroad = buildAbroad(c, shown.map((x) => x.id));
   const statuses = br.candidates.map((x) => x.status ?? "");
-  const outcome = statuses.some((s) => /^eleito/i.test(s)) ? "winner" : statuses.some((s) => /2º turno/i.test(s)) ? "runoff" : "open";
+  let outcome: "open" | "winner" | "runoff" = statuses.some((s) => /^eleito/i.test(s)) ? "winner" : statuses.some((s) => /2º turno/i.test(s)) ? "runoff" : "open";
   const pct = br.totalization.percentage ?? 0;
+  // Sellado y al 100 %: el TSE no llegó a marcar el desenlace, pero la cuenta es la de la ley (mayoría absoluta de válidos).
+  if (c.store.frozen && outcome === "open" && pct >= 100 && candidates.length >= 2) outcome = candidates[0]!.pct > 50 ? "winner" : "runoff";
   return {
     available: true, updated_at: br.times.totalization_time, fetched_at: br.times.fetched_at, round: br.election.round,
     counted_pct: pct, candidates, states, cities, abroad, outcome, totalized_final: pct >= 100, source,

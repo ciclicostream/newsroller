@@ -1,3 +1,4 @@
+import { existsSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import type { TseEnv } from "./types.js";
@@ -9,10 +10,16 @@ const str = (n: string, d: string) => process.env[n]?.trim() || d;
 export const ARGENTINA_CITIES = ["BUENOS AIRES", "CÓRDOBA", "MENDOZA", "PASO LOS LIBRES", "PUERTO IGUAZÚ"] as const;
 export interface MunicipalSelection { uf: string; all?: boolean; names?: string[] }
 
+// Resultados finales sellados (1ª vuelta 2026): si existe `server/tse-final/seal.json` el colector NO consulta al TSE y todo sale
+// de ese archivo de sólo lectura. Sólo se levanta con TSE_DESCONGELAR=1 (acceso al servidor), nunca desde el panel ni la API.
+const FINAL_DIR = path.resolve(fileURLToPath(import.meta.url), "../../../tse-final");
+
 export function tseConfig() {
   const env = (str("TSE_ENV", "oficial") === "simulado" ? "simulado" : "oficial") as TseEnv;
   return {
     // Activo por defecto (apuntando al TSE oficial): hay que apagarlo a propósito con TSE_ENABLED=0. Antes de la publicación sólo pide el catálogo y EA14 con espera creciente.
+    finalDir: FINAL_DIR,
+    frozen: existsSync(path.join(FINAL_DIR, "seal.json")) && str("TSE_DESCONGELAR", "0") !== "1",
     enabled: !["0", "false", "no"].includes(str("TSE_ENABLED", "1").toLowerCase()),
     env,
     cycle: str("TSE_CICLO", "ele2026"),

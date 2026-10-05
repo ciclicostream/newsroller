@@ -114,7 +114,8 @@ http.listen(env.port, () => {
   void ensureAdmins();
   void closeOrphanIncidents();
   registry.start();
-  if (tseCfg.enabled) { tse.start(); console.log(`[tse] colector activo (${tseCfg.env}, cada ${tseCfg.pollMs / 1000}s)`); }
+  if (tseCfg.frozen) console.log("[tse] resultados SELLADOS (1ª vuelta 2026): sólo lectura, sin consultar al TSE");
+  else if (tseCfg.enabled) { tse.start(); console.log(`[tse] colector activo (${tseCfg.env}, cada ${tseCfg.pollMs / 1000}s)`); }
   startTrashPurger();
 
   // Auto-sync de shorts de YouTube (si hay key + Supabase).

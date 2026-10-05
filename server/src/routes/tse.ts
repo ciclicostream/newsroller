@@ -51,7 +51,7 @@ export function tseRouter(c: TseCollector): Router {
 
   // Para la placa de Elecciones en modo auto.
   // Widget embebible de la web (iframe): datos + etapa. Público, con CORS abierto y cache corta.
-  r.get("/widget/br-presidente", (_req, res) => { res.set("Cache-Control", "public, max-age=15"); res.json(buildWidget(c, readOverride(c.cfg.dataDir))); });
+  r.get("/widget/br-presidente", (_req, res) => { res.set("Cache-Control", "public, max-age=15"); res.json(buildWidget(c, c.store.frozen ? {} : readOverride(c.cfg.dataDir))); });
   r.get("/live/br-presidente", (_req, res) => { res.set("Cache-Control", "public, max-age=10"); res.json(buildElectionLive(c)); });
   return r;
 }

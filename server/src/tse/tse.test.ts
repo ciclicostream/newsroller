@@ -197,6 +197,20 @@ test("una actualización posterior reemplaza a la anterior; una generación viej
   assert.equal(st.get("br")!.result.times.file_generated_at, "2026-09-29T16:45:00-03:00");
 });
 
+test("si el TSE limpia su base (resultado vacío o con menos votos) se conserva lo que ya teníamos", () => {
+  const e = el();
+  const geo = { type: "BR" as const, country: "BR" as const, uf: null, municipality_code: null, municipality_ibge: null, name: "Brasil" };
+  const raw1 = fx("ea20-br.json");
+  const mk = (raw: string) => normalizeEa20(raw, { el: e, geography: geo, fetchedAt: new Date().toISOString(), lastModified: null, url: "u" });
+  const st = new TseStore(null);
+  st.put("br", mk(raw1), raw1, "a");
+  const before = st.get("br")!.result.totals.valid;
+  assert.ok((before ?? 0) > 0);
+  const wiped = raw1.replace('"hg" : "16:29:12"', '"hg" : "23:00:00"').replace(/"vv" : "\d+"/, '"vv" : "0"').replace(/"tv" : "\d+"/, '"tv" : "0"').replace(/"st" : "\d+"/, '"st" : "0"');
+  assert.equal(st.put("br", mk(wiped), wiped, "z"), "regressed");
+  assert.equal(st.get("br")!.result.totals.valid, before);
+});
+
 test("adaptador en vivo para la placa: ranking, estados con ganador, desenlace del TSE", async () => {
   const { c } = collector(mock());
   await c.cycle();
@@ -271,4 +285,19 @@ test("ganador confirmado por el editor: fuerza la pantalla de ganador aunque el 
   assert.ok(!electionScreens({ ...base, outcome: "runoff" }).includes("winner"), "sin override, en 'resultados' no hay ganador");
   assert.deepEqual(electionScreens({ ...base, outcome: "runoff", winner_override: "A" }).filter((x) => x === "winner" || x === "runoff"), ["winner"]);
   assert.deepEqual(electionScreens({ ...base, counted_pct: 0, winner_override: "A" }), ["intro"], "sin resultados cargados nunca queda una pantalla vacía");
+});
+
+test("sellado: sólo lectura, verifica el hash y se niega a cambiar", async () => {
+  const { mkdtempSync, writeFileSync } = await import("node:fs");
+  const { createHash } = await import("node:crypto");
+  const { tmpdir } = await import("node:os");
+  const dir = mkdtempSync(path.join(tmpdir(), "seal-"));
+  const body = JSON.stringify({ last_update_at: "x", results: [] });
+  writeFileSync(path.join(dir, "latest.json"), body);
+  writeFileSync(path.join(dir, "seal.json"), JSON.stringify({ sha256: createHash("sha256").update(body).digest("hex") }));
+  const ok = TseStore.sealed(dir);
+  assert.equal(ok.frozen, true); assert.equal(ok.sealError, null);
+  writeFileSync(path.join(dir, "latest.json"), body.replace('"x"', '"y"')); // alguien lo toca
+  const bad = TseStore.sealed(dir);
+  assert.ok(bad.sealError); assert.equal(bad.keys().length, 0);
 });
