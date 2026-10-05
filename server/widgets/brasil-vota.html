@@ -24,7 +24,9 @@ button{font-family:var(--f)}
 .ttl{display:flex;align-items:center;gap:16px;margin-top:12px}
 .flag{width:clamp(38px,7vw,52px);height:auto;flex:none;border-radius:3px;box-shadow:0 0 0 1px var(--line);transition:transform .35s}
 .hd:hover .flag{transform:rotate(-4deg) scale(1.05)}
-h1{font-weight:800;font-size:clamp(29px,6.7vw,50.5px);line-height:1;letter-spacing:.01em;text-transform:uppercase;white-space:nowrap}
+.tt{min-width:0}
+.sub{margin-top:5px;font-size:clamp(11px,2.2vw,14px);font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:#E0AE00}
+h1{font-weight:800;font-size:clamp(17px,3.9vw,30px);line-height:1;letter-spacing:.01em;text-transform:uppercase;white-space:nowrap}
 h1 span{display:inline-block;color:var(--brand);animation:lt 16s ease-in-out infinite}
 h1 span.sp{width:.3em}
 @keyframes lt{0%,24%{color:var(--brand)}44%{color:#E0AE00}64%{color:#1E9B57}84%,100%{color:var(--brand)}}
@@ -242,7 +244,7 @@ h1 span.sp{width:.3em}
     <div class="kick">Especial Cíclico</div>
     <div class="ttl">
       <svg class="flag" viewBox="0 0 72 50" aria-hidden="true"><rect width="72" height="50" fill="#009C3B"/><polygon points="36,4 68,25 36,46 4,25" fill="#FFDF00"/><circle cx="36" cy="25" r="11" fill="#002776"/><path d="M25.2 22.5c7-2 15-.6 21.4 3.6" stroke="#fff" stroke-width="2.2" fill="none"/></svg>
-      <h1 id="t" aria-label="Brasil Vota"></h1>
+      <div class="tt"><h1 id="t" aria-label="Brasil Vota Presidente"></h1><div class="sub" id="sub">Primera vuelta</div></div>
     </div>
     <ol class="tl" id="tl" aria-label="Etapas de la elección"></ol>
     <div class="row">
@@ -267,7 +269,7 @@ h1 span.sp{width:.3em}
   var data = null, open = false, mapa = null, seenKey = "bv:seen", focus = -1, hover = -1;
 
   // Título: cada letra recorre blanco → dorado → verde → blanco, desfasadas.
-  var t = $("t"); "BRASIL VOTA".split("").forEach(function (ch, i) {
+  var t = $("t"); "BRASIL VOTA PRESIDENTE".split("").forEach(function (ch, i) {
     var s = document.createElement("span");
     if (ch === " ") { s.className = "sp"; s.innerHTML = "&nbsp;"; } else { s.textContent = ch; s.style.animationDelay = (-i * 1.1) + "s"; }
     t.appendChild(s);
@@ -402,6 +404,7 @@ h1 span.sp{width:.3em}
   var animNext = false, startTab = Q.get("tab");
   function render() {
     var d = data; if (!d) return;
+    $("sub").textContent = d.round === 2 ? "Segunda vuelta" : "Primera vuelta";
     drawTimeline(d.phase);
     var hasRes = d.available && d.candidates.length >= 2 && d.counted_pct > 0, html;
     $("status").innerHTML = "<b>" + esc(d.phase_label) + "</b>" + (hasRes ? " · escrutinio " + pct(d.counted_pct) + " %" : "");
