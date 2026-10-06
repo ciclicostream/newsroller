@@ -66,7 +66,7 @@ export interface ElectionData {
   abroad?: ElectionAbroad; // en modo auto: paso "Brasileños en Argentina"
   cities?: ElectionCity[]; // en modo auto: las ciudades que informa el TSE; sin ellas no hay pantalla de ciudades
   screens?: { winner?: boolean; top?: boolean; states?: boolean; cities?: boolean; abroad?: boolean }; // por defecto todas las que tengan datos
-  sec_per_screen?: number; // segundos con la placa ya armada (mínimo y por defecto 40)
+  sec_per_screen?: number; // segundos con la placa ya armada (mínimo y por defecto 20)
 }
 export const ELECTION_MAX_CANDIDATES = 12;
 export const ELECTION_TOP_N = 5;
@@ -75,7 +75,7 @@ export const electionPhase = (d: Pick<ElectionData, "phase">): ElectionPhase => 
 
 // Fuente única de la lógica de emisión (la usan el panel y el aire): qué pantallas salen, en orden, con los datos que
 // hay hoy. Una pantalla sólo entra si tiene con qué llenarse; sin resultados siempre queda, al menos, el arranque.
-export function electionScreens(d: Pick<ElectionData, "phase" | "intro" | "screens" | "candidates" | "states" | "counted_pct" | "country" | "outcome" | "cities" | "abroad" | "winner_override">): ElectionScreen[] {
+export function electionScreens(d: Pick<ElectionData, "auto" | "phase" | "intro" | "screens" | "candidates" | "states" | "counted_pct" | "country" | "outcome" | "cities" | "abroad" | "winner_override">): ElectionScreen[] {
   const rank = d.winner_override ? ELECTION_PHASES.length - 1 : ELECTION_PHASES.findIndex((p) => p.id === electionPhase(d));
   const mode = d.intro ?? "con";
   const withPct = (d.candidates ?? []).filter((c) => c.name?.trim() && c.pct > 0);
@@ -83,7 +83,8 @@ export function electionScreens(d: Pick<ElectionData, "phase" | "intro" | "scree
   if (mode === "solo" || !hasResults) return ["intro"];
   const on = d.screens ?? {};
   const l: ElectionScreen[] = [];
-  if (mode === "con") l.push("intro");
+  // En modo auto (TSE), con resultados en pantalla la placa de arranque ya cumplió: se va directo a los resultados.
+  if (mode === "con" && !d.auto) l.push("intro");
   if (rank >= 3 && on.winner !== false) l.push(d.outcome === "runoff" && !d.winner_override ? "runoff" : "winner");
   if (on.top !== false) l.push("top");
   const hasStates = (d.states ?? []).some((s) => s.winner >= 0) && ELECTION_COUNTRIES_IDS.includes(d.country);
@@ -112,7 +113,7 @@ export interface ElectionLive {
 
 // Tiempos de la placa: cada pantalla necesita ENTER segundos para terminar de armarse y después queda al menos HOLD_MIN
 // segundos completa antes de pasar a la siguiente. La duración del bloque debe cubrir todo eso o la salida lo corta.
-export const ELECTION_HOLD_MIN_SEC = 40;
+export const ELECTION_HOLD_MIN_SEC = 20;
 export const ELECTION_ENTER_SEC = 7;
 export const ELECTION_EXIT_SEC = 2;
 export const electionHold = (sec: number | undefined): number => Math.max(ELECTION_HOLD_MIN_SEC, sec ?? ELECTION_HOLD_MIN_SEC);

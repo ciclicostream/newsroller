@@ -423,7 +423,7 @@ export function Elecciones({ data: manual, durationSec }: { data: ElectionData; 
   const data = useMemo(() => applyOverride(mergeLive(manual, live)), [manual, live]);
   const videoRef = useForcePlay<HTMLVideoElement>();
   const country = ELECTION_COUNTRIES.find((c) => c.id === data.country);
-  // Tiempo con la placa ya armada: nunca menos de 40 s (`?hold=N` sólo para revisar demos).
+  // Tiempo con la placa ya armada: nunca menos de 20 s (`?hold=N` sólo para revisar demos).
   const hold = Number(P.get("hold")) || electionHold(data.sec_per_screen);
   const stepMs = (ELECTION_ENTER_SEC + hold) * 1000;
   const ranked: Ranked[] = useMemo(() => (data.candidates ?? []).map((c, i) => ({ ...c, i })).sort((a, b) => b.pct - a.pct), [data.candidates]);

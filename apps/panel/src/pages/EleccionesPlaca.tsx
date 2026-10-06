@@ -61,7 +61,7 @@ export function EleccionesPlaca() {
   const par = kind === "parlamentaria";
   const emitted = electionScreens(buildData());
   // En modo auto las pantallas aparecen solas durante la noche: la duración se calcula para el caso completo.
-  const nScr = autoOn ? Math.max(emitted.length, (intro === "sin" ? 0 : 1) + [scrWinner, scrTop, scrStates, scrCities, scrAbroad].filter(Boolean).length) : emitted.length;
+  const nScr = autoOn ? Math.max(emitted.length, [scrWinner, scrTop, scrStates, scrCities, scrAbroad].filter(Boolean).length) : emitted.length;
   const dur = electionDuration(nScr, sec);
   const cur = cands[act] ?? cands[0]!;
   const sumPct = cands.reduce((s, c) => s + (c.pct || 0), 0);
