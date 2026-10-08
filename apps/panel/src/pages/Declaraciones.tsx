@@ -6,10 +6,20 @@ import type { ContentItem, DeclaracionesData } from "@newsroller/shared";
 import { DECLARACIONES_PROGRAMAS } from "@newsroller/shared";
 import { contentItems } from "../lib/content-items";
 import { uploadMedia } from "../lib/content";
+import { useActiveSuite } from "../lib/collections";
+import type { CropGuide } from "../lib/imageCrop";
 
 const Q_MAX = 450;
 
+// Dónde muestra cada colección la foto del declarante (medidas del output): el encuadrador las dibuja sobre la foto.
+// Clásica: cuadrada en las dos versiones. Moderna: vertical (520×680 en escritorio, 540×700 en celular).
+const photoGuides = (collection: string): CropGuide[] =>
+  collection === "moderna"
+    ? [{ label: "Escritorio", aspect: 520 / 680, w: 520 }, { label: "Celular", aspect: 540 / 700, w: 540 }]
+    : [{ label: "Escritorio", aspect: 330 / 330, w: 330 }, { label: "Celular", aspect: 380 / 380, w: 380 }];
+
 export function Declaraciones() {
+  const suite = useActiveSuite();
   const [items, setItems] = useState<ContentItem[]>([]);
   const [err, setErr] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
@@ -38,7 +48,7 @@ export function Declaraciones() {
     const file = e.target.files?.[0];
     if (!file) return;
     setErr(null); setUploading(true);
-    try { setPhotoUrl(await uploadMedia(file, "media")); }
+    try { setPhotoUrl(await uploadMedia(file, "media", "placa", { guides: photoGuides(suite?.style ?? "clasica") })); }
     catch (e) { setErr(e instanceof Error ? e.message : "error subiendo"); }
     finally { setUploading(false); }
   }

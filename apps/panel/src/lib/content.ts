@@ -1,6 +1,7 @@
 import type { Asset, AssetKind, Placa, Short } from "@newsroller/shared";
 import { api } from "./api";
 import { supabase } from "./supabase";
+import { friendlyError } from "./errors";
 import { autoCompress, isRaster, requestCrop, type CropOpts } from "./imageCrop";
 
 interface SignResponse {
@@ -17,7 +18,7 @@ export async function uploadAsset(kind: AssetKind, file: File): Promise<Asset> {
     filename: file.name,
   });
   const { error } = await supabase.storage.from(sign.bucket).uploadToSignedUrl(sign.path, sign.token, file);
-  if (error) throw new Error(`subida a Storage: ${error.message}`);
+  if (error) throw new Error(friendlyError(error, "No se pudo subir el archivo"));
   return api.post<Asset>("/api/content/assets", {
     kind,
     bucket: sign.bucket,
@@ -37,7 +38,7 @@ export async function uploadMedia(file: File, kind: AssetKind | "media" = "media
   if (source !== "ajustes" && isRaster(file)) file = source === "banco" ? await autoCompress(file) : await requestCrop(file, crop);
   const sign = await api.post<SignResponse>("/api/content/uploads/sign", { kind, filename: file.name, folder: source === "ajustes" ? "ajustes" : undefined });
   const { error } = await supabase.storage.from(sign.bucket).uploadToSignedUrl(sign.path, sign.token, file);
-  if (error) throw new Error(`subida a Storage: ${error.message}`);
+  if (error) throw new Error(friendlyError(error, "No se pudo subir el archivo"));
   // Toda subida queda registrada en el Banco (quién, cuándo, tamaño). Si falla, la subida igual vale.
   if (source !== "ajustes") await api.post("/api/content/uploads/register", { bucket: sign.bucket, path: sign.path, name: file.name, mime: file.type, size: file.size, source }).catch(() => {});
   return supabase.storage.from(sign.bucket).getPublicUrl(sign.path).data.publicUrl;

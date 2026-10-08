@@ -1,3 +1,4 @@
+import { friendlyError } from "../lib/errors";
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react";
 import { can as canRole, type Perm, type Role } from "@newsroller/shared";
 import { supabase } from "../lib/supabase";
@@ -59,7 +60,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (error) {
       // Se avisa al server para el reporte de seguridad (ingresos fallidos). Nunca frena el mensaje de error.
       void api.post("/api/security/login-attempt", { email }).catch(() => {});
-      throw new Error(error.message);
+      throw new Error(friendlyError(error));
     }
     try { sessionStorage.removeItem(LOGOUT_MSG_KEY); } catch { /* noop */ }
     // Abre la sesión registrada (inactividad y reportes). Si falla, se entra igual.

@@ -3,6 +3,7 @@ import { Navigate } from "react-router-dom";
 import { CircleDot, LogIn } from "lucide-react";
 import { useAuth, LOGOUT_MSG_KEY } from "../auth/AuthProvider";
 import { supabase, supabaseConfigured } from "../lib/supabase";
+import { friendlyError } from "../lib/errors";
 
 export function Login() {
   const { me, loading, signIn } = useAuth();
@@ -49,7 +50,7 @@ export function Login() {
       if (error) throw error;
       setInfo("Listo: si el email existe, te mandamos un link para elegir una contraseña nueva.");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "no se pudo enviar el mail");
+      setError(friendlyError(err, "No se pudo enviar el mail"));
     } finally { setBusy(false); }
   }
 
@@ -64,7 +65,7 @@ export function Login() {
       window.history.replaceState(null, "", window.location.pathname);
       setDone(true);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "no se pudo cambiar la contraseña");
+      setError(friendlyError(err, "No se pudo cambiar la contraseña"));
     } finally { setBusy(false); }
   }
 

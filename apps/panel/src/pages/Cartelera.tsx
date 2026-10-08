@@ -17,8 +17,8 @@ const KINDS: { key: CarteleraKind; label: string }[] = [{ key: "teatro", label: 
 // Dónde muestra cada colección la foto horizontal (medidas del output): el encuadrador las dibuja sobre la foto.
 const photoGuides = (collection: string, kind: CarteleraKind): CropGuide[] =>
   collection === "moderna"
-    ? [{ label: "Escritorio", aspect: 1000 / 562 }, { label: "Celular", aspect: 960 / 540 }]
-    : [{ label: "Escritorio", aspect: 1164 / (kind === "teatro" ? 590 : 520) }, { label: "Celular", aspect: 900 / 640 }];
+    ? [{ label: "Escritorio", aspect: 1000 / 562, w: 1000 }, { label: "Celular", aspect: 960 / 540, w: 960 }]
+    : [{ label: "Escritorio", aspect: 1164 / (kind === "teatro" ? 590 : 520), w: 1164 }, { label: "Celular", aspect: 900 / 640, w: 900 }];
 const kindOf = (d: CarteleraData): CarteleraKind => d.kind ?? "teatro"; // las ya guardadas son de teatro
 const isYtId = (s: string) => /^[\w-]{11}$/.test(s);
 const isJpgOrPng = (f: File) =>

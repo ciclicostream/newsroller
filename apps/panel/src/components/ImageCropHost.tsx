@@ -4,15 +4,18 @@ import { MAX_BYTES, MAX_SIDE, cropAndEncode, fmtSize, mergeGuides, mountCropHost
 
 // Encuadrador de fotos (lo abre uploadMedia). Se arrastra la foto y se acerca/aleja con el control o la rueda;
 // lo que queda dentro del marco es lo que se sube, ya liviano (≤ 1 MB). Se monta una sola vez en el Layout.
+// Nombres de las proporciones habituales (para indicar la sugerida por el formulario).
 const ASPECTS: { label: string; v: number | null }[] = [
   { label: "Original", v: null }, { label: "16:9", v: 16 / 9 }, { label: "9:16", v: 9 / 16 }, { label: "4:5", v: 4 / 5 },
   { label: "1:1", v: 1 }, { label: "3:4", v: 3 / 4 }, { label: "2:3", v: 2 / 3 },
 ];
+const MAX_STRETCH = 1.5; // se avisa si la plantilla tiene que agrandar la foto más que esto
 const LOW_PX = 1000; // por debajo de este lado mayor (en px reales de la foto) se avisa que puede verse borrosa
 const PAD = 16; // margen del marco dentro de la zona de trabajo (su tamaño se mide: depende de la pantalla)
 
 export function ImageCropHost() {
   const queue = useRef<CropRequest[]>([]);
+  const active = useRef<CropRequest | null>(null); // el pedido en pantalla (refleja `req` sin esperar al render)
   const [req, setReq] = useState<CropRequest | null>(null);
   const [url, setUrl] = useState<string | null>(null);
   const [nat, setNat] = useState<{ w: number; h: number } | null>(null);
@@ -28,7 +31,7 @@ export function ImageCropHost() {
   // Zona de trabajo: todo el ancho disponible y un alto que deja ver los botones aun en pantallas bajas.
   useLayoutEffect(() => {
     if (!req) return;
-    const measure = () => setBox({ w: boxRef.current?.clientWidth || 560, h: Math.round(Math.min(380, Math.max(200, window.innerHeight * 0.94 - 330))) });
+    const measure = () => setBox({ w: boxRef.current?.clientWidth || 560, h: Math.round(Math.min(380, Math.max(200, window.innerHeight * 0.94 - 300))) });
     measure();
     window.addEventListener("resize", measure);
     return () => window.removeEventListener("resize", measure);
@@ -36,6 +39,7 @@ export function ImageCropHost() {
 
   const next = useCallback(() => {
     const r = queue.current.shift() ?? null;
+    active.current = r;
     setReq(r); setNat(null); setZoom(1); setOff({ x: 0, y: 0 }); setErr(null); setBusy(false);
     setAspect(r ? r.opts.aspect ?? unionAspect(mergeGuides(r.opts.guides)) : null);
   }, []);
@@ -44,7 +48,7 @@ export function ImageCropHost() {
     const un = mountCropHost();
     const onReq = (e: Event) => {
       queue.current.push((e as CustomEvent<CropRequest>).detail);
-      setReq((cur) => { if (!cur) queueMicrotask(next); return cur; });
+      if (!active.current) next(); // si ya hay una foto en pantalla, espera su turno
     };
     window.addEventListener("ciclico:crop", onReq);
     return () => { window.removeEventListener("ciclico:crop", onReq); un(); };
@@ -98,15 +102,18 @@ export function ImageCropHost() {
   // Cancelar corta la subida con un error de mensaje vacío: los formularios muestran el mensaje del error, y vacío no muestra nada.
   const cancel = () => { if (!busy) finish(new Error("")); };
 
-  const pick = (v: number | null) => { setAspect(v); setZoom(1); setOff({ x: 0, y: 0 }); };
   const left = box.w / 2 + o.x - ((nat?.w ?? 0) * s) / 2;
   const top = box.h / 2 + o.y - ((nat?.h ?? 0) * s) / 2;
   // Foto chica para el encuadre elegido: el output no la agranda de verdad, la estira (al aire se vería borrosa).
+  // Con las medidas de las zonas, se compara cuánto se agranda la foto en cada una; sin ellas, un mínimo de píxeles.
   const cr = rect();
-  const lowRes = !!cr && Math.max(cr.w, cr.h) < LOW_PX;
+  const gs = mergeGuides(req.opts.guides);
+  const sized = gs.filter((g) => g.w);
+  const stretch = cr ? Math.max(0, ...sized.map((g) => g.w! / (((g.aspect >= ratio ? fw : fh * g.aspect)) / s))) : 0;
+  const lowRes = !!cr && (sized.length ? stretch > MAX_STRETCH : Math.max(cr.w, cr.h) < LOW_PX);
   const guides = mergeGuides(req.opts.guides);
-  const union = unionAspect(guides);
-  const aspects = union != null ? [{ label: "Ambas zonas", v: union }, ...ASPECTS.filter((a) => a.v == null || Math.abs(a.v - union) > 0.01)] : ASPECTS;
+  const frameLabel = guides.length > 1 ? "Ambas zonas" : guides[0]?.label
+    ?? (req.opts.aspect ? ASPECTS.find((a) => a.v != null && Math.abs(a.v - req.opts.aspect!) < 0.01)?.label ?? req.opts.aspect.toFixed(2) : "Original");
   const tooBig = req.file.size > MAX_BYTES || (nat ? Math.max(nat.w, nat.h) > MAX_SIDE : false);
 
   return (
@@ -118,14 +125,16 @@ export function ImageCropHost() {
         </div>
         <div style={{ padding: 16, display: "grid", gap: 12, overflow: "auto" }}>
           <div className="muted-note" style={{ fontSize: 12 }}>
-            {req.file.name} · {nat ? `${nat.w}×${nat.h}` : "…"} · {fmtSize(req.file.size)}
-            {tooBig ? ` → se guarda de hasta ${MAX_SIDE} px y ${fmtSize(MAX_BYTES)}` : " → ya entra en el límite"}
+            Arrastrá la foto para encuadrarla; lo de adentro del marco es lo que se sube.{guides.length > 0 && " Las líneas punteadas son lo que se ve en cada versión: poné lo importante dentro de todas."}
           </div>
 
-          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-            {aspects.map((a) => (
-              <button key={a.label} type="button" className={"toggle-pill" + ((aspect ?? null) === a.v ? " on" : "")} onClick={() => pick(a.v)} style={{ padding: "4px 10px" }}>{a.label}</button>
-            ))}
+          {/* El encuadre lo define cada formulario (zonas de la plantilla o proporción sugerida): acá sólo se indica cuál es y se acerca. */}
+          <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+            <span className="toggle-pill on" style={{ padding: "4px 12px", cursor: "default", whiteSpace: "nowrap" }}>{frameLabel}</span>
+            <label style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 13, flex: 1 }}>
+              <span>Zoom</span>
+              <input type="range" min={1} max={4} step={0.01} value={zoom} onChange={(e) => setZoom(Number(e.target.value))} style={{ flex: 1 }} />
+            </label>
           </div>
 
           <div
@@ -155,19 +164,20 @@ export function ImageCropHost() {
             {!nat && !err && <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff" }}><Loader2 size={22} className="spin" /></div>}
           </div>
 
-          <label style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 13 }}>
-            <span style={{ width: 52 }}>Zoom</span>
-            <input type="range" min={1} max={4} step={0.01} value={zoom} onChange={(e) => setZoom(Number(e.target.value))} style={{ flex: 1 }} />
-          </label>
-          <div className="muted-note" style={{ fontSize: 12 }}>Arrastrá la foto para encuadrarla. Lo que queda dentro del marco es lo que se sube.{guides.length > 0 && " Las líneas punteadas son lo que se ve en cada versión: poné lo importante dentro de todas."}</div>
 
           {lowRes && cr && (
             <div className="alert" style={{ margin: 0, background: "#fff7e0", borderColor: "#f0dba0", color: "#7a5b00" }}>
-              Con este encuadre la foto queda de {Math.round(cr.w)}×{Math.round(cr.h)} px. Es chica para la pantalla (1920 px de ancho) y puede verse borrosa al aire.
+              {sized.length
+                ? <>Con este encuadre la foto queda de {Math.round(cr.w)}×{Math.round(cr.h)} px y al aire se agranda ×{stretch.toFixed(1).replace(".", ",")}: puede verse borrosa.</>
+                : <>Con este encuadre la foto queda de {Math.round(cr.w)}×{Math.round(cr.h)} px. Es chica para la pantalla (1920 px de ancho) y puede verse borrosa al aire.</>}
             </div>
           )}
           {err && <div className="alert error" style={{ margin: 0 }}>{err}</div>}
-          <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <div className="muted-note" style={{ fontSize: 11.5, lineHeight: 1.35, flex: 1, minWidth: 0, wordBreak: "break-word" }}>
+              {req.file.name} · {nat ? `${nat.w}×${nat.h}` : "…"} · {fmtSize(req.file.size)}
+              {tooBig ? ` → se guarda de hasta ${MAX_SIDE} px y ${fmtSize(MAX_BYTES)}` : " → ya entra en el límite"}
+            </div>
             <button type="button" className="btn" onClick={cancel} disabled={busy}>Cancelar</button>
             <button type="button" className="btn primary" onClick={accept} disabled={!nat || busy}>{busy ? "Procesando…" : "Usar esta foto"}</button>
           </div>

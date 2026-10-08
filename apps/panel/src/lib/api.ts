@@ -1,4 +1,5 @@
 import { supabase } from "./supabase";
+import { friendlyError } from "./errors";
 
 const BASE = (import.meta.env.VITE_API_URL as string | undefined) ?? "";
 
@@ -9,14 +10,19 @@ async function authHeader(): Promise<Record<string, string>> {
 }
 
 async function request<T>(method: string, path: string, body?: unknown): Promise<T> {
-  const res = await fetch(`${BASE}${path}`, {
-    method,
-    headers: {
-      "Content-Type": "application/json",
-      ...(await authHeader()),
-    },
-    body: body === undefined ? undefined : JSON.stringify(body),
-  });
+  let res: Response;
+  try {
+    res = await fetch(`${BASE}${path}`, {
+      method,
+      headers: {
+        "Content-Type": "application/json",
+        ...(await authHeader()),
+      },
+      body: body === undefined ? undefined : JSON.stringify(body),
+    });
+  } catch (e) {
+    throw new Error(friendlyError(e)); // sin conexión con el server ("Failed to fetch")
+  }
   if (res.status === 204) return undefined as T;
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
@@ -25,7 +31,9 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
     if ((res.status === 401 && code === "idle") || (res.status === 403 && code === "disabled")) {
       window.dispatchEvent(new CustomEvent("ciclico:session-ended", { detail: code }));
     }
-    throw new Error((data as { error?: string }).error ?? `HTTP ${res.status}`);
+    throw new Error((data as { error?: string }).error ?? (res.status >= 500
+      ? `El servidor tuvo un problema (error ${res.status}). Probá de nuevo en unos segundos; si sigue, avisale a un administrador.`
+      : `El servidor no pudo completar la acción (error ${res.status}).`));
   }
   return data as T;
 }

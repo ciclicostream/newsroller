@@ -1,3 +1,4 @@
+import { friendlyError } from "../lib/errors";
 import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Camera, Loader2, Trash2, Save, KeyRound } from "lucide-react";
@@ -62,7 +63,7 @@ export function Perfil() {
     setBusy("pass"); setErr(null);
     try {
       const { error } = await supabase.auth.updateUser({ password: pass });
-      if (error) throw new Error(error.message);
+      if (error) throw new Error(friendlyError(error));
       setPass(""); setPass2(""); ok("Contraseña cambiada.");
     } catch (er) { setErr(er instanceof Error ? er.message : "error"); }
     finally { setBusy(null); }

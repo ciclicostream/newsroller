@@ -1,3 +1,4 @@
+import { friendlyError } from "./errors";
 import { api } from "./api";
 import { supabase } from "./supabase";
 
@@ -24,6 +25,6 @@ export async function uploadAvatar(file: File): Promise<string> {
   const blob = await toSquareJpeg(file);
   const sign = await api.post<{ bucket: string; path: string; token: string }>("/api/me/avatar/sign", {});
   const { error } = await supabase.storage.from(sign.bucket).uploadToSignedUrl(sign.path, sign.token, blob, { contentType: "image/jpeg" });
-  if (error) throw new Error(`subida de la foto: ${error.message}`);
+  if (error) throw new Error(friendlyError(error, "No se pudo subir la foto"));
   return supabase.storage.from(sign.bucket).getPublicUrl(sign.path).data.publicUrl;
 }
