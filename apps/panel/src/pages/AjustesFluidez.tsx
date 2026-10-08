@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, RefreshCw } from "lucide-react";
+import { ArrowLeft, Download, RefreshCw } from "lucide-react";
 import { api } from "../lib/api";
 
 // Ajustes → Fluidez del aire: cuántos cuadros por segundo entrega cada output real (OBS/vMix) y en qué
@@ -14,6 +14,39 @@ const hhmm = (iso: string) => new Date(iso).toLocaleTimeString("es-AR", { hour: 
 const uptime = (min: number) => (min >= 60 ? `${Math.floor(min / 60)} h ${min % 60} min` : `${min} min`);
 // Mediana ≈ 33 ms = la fuente de navegador corre a 30 fps; ≈ 16,7 ms = a 60 fps.
 const nominal = (ms: number) => (ms >= 28 ? "30 fps" : ms >= 14 ? "60 fps" : ms > 0 ? "más de 60 fps" : "—");
+
+// Informe en texto (Markdown) con todo lo que muestra la pantalla, para compartirlo o adjuntarlo.
+function buildReport(data: Record<string, Client>, hours: number): string {
+  const L: string[] = [`# Fluidez del aire`, ``, `Generado: ${new Date().toLocaleString("es-AR")} · período: últimas ${hours} h`, ``];
+  const clients = Object.entries(data);
+  if (!clients.length) L.push("Sin reportes en el período.");
+  for (const [id, c] of clients) {
+    const rows = Object.entries(c.porContenido).sort((a, b) => b[1].saltosPct - a[1].saltosPct);
+    const tot = rows.reduce((s, [, r]) => s + r.minutos, 0);
+    const med = tot ? rows.reduce((s, [, r]) => s + r.medianaMs * r.minutos, 0) / tot : 0;
+    L.push(`## Output ${c.orientation} (${id})`, ``,
+      `- Fuente de navegador: ${nominal(med)} (mediana ${med.toFixed(1)} ms)`,
+      `- Encendido hace: ${uptime(c.uptimeMin)}`,
+      `- Memoria: ${c.heapMb != null ? `${c.heapMb} MB` : "—"}`,
+      `- Resolución: ${c.screen ?? "—"}`,
+      `- Navegador: ${c.ua ?? "—"}`,
+      `- Último reporte: ${new Date(c.ultimoReporte).toLocaleString("es-AR")}`, ``,
+      `| Contenido | Min | fps | Mediana ms | Saltos % | Tirones % | Congelados | p99 ms | Peor ms | Bloqueos |`,
+      `|---|---|---|---|---|---|---|---|---|---|`);
+    for (const [l, r] of rows) L.push(`| ${l} | ${r.minutos} | ${r.fpsPromedio} | ${r.medianaMs} | ${r.saltosPct} | ${r.tironesPct} | ${r.congelados} | ${r.p99Max} | ${r.maxMs} | ${r.tareasLargas} |`);
+    L.push(``);
+  }
+  L.push(`Saltos: cuadros >1,5× la mediana · Tirones: >3× · Congelados: >6×.`);
+  return L.join("\n");
+}
+
+function download(name: string, text: string): void {
+  const url = URL.createObjectURL(new Blob([text], { type: "text/markdown;charset=utf-8" }));
+  const a = document.createElement("a");
+  a.href = url; a.download = name; a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
 const tone = (r: Row) => (r.congelados > 0 || r.saltosPct >= 3 ? "bad" : r.saltosPct >= 1 ? "warn" : "ok");
 
 export function AjustesFluidez() {
@@ -50,6 +83,7 @@ export function AjustesFluidez() {
             <button key={h} type="button" className={"btn" + (hours === h ? " primary" : "")} onClick={() => setHours(h)}>{h === 1 ? "1 hora" : `${h} horas`}</button>
           ))}
           <button type="button" className="btn" onClick={load} disabled={loading} style={{ marginLeft: "auto" }}><RefreshCw size={14} /> Actualizar</button>
+          <button type="button" className="btn" disabled={!data} onClick={() => data && download(`fluidez-${new Date().toISOString().slice(0, 16).replace(/[:T]/g, "-")}.md`, buildReport(data, hours))}><Download size={14} /> Descargar informe</button>
         </div>
       </section>
 
