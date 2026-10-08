@@ -7,11 +7,18 @@ import { PLATAFORMAS_DEFAULT } from "@newsroller/shared";
 import { contentItems } from "../lib/content-items";
 import { uploadMedia, content } from "../lib/content";
 import { settingsApi } from "../lib/settings";
+import { useActiveSuite } from "../lib/collections";
+import type { CropGuide } from "../lib/imageCrop";
 import { youtubeId } from "../lib/cameras";
 import { youtubeDuration } from "../lib/youtube";
 
 const T_MAX = 90;
 const KINDS: { key: CarteleraKind; label: string }[] = [{ key: "teatro", label: "Teatro" }, { key: "cine", label: "Cine" }, { key: "evento", label: "Eventos" }];
+// Dónde muestra cada colección la foto horizontal (medidas del output): el encuadrador las dibuja sobre la foto.
+const photoGuides = (collection: string, kind: CarteleraKind): CropGuide[] =>
+  collection === "moderna"
+    ? [{ label: "Escritorio", aspect: 1000 / 562 }, { label: "Celular", aspect: 960 / 540 }]
+    : [{ label: "Escritorio", aspect: 1164 / (kind === "teatro" ? 590 : 520) }, { label: "Celular", aspect: 900 / 640 }];
 const kindOf = (d: CarteleraData): CarteleraKind => d.kind ?? "teatro"; // las ya guardadas son de teatro
 const isYtId = (s: string) => /^[\w-]{11}$/.test(s);
 const isJpgOrPng = (f: File) =>
@@ -25,6 +32,7 @@ export function Cartelera() {
   const [editingId, setEditingId] = useState<string | null>(null);
 
   const [kind, setKind] = useState<CarteleraKind>("teatro");
+  const suite = useActiveSuite();
   // Cine (película o serie)
   const [synopsis, setSynopsis] = useState("");
   const [durText, setDurText] = useState("");
@@ -89,7 +97,7 @@ export function Cartelera() {
     const file = e.target.files?.[0];
     if (!file) return;
     setErr(null); setUploadingPhoto(true);
-    try { setPhotoUrl(await uploadMedia(file, "media", "placa", { aspect: 16 / 9 })); }
+    try { setPhotoUrl(await uploadMedia(file, "media", "placa", { guides: photoGuides(suite?.style ?? "clasica", kind) })); }
     catch (e) { setErr(e instanceof Error ? e.message : "error subiendo"); }
     finally { setUploadingPhoto(false); }
   }

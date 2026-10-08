@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Loader2, X } from "lucide-react";
-import { MAX_BYTES, MAX_SIDE, cropAndEncode, fmtSize, mountCropHost, type CropRequest, type Rect } from "../lib/imageCrop";
+import { MAX_BYTES, MAX_SIDE, cropAndEncode, fmtSize, mergeGuides, mountCropHost, unionAspect, type CropRequest, type Rect } from "../lib/imageCrop";
 
 // Encuadrador de fotos (lo abre uploadMedia). Se arrastra la foto y se acerca/aleja con el control o la rueda;
 // lo que queda dentro del marco es lo que se sube, ya liviano (≤ 1 MB). Se monta una sola vez en el Layout.
@@ -37,7 +37,7 @@ export function ImageCropHost() {
   const next = useCallback(() => {
     const r = queue.current.shift() ?? null;
     setReq(r); setNat(null); setZoom(1); setOff({ x: 0, y: 0 }); setErr(null); setBusy(false);
-    setAspect(r?.opts.aspect ?? null);
+    setAspect(r ? r.opts.aspect ?? unionAspect(mergeGuides(r.opts.guides)) : null);
   }, []);
 
   useEffect(() => {
@@ -95,7 +95,8 @@ export function ImageCropHost() {
     try { finish(await cropAndEncode(req.file, r)); }
     catch (e) { setErr(e instanceof Error ? e.message : "No se pudo procesar la imagen."); setBusy(false); }
   }
-  const cancel = () => { if (!busy) finish(new Error("Subida cancelada.")); };
+  // Cancelar corta la subida con un error de mensaje vacío: los formularios muestran el mensaje del error, y vacío no muestra nada.
+  const cancel = () => { if (!busy) finish(new Error("")); };
 
   const pick = (v: number | null) => { setAspect(v); setZoom(1); setOff({ x: 0, y: 0 }); };
   const left = box.w / 2 + o.x - ((nat?.w ?? 0) * s) / 2;
@@ -103,6 +104,9 @@ export function ImageCropHost() {
   // Foto chica para el encuadre elegido: el output no la agranda de verdad, la estira (al aire se vería borrosa).
   const cr = rect();
   const lowRes = !!cr && Math.max(cr.w, cr.h) < LOW_PX;
+  const guides = mergeGuides(req.opts.guides);
+  const union = unionAspect(guides);
+  const aspects = union != null ? [{ label: "Ambas zonas", v: union }, ...ASPECTS.filter((a) => a.v == null || Math.abs(a.v - union) > 0.01)] : ASPECTS;
   const tooBig = req.file.size > MAX_BYTES || (nat ? Math.max(nat.w, nat.h) > MAX_SIDE : false);
 
   return (
@@ -119,7 +123,7 @@ export function ImageCropHost() {
           </div>
 
           <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-            {ASPECTS.map((a) => (
+            {aspects.map((a) => (
               <button key={a.label} type="button" className={"toggle-pill" + ((aspect ?? null) === a.v ? " on" : "")} onClick={() => pick(a.v)} style={{ padding: "4px 10px" }}>{a.label}</button>
             ))}
           </div>
@@ -136,7 +140,18 @@ export function ImageCropHost() {
               <img src={url} alt="" draggable={false} style={{ position: "absolute", left, top, width: nat.w * s, height: nat.h * s, maxWidth: "none", pointerEvents: "none" }} />
             )}
             {/* marco: lo de afuera se oscurece */}
-            <div style={{ position: "absolute", left: (box.w - fw) / 2, top: (box.h - fh) / 2, width: fw, height: fh, boxShadow: "0 0 0 9999px rgba(8,12,20,.62)", border: "2px solid #fff", borderRadius: 2, pointerEvents: "none" }} />
+            <div style={{ position: "absolute", left: (box.w - fw) / 2, top: (box.h - fh) / 2, width: fw, height: fh, boxShadow: "0 0 0 9999px rgba(8,12,20,.62)", border: "2px solid #fff", borderRadius: 2, pointerEvents: "none" }}>
+              {/* zonas donde la plantilla muestra la foto (centradas: lo que sobra se corta) */}
+              {guides.map((g, i) => {
+                const w = g.aspect >= ratio ? fw : fh * g.aspect, h = g.aspect >= ratio ? fw / g.aspect : fh;
+                const col = i === 0 ? "#ffd24a" : "#4ad0ff";
+                return (
+                  <div key={g.label} style={{ position: "absolute", left: (fw - w) / 2, top: (fh - h) / 2, width: w, height: h, border: `2px dashed ${col}`, boxSizing: "border-box" }}>
+                    <span style={{ position: "absolute", left: 4, top: 4, background: col, color: "#10151f", fontSize: 10, fontWeight: 800, padding: "1px 6px", borderRadius: 4, whiteSpace: "nowrap" }}>{g.label}</span>
+                  </div>
+                );
+              })}
+            </div>
             {!nat && !err && <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff" }}><Loader2 size={22} className="spin" /></div>}
           </div>
 
@@ -144,7 +159,7 @@ export function ImageCropHost() {
             <span style={{ width: 52 }}>Zoom</span>
             <input type="range" min={1} max={4} step={0.01} value={zoom} onChange={(e) => setZoom(Number(e.target.value))} style={{ flex: 1 }} />
           </label>
-          <div className="muted-note" style={{ fontSize: 12 }}>Arrastrá la foto para encuadrarla. Lo que queda dentro del marco es lo que se sube.</div>
+          <div className="muted-note" style={{ fontSize: 12 }}>Arrastrá la foto para encuadrarla. Lo que queda dentro del marco es lo que se sube.{guides.length > 0 && " Las líneas punteadas son lo que se ve en cada versión: poné lo importante dentro de todas."}</div>
 
           {lowRes && cr && (
             <div className="alert" style={{ margin: 0, background: "#fff7e0", borderColor: "#f0dba0", color: "#7a5b00" }}>

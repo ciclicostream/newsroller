@@ -7,7 +7,22 @@
 export const MAX_BYTES = 1024 * 1024;
 export const MAX_SIDE = 2048;
 
-export interface CropOpts { aspect?: number | null } // proporción inicial del encuadre (ancho/alto); sin valor = la original
+// Zona donde la plantilla muestra la foto en cada versión (escritorio / celular): proporción ancho/alto del lugar.
+// Como la plantilla centra y corta lo que sobra, el encuadrador la dibuja sobre la foto para saber qué se va a ver.
+export interface CropGuide { label: string; aspect: number }
+export interface CropOpts { aspect?: number | null; guides?: CropGuide[] } // aspect: proporción inicial del marco (ancho/alto); sin valor = la original o, con guías, la que contiene todas las zonas
+
+// Guías sin repetir: las que tienen la misma proporción se juntan en una sola ("Escritorio y celular").
+export function mergeGuides(guides: CropGuide[] = []): CropGuide[] {
+  const out: CropGuide[] = [];
+  for (const g of guides) {
+    const same = out.find((o) => Math.abs(o.aspect - g.aspect) / o.aspect < 0.01);
+    if (same) same.label = `${same.label} y ${g.label.toLowerCase()}`; else out.push({ ...g });
+  }
+  return out;
+}
+// Proporción de un marco que contiene todas las zonas (la más "alta"): lo importante, dentro de ese centro, se ve en todas.
+export const unionAspect = (guides: CropGuide[]): number | null => (guides.length ? Math.min(...guides.map((g) => g.aspect)) : null);
 
 export const isRaster = (f: File): boolean => /^image\/(jpeg|png|webp)$/.test(f.type);
 export const fmtSize = (n: number): string => (n >= 1048576 ? `${(n / 1048576).toFixed(1)} MB` : `${Math.max(1, Math.round(n / 1024))} KB`);
