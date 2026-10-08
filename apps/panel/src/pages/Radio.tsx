@@ -14,7 +14,7 @@ import { contentItems as contentItemsApi } from "../lib/content-items";
 import { camerasApi } from "../lib/cameras";
 import { RADIO_RELEASED, createRadioLink, radioApi, type RadioConfig, type RadioLink } from "../lib/radioLink";
 import offAir from "../assets/off-air.jpg";
-import { CAT, CAT_ICON, CAT_ORDER, SESSION_COLOR, SESSION_ICON, TYPE_LABEL, catOf, iconOf, itemText } from "../lib/contentCatalog";
+import { CAT, CAT_ICON, CAT_ORDER, SESSION_COLOR, SESSION_ICON, TYPE_LABEL, catOf, catVar, iconOf, itemText } from "../lib/contentCatalog";
 
 // Stream = radio manual (MAQUETA). Sin nada al aire se ve la placa de espera (off-air). Una "transmisión" es el programa completo del locutor: la abre a las 20:00,
 // va poniendo contenidos (cada uno en loop hasta que toca otro), habla encima con el micrófono y la
@@ -433,7 +433,7 @@ export function Radio({ visible = true }: { visible?: boolean }) {
           <div className="rd-boardt"><b>Contenidos</b></div>
         <div className="rd-cats">
           {[["all", "Todos", LayoutGrid, "#5b6678"] as const, ...CAT_ORDER.map((k) => [k, CAT[k]!.label, CAT_ICON[k], CAT[k]!.color] as const)].map(([id, lb, I, col]) => (
-            <button key={id} type="button" className={"rd-cat" + (filter === id ? " on" : "")} onClick={() => setFilter(id)}>
+            <button key={id} type="button" className={"rd-cat" + (id !== "all" ? " cat" : "") + (filter === id ? " on" : "")} style={id !== "all" ? catVar(id) : undefined} onClick={() => setFilter(id)}>
               <I size={14} color={col} />{lb}<span className="pv-cn">{counts[id] ?? 0}</span>
             </button>
           ))}

@@ -1,7 +1,7 @@
 import type { RefObject } from "react";
 import { AlertTriangle, GripVertical, MonitorPlay, X } from "lucide-react";
 import type { ContentItem, PlaylistItem } from "@newsroller/shared";
-import { CAT, TYPE_LABEL, catOf, iconOf, itemText, SESSION_ICON, SESSION_COLOR, type TextCtx } from "../lib/contentCatalog";
+import { CAT, TYPE_LABEL, catOf, catVar, iconOf, itemText, SESSION_ICON, SESSION_COLOR, type TextCtx } from "../lib/contentCatalog";
 import type { SessionRow } from "../lib/sessions";
 
 // Lista ordenada de bloques ("Parrilla" en Emisión, "Contenidos de la sesión" en Sesiones): misma fila,
@@ -40,7 +40,7 @@ export function PlaylistRows({
           const sess = isSession ? sessionById?.get(r.content_id ?? "") : undefined;
           const ci = !isSession && r.content_id ? itemById.get(r.content_id) : null;
           const missing = (r.content_type === "content_item" && (!ci || ci.in_parrilla === false)) || (isSession && (!sess || sess.in_parrilla === false));
-          const cat = ci ? catOf(ci.type) : "media"; const cc = isSession ? CAT.sesion! : CAT[cat]!;
+          const cat = isSession ? "sesion" : ci ? catOf(ci.type) : "otros"; const cc = CAT[cat]!;
           const Ic = missing ? AlertTriangle : isSession ? SESSION_ICON : ci ? iconOf(ci.type) : cc.Icon;
           const label = isSession
             ? (sess ? `Sesión · ${sess.name}` : "Sesión eliminada")
@@ -48,7 +48,7 @@ export function PlaylistRows({
           return (
             <div key={r.id} style={{ display: "contents" }}>
               {ins === i && <div className="pv-slot" />}
-              <div data-rid={r.id} className={"pv-row" + (r.enabled ? "" : " off") + (sel === r.id ? " sel" : "") + (missing ? " missing" : "")}
+              <div data-rid={r.id} style={catVar(cat)} className={"pv-row pv-tint" + (r.enabled ? "" : " off") + (sel === r.id ? " sel" : "") + (missing ? " missing" : "")}
                 draggable onDragStart={() => onDragStart(r.id)} onDragEnd={onDragEnd}
                 onClick={() => onSelect(r.id)}
                 title={missing ? "No disponible: se eliminó o se retiró" : isSession ? "Reproduce todos los contenidos de esa Sesión y sigue" : undefined}>

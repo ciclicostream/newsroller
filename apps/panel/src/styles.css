@@ -810,3 +810,31 @@ a.aj-hd:hover .aj-go { color: var(--accent); transform: translateX(2px); }
 .tbl th { color: var(--muted); font-weight: 600; }
 .tbl tr.fl-warn td { background: #fff7e0; }
 .tbl tr.fl-bad td { background: #fdeceb; color: var(--danger); }
+
+
+/* Categorías de contenido: el color (--cc) es el mismo en las pastillas, las filas de "Contenidos disponibles", la parrilla,
+   Stream y las cards del submenú de Contenido. Los fondos son un tono mínimo del color, para que se vea la relación sin cargar. */
+.rd-cat.cat{border:1px solid color-mix(in srgb,var(--cc,#5b6678) 28%,#fff);background:color-mix(in srgb,var(--cc,#5b6678) 9%,#fff)}
+/* Interruptor Todos / Sin uso y selector de categoría (el color de cada categoría se ve en su ícono y, elegida, en el borde). */
+.pv-sw{display:inline-flex;background:#eceef3;border-radius:10px;padding:2px;flex:none}
+.pv-sw button{border:0;background:transparent;color:var(--dim);font:inherit;font-size:12px;font-weight:400;padding:5px 10px;border-radius:8px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.pv-sw button.on{background:#fff;color:var(--tx);font-weight:500;box-shadow:0 1px 3px rgba(20,30,60,.14)}
+.pv-ddb.on[style*="--cc"]{border-color:var(--cc);background:color-mix(in srgb,var(--cc) 9%,#fff)}
+.pv-ddi[style*="--cc"].sel{background:color-mix(in srgb,var(--cc) 12%,#fff)}
+.rd-cat.cat:hover{border-color:var(--cc)}
+.rd-cat.cat.on{background:var(--cc);border-color:var(--cc);color:#fff}
+.rd-cat.cat.on .pv-cn{background:rgba(255,255,255,.25);color:#fff}
+.rd-cat.cat.on svg{color:#fff!important}
+.pv-chip.pv-tint{border-left-color:var(--cc);background:color-mix(in srgb,var(--cc) 6%,#fff)}
+.pv-chip.pv-tint.inuse{border-left-color:var(--cc);background:color-mix(in srgb,var(--cc) 14%,#fff)}
+.pv-row.pv-tint{border-left:4px solid var(--cc)}
+.pv-row.pv-tint:not(.missing){background:color-mix(in srgb,var(--cc) 6%,#fff);border-color:color-mix(in srgb,var(--cc) 22%,var(--ln));border-left-color:var(--cc)}
+/* Submenú de Contenido: una card por categoría (sobre el fondo oscuro, un tono translúcido del color). */
+.tpl-subnav{gap:10px;align-items:stretch}
+.tpl-grp{display:flex;flex-direction:column;gap:6px;padding:7px 9px 4px;border-radius:14px;background:color-mix(in srgb,var(--cc) 14%,transparent);border:1px solid color-mix(in srgb,var(--cc) 34%,transparent)}
+.tpl-grp-t{font-size:9.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;text-align:center;color:color-mix(in srgb,var(--cc) 50%,#fff)}
+.tpl-grp-c{display:flex;justify-content:center}
+
+/* Copiloto: sin negrita en "Contenidos disponibles" y en la parrilla. */
+.pv-disp *,.pv-par *{font-weight:400!important}
+.pv-sw button.on,.pv-ddi.sel{font-weight:500!important}

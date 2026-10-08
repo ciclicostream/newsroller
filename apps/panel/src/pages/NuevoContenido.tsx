@@ -3,6 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import { Construction, Trash2 } from "lucide-react";
 import type { ContentItem } from "@newsroller/shared";
 import { TIPOS, TIPO_BY_KEY, CARD_OF } from "../lib/tipos";
+import { CAT, CAT_ORDER, catOf, catVar } from "../lib/contentCatalog";
 import { contentItems } from "../lib/content-items";
 import { parrilla } from "../lib/parrilla";
 import { UltimaHora } from "./UltimaHora";
@@ -58,25 +59,37 @@ export function ContenidoNav({ active }: { active: string }) {
     return () => { on = false; clearInterval(iv); window.removeEventListener("focus", load); };
   }, []);
 
+  // Las cards se agrupan con la misma lógica y los mismos colores que "Contenidos disponibles" y la parrilla.
+  const groups = [...CAT_ORDER.filter((k) => k !== "sesion"), "otros"]
+    .map((k) => ({ k, types: TIPOS.filter((t) => !t.hidden && catOf(t.type) === k) }))
+    .filter((g) => g.types.length > 0);
+
   return (
       <nav className="tpl-subnav" aria-label="Plantillas">
-        {TIPOS.filter((t) => !t.hidden).map((t) => {
-          // Una card puede reunir varios tipos (Informes: Carrusel y Lista; Efemérides: Efemérides y Retro):
-          // se ilumina si cualquiera de ellos está en la parrilla o en edición.
-          const kids = Object.keys(CARD_OF).filter((k) => CARD_OF[k] === t.type);
-          const air = inGrid.has(t.type) || kids.some((k) => inGrid.has(k));
-          return (
-            <Link
-              key={t.type}
-              to={`/contenido/${t.type}`}
-              className={"tpl-chip" + (t.type === active || CARD_OF[active] === t.type ? " active" : "") + (air ? " on-air" : "")}
-              title={t.desc}
-            >
-              <span className="tpl-chip-ic"><t.Icon size={16} /></span>
-              <span className="tpl-chip-lbl">{(MENU_LABEL[t.type] ?? t.label).split(" ").filter((w) => w !== "/").map((w) => <span key={w}>{w}</span>)}</span>
-            </Link>
-          );
-        })}
+        {groups.map((g) => (
+          <div key={g.k} className="tpl-grp" style={catVar(g.k)}>
+            <div className="tpl-grp-t">{CAT[g.k]!.label}</div>
+            <div className="tpl-grp-c">
+              {g.types.map((t) => {
+                // Una card puede reunir varios tipos (Informes: Carrusel y Lista; Efemérides: Efemérides y Retro):
+                // se ilumina si cualquiera de ellos está en la parrilla o en edición.
+                const kids = Object.keys(CARD_OF).filter((k) => CARD_OF[k] === t.type);
+                const air = inGrid.has(t.type) || kids.some((k) => inGrid.has(k));
+                return (
+                  <Link
+                    key={t.type}
+                    to={`/contenido/${t.type}`}
+                    className={"tpl-chip" + (t.type === active || CARD_OF[active] === t.type ? " active" : "") + (air ? " on-air" : "")}
+                    title={t.desc}
+                  >
+                    <span className="tpl-chip-ic"><t.Icon size={16} /></span>
+                    <span className="tpl-chip-lbl">{(MENU_LABEL[t.type] ?? t.label).split(" ").filter((w) => w !== "/").map((w) => <span key={w}>{w}</span>)}</span>
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        ))}
       </nav>
   );
 }
