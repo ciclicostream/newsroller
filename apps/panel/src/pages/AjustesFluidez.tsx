@@ -7,7 +7,7 @@ import { api } from "../lib/api";
 // contenidos se corta. Los datos los manda el propio output cada minuto (apps/output/src/lib/perf.ts); el
 // server guarda las últimas 24 h en memoria, así que se reinician con el server.
 interface Row { minutos: number; fpsPromedio: number; medianaMs: number; p99Max: number; maxMs: number; saltosPct: number; tironesPct: number; congelados: number; tareasLargas: number }
-interface Client { orientation: string; ua?: string; screen?: string; uptimeMin: number; heapMb: number | null; ultimoReporte: string; porContenido: Record<string, Row> }
+interface Client { orientation: string; source?: string; ua?: string; screen?: string; uptimeMin: number; heapMb: number | null; ultimoReporte: string; porContenido: Record<string, Row> }
 
 const HOURS = [1, 6, 24];
 const hhmm = (iso: string) => new Date(iso).toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" });
@@ -30,7 +30,8 @@ function buildReport(data: Record<string, Client>, hours: number): string {
       `- Memoria: ${c.heapMb != null ? `${c.heapMb} MB` : "—"}`,
       `- Resolución: ${c.screen ?? "—"}`,
       `- Navegador: ${c.ua ?? "—"}`,
-      `- Último reporte: ${new Date(c.ultimoReporte).toLocaleString("es-AR")}`, ``,
+      `- Último reporte: ${new Date(c.ultimoReporte).toLocaleString("es-AR")} (${isActive(c) ? "activo ahora" : `cerrado, sin reportes hace ${ago(c.ultimoReporte)}`})`,
+      `- Origen: ${c.source ?? "—"}`, ``,
       `| Contenido | Min | fps | Mediana ms | Saltos % | Tirones % | Congelados | p99 ms | Peor ms | Bloqueos |`,
       `|---|---|---|---|---|---|---|---|---|---|`);
     for (const [l, r] of rows) L.push(`| ${l} | ${r.minutos} | ${r.fpsPromedio} | ${r.medianaMs} | ${r.saltosPct} | ${r.tironesPct} | ${r.congelados} | ${r.p99Max} | ${r.maxMs} | ${r.tareasLargas} |`);
@@ -47,6 +48,9 @@ function download(name: string, text: string): void {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
+const ACTIVE_MS = 3 * 60_000; // un output real reporta cada minuto: sin reportes hace más de 3 min, ya no está abierto
+const ago = (iso: string) => { const m = Math.round((Date.now() - new Date(iso).getTime()) / 60_000); return m < 60 ? `${m} min` : `${Math.floor(m / 60)} h ${m % 60} min`; };
+const isActive = (c: Client) => Date.now() - new Date(c.ultimoReporte).getTime() < ACTIVE_MS;
 const tone = (r: Row) => (r.congelados > 0 || r.saltosPct >= 3 ? "bad" : r.saltosPct >= 1 ? "warn" : "ok");
 
 export function AjustesFluidez() {
@@ -62,7 +66,7 @@ export function AjustesFluidez() {
   useEffect(load, [hours]);
   useEffect(() => { const t = setInterval(load, 60_000); return () => clearInterval(t); }, [hours]);
 
-  const clients = data ? Object.entries(data) : [];
+  const clients = data ? Object.entries(data).sort((a, b) => Number(isActive(b[1])) - Number(isActive(a[1])) || b[1].ultimoReporte.localeCompare(a[1].ultimoReporte)) : [];
 
   return (
     <>
@@ -96,7 +100,12 @@ export function AjustesFluidez() {
         const med = rows.length ? rows.reduce((s, [, r]) => s + r.medianaMs * r.minutos, 0) / Math.max(0.001, rows.reduce((s, [, r]) => s + r.minutos, 0)) : 0;
         return (
           <section key={id} className="card sec-card" style={{ marginTop: 16 }}>
-            <h2 style={{ marginBottom: 4 }}>Output {c.orientation} <span className="muted-note">· {id}</span></h2>
+            <h2 style={{ marginBottom: 4, opacity: isActive(c) ? 1 : .6 }}>
+              Output {c.orientation} <span className="muted-note">· {c.source ?? "—"} · {id}</span>{" "}
+              <span className="muted-note" style={{ color: isActive(c) ? "var(--ok)" : undefined, fontWeight: 700 }}>
+                {isActive(c) ? "● Activo ahora" : `○ Cerrado (sin reportes hace ${ago(c.ultimoReporte)})`}
+              </span>
+            </h2>
             <div className="muted-note" style={{ marginBottom: 12 }}>
               Fuente de navegador a <b>{nominal(med)}</b> · encendido hace {uptime(c.uptimeMin)} · memoria {c.heapMb != null ? `${c.heapMb} MB` : "—"} · último reporte {hhmm(c.ultimoReporte)}{c.screen ? ` · ${c.screen}` : ""}
             </div>
@@ -134,6 +143,7 @@ export function AjustesFluidez() {
           <li><b>Saltos</b>: cuadros que tardaron más de 1,5 veces lo normal. <b>Tirones</b>: más de 3 veces. <b>Congelados</b>: más de 6 veces.</li>
           <li>Si los saltos se concentran en uno o dos contenidos, esos contenidos son pesados para la máquina que transmite.</li>
           <li><b>Bloqueos del script</b> altos indican que el problema es el código; si son bajos y hay saltos, es el pintado o la GPU.</li>
+          <li>Cada vez que se abre o se actualiza una fuente de navegador cuenta como un output nuevo: el anterior queda listado como "Cerrado" hasta que pasa el período elegido. Los que están "Activos" son los que hoy están al aire.</li>
           <li>Filas en amarillo: más del 1% con saltos. En rojo: más del 3% o algún congelamiento.</li>
         </ul>
       </section>

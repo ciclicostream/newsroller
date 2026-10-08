@@ -6,7 +6,7 @@ export interface PerfLabel {
   drops: number; stutters: number; freezes: number; longTasks: number; longTaskMs: number;
 }
 export interface PerfReport {
-  at: number; client: string; orientation: "horizontal" | "vertical"; uptimeMin: number; heapMb: number | null;
+  at: number; client: string; source?: string; orientation: "horizontal" | "vertical"; uptimeMin: number; heapMb: number | null;
   ua?: string; screen?: string; labels: Record<string, PerfLabel>;
 }
 
@@ -31,7 +31,7 @@ export function recordPerf(b: Record<string, unknown>): boolean {
   const client = b.client.slice(0, 16);
   if (typeof b.ua === "string") meta.set(client, { ua: b.ua.slice(0, 300), screen: typeof b.screen === "string" ? b.screen.slice(0, 40) : undefined });
   const r: PerfReport = {
-    at: Date.now(), client, orientation: b.orientation === "vertical" ? "vertical" : "horizontal",
+    at: Date.now(), client, source: typeof b.source === "string" ? b.source.slice(0, 60) : undefined, orientation: b.orientation === "vertical" ? "vertical" : "horizontal",
     uptimeMin: num(b.uptimeMin), heapMb: b.heapMb == null ? null : num(b.heapMb), ...meta.get(client), labels,
   };
   reports.push(r);
@@ -49,11 +49,11 @@ export function recordPerf(b: Record<string, unknown>): boolean {
 // Resumen para leer de un vistazo: por cliente y por tipo de contenido, ponderado por cuadros.
 export function perfSummary(sinceMs = KEEP_MS) {
   const from = Date.now() - sinceMs;
-  const clients: Record<string, { orientation: string; ua?: string; screen?: string; uptimeMin: number; heapMb: number | null; lastAt: number; labels: Record<string, Record<string, number>> }> = {};
+  const clients: Record<string, { orientation: string; source?: string; ua?: string; screen?: string; uptimeMin: number; heapMb: number | null; lastAt: number; labels: Record<string, Record<string, number>> }> = {};
   for (const r of reports) {
     if (r.at < from) continue;
-    const c = (clients[r.client] ??= { orientation: r.orientation, ua: r.ua, screen: r.screen, uptimeMin: 0, heapMb: null, lastAt: 0, labels: {} });
-    c.uptimeMin = r.uptimeMin; c.heapMb = r.heapMb; c.lastAt = r.at; c.ua = r.ua ?? c.ua; c.screen = r.screen ?? c.screen;
+    const c = (clients[r.client] ??= { orientation: r.orientation, source: r.source, ua: r.ua, screen: r.screen, uptimeMin: 0, heapMb: null, lastAt: 0, labels: {} });
+    c.source = r.source ?? c.source; c.uptimeMin = r.uptimeMin; c.heapMb = r.heapMb; c.lastAt = r.at; c.ua = r.ua ?? c.ua; c.screen = r.screen ?? c.screen;
     for (const [l, v] of Object.entries(r.labels)) {
       const a = (c.labels[l] ??= { frames: 0, sumMs: 0, medianW: 0, p99Max: 0, maxMs: 0, drops: 0, stutters: 0, freezes: 0, longTasks: 0 });
       a.frames! += v.frames; a.sumMs! += v.avgMs * v.frames; a.medianW! += v.medianMs * v.frames;
@@ -74,7 +74,7 @@ export function perfSummary(sinceMs = KEEP_MS) {
         saltosPct: +((a.drops! / f) * 100).toFixed(2), tironesPct: +((a.stutters! / f) * 100).toFixed(2), congelados: a.freezes, tareasLargas: a.longTasks,
       };
     }
-    out[id] = { orientation: c.orientation, ua: c.ua, screen: c.screen, uptimeMin: c.uptimeMin, heapMb: c.heapMb, ultimoReporte: new Date(c.lastAt).toISOString(), porContenido: labels };
+    out[id] = { orientation: c.orientation, source: c.source, ua: c.ua, screen: c.screen, uptimeMin: c.uptimeMin, heapMb: c.heapMb, ultimoReporte: new Date(c.lastAt).toISOString(), porContenido: labels };
   }
   return out;
 }

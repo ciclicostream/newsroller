@@ -1,6 +1,7 @@
 import { API_BASE } from "./scene";
 import { isLiveOutput } from "./telemetry";
 import { ORIENTATION } from "./orientation";
+import { P, slugFromPath } from "./params";
 
 // Medición de fluidez del output al aire. Cuenta el tiempo entre cuadros (requestAnimationFrame) y lo agrupa
 // por lo que está al aire en ese momento (tipo de contenido). Cada minuto manda un resumen al server
@@ -85,6 +86,7 @@ function flush(): void {
   const body: Record<string, unknown> = {
     client: clientId,
     orientation: ORIENTATION,
+    source: slugFromPath() ? `/output/${slugFromPath()}` : P.has("session") ? "sesión" : P.has("radio") ? "stream" : "link directo",
     uptimeMin: Math.round((Date.now() - bootAt) / 60_000),
     heapMb: mem ? Math.round(mem.usedJSHeapSize / 1048576) : null,
     labels: by,
