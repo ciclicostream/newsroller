@@ -17,6 +17,13 @@ const ROTATE_MS = 30_000;
 const cityIdxNow = (n: number) => (n > 0 ? Math.floor(Date.now() / ROTATE_MS) % n : 0);
 let citiesCache: ClimaCity[] = [];
 let tickerCache: TickerItem[] = [];
+let speedCache: number | null = null;
+let lastLoadAt = 0; // el marco se monta con cada placa: los datos no se vuelven a pedir si se pidieron hace menos de 1 min
+// El ticker tampoco vuelve a empezar con cada contenido: su posición sale del reloj (no del montaje), así que al
+// montarse el marco de la placa siguiente el texto sigue por donde iba. Para eso la duración tiene que ser la misma
+// entre montajes (por eso se recuerda), y los titulares nuevos se aplican recién al terminar una vuelta.
+const TICKER_T0 = Date.now();
+const tickerPhaseSec = (lapSec: number) => ((Date.now() - TICKER_T0) / 1000) % lapSec;
 
 // Marco estándar PERSISTENTE compartido por todas las placas:
 // pills reloj + temperatura (rota capitales cada 30s, desde la API de clima),
@@ -34,7 +41,11 @@ export function Chrome({ tickerSpeed = 90, hideClock = false, hideTemp = false, 
   const [swapped, setSwapped] = useState(false); // ya hubo un cambio (anima la entrada de la nueva)
   const citiesRef = useRef(cities);
   citiesRef.current = cities;
-  const [speed, setSpeed] = useState(tickerSpeed);
+  const tickerRef = useRef(ticker);
+  tickerRef.current = ticker;
+  const [speed, setSpeed] = useState(speedCache ?? tickerSpeed);
+  const [phase] = useState(() => tickerPhaseSec(speedCache ?? tickerSpeed)); // se fija al montar
+  const pendingTicker = useRef<TickerItem[] | null>(null);
 
   // Reloj.
   useEffect(() => {
@@ -49,7 +60,9 @@ export function Chrome({ tickerSpeed = 90, hideClock = false, hideTemp = false, 
       fetch(`${API_BASE}/api/data/ticker`).then((r) => r.json()).then((d) => {
         if (!on) return;
         const items: TickerItem[] = d?.payload?.items ?? (d?.payload?.headlines ?? []).map((t: string) => ({ title: t, cats: [] }));
-        if (items.length) { tickerCache = items; setTicker(items); }
+        if (!items.length) return;
+        // Con el ticker ya andando, los titulares nuevos esperan al fin de la vuelta (ahí el texto está al inicio y no salta).
+        if (tickerRef.current.length) pendingTicker.current = items; else { tickerCache = items; setTicker(items); }
       }).catch(() => {});
       fetch(`${API_BASE}/api/data/clima`).then((r) => r.json()).then((d) => {
         if (!on) return;
@@ -60,11 +73,11 @@ export function Chrome({ tickerSpeed = 90, hideClock = false, hideTemp = false, 
       fetch(`${API_BASE}/api/settings`).then((r) => r.json()).then((d) => {
         if (!on) return;
         const s = Number(d?.tickerSpeed);
-        if (Number.isFinite(s) && s > 0) setSpeed(s);
+        if (Number.isFinite(s) && s > 0) { speedCache = s; setSpeed(s); }
       }).catch(() => {});
     };
-    load();
-    const iv = setInterval(load, 5 * 60_000);
+    if (!tickerCache.length || Date.now() - lastLoadAt > 60_000) { lastLoadAt = Date.now(); load(); }
+    const iv = setInterval(() => { lastLoadAt = Date.now(); load(); }, 5 * 60_000);
     return () => { on = false; clearInterval(iv); };
   }, []);
 
@@ -113,7 +126,8 @@ export function Chrome({ tickerSpeed = 90, hideClock = false, hideTemp = false, 
       </div>
 
       <div className="ck-ticker">
-        <div className="ck-track" style={{ animationDuration: `${speed}s` }}>
+        <div className="ck-track" style={{ animationDuration: `${speed}s`, animationDelay: `-${phase}s` }}
+          onAnimationIteration={() => { if (pendingTicker.current) { tickerCache = pendingTicker.current; setTicker(pendingTicker.current); pendingTicker.current = null; } }}>
           {[0, 1].map((dup) => (
             <div className="ck-seq" key={dup} aria-hidden={dup === 1}>
               {ticker.map((it, i) => (

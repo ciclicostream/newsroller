@@ -23,7 +23,6 @@ let buckets = new Map<string, Bucket>();
 let label = "idle";
 let started = false;
 let lastT = 0;
-let sentMeta = false;
 const clientId = Math.random().toString(36).slice(2, 10);
 const bootAt = Date.now();
 
@@ -90,7 +89,9 @@ function flush(): void {
     heapMb: mem ? Math.round(mem.usedJSHeapSize / 1048576) : null,
     labels: by,
   };
-  if (!sentMeta) { sentMeta = true; body.ua = navigator.userAgent; body.screen = `${innerWidth}x${innerHeight}@${devicePixelRatio}`; }
+  // Se manda siempre: si el server se reinicia entre reportes, perdería estos datos y no los volvería a recibir.
+  body.ua = navigator.userAgent;
+  body.screen = `${innerWidth}x${innerHeight}@${devicePixelRatio}`;
   void fetch(`${API_BASE}/api/output/perf`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body), keepalive: true }).catch(() => {});
 }
 
