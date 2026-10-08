@@ -1,15 +1,25 @@
 import { useContentSelect } from "../lib/contentSelect";
 import { useEffect, useRef, useState } from "react";
 import { PreviewMonitor } from "../components/PreviewMonitor";
-import { Plus, Trash2, Check, Loader2, Image as ImageIcon, Video, Music, X, Pencil } from "lucide-react";
+import { Plus, Trash2, Check, Loader2, Music, X, Pencil } from "lucide-react";
 import type { ContentItem, UltimaHoraData } from "@newsroller/shared";
 import { contentItems } from "../lib/content-items";
 import { uploadMedia } from "../lib/content";
+import { useActiveSuite } from "../lib/collections";
+import type { CropGuide } from "../lib/imageCrop";
 import { UltimaHoraSwitch } from "../components/PlacaSwitch";
 
 const MAX = 200;
 
+// Dónde muestra cada colección la foto o el video (medidas del output). Clásica: cuadrada en las dos versiones (640×640 en
+// escritorio, 900×900 en celular). Moderna: 580×540 en escritorio y apaisada, 960×580, en celular.
+const mediaGuides = (collection: string): CropGuide[] =>
+  collection === "moderna"
+    ? [{ label: "Escritorio", aspect: 580 / 540, w: 580 }, { label: "Celular", aspect: 960 / 580, w: 960 }]
+    : [{ label: "Escritorio", aspect: 1, w: 640 }, { label: "Celular", aspect: 1, w: 900 }];
+
 export function UltimaHora() {
+  const suite = useActiveSuite();
   const [items, setItems] = useState<ContentItem[]>([]);
   const [err, setErr] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
@@ -38,7 +48,7 @@ export function UltimaHora() {
     setErr(null);
     setUploading(true);
     try {
-      const url = await uploadMedia(file, "media");
+      const url = await uploadMedia(file, "media", "placa", { guides: mediaGuides(suite?.style ?? "clasica") });
       setMediaUrl(url);
       setMediaKind(file.type.startsWith("video/") ? "video" : "image");
     } catch (e) {
@@ -179,9 +189,9 @@ export function UltimaHora() {
             <label>Foto o video (opcional)</label>
             {mediaUrl ? (
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 13 }}>
-                  {mediaKind === "video" ? <Video size={16} /> : <ImageIcon size={16} />} recurso cargado
-                </span>
+                {mediaKind === "video"
+                  ? <video src={mediaUrl} style={{ width: 64, height: 64, objectFit: "cover", borderRadius: 8, background: "#10151f" }} muted preload="metadata" />
+                  : <img src={mediaUrl} alt="" style={{ width: 64, height: 64, objectFit: "cover", borderRadius: 8, background: "#10151f" }} />}
                 <button type="button" className="btn" onClick={clearMedia}><X size={14} /> quitar</button>
               </div>
             ) : (

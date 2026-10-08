@@ -41,7 +41,8 @@ export function ImageCropHost() {
     const r = queue.current.shift() ?? null;
     active.current = r;
     setReq(r); setNat(null); setZoom(1); setOff({ x: 0, y: 0 }); setErr(null); setBusy(false);
-    setAspect(r ? r.opts.aspect ?? unionAspect(mergeGuides(r.opts.guides)) : null);
+    // `aspect` indicado (incluso null = la original) manda; si no, el marco que contiene todas las zonas.
+    setAspect(r ? (r.opts.aspect === undefined ? unionAspect(mergeGuides(r.opts.guides)) : r.opts.aspect) : null);
   }, []);
 
   useEffect(() => {
@@ -107,11 +108,11 @@ export function ImageCropHost() {
   // Foto chica para el encuadre elegido: el output no la agranda de verdad, la estira (al aire se vería borrosa).
   // Con las medidas de las zonas, se compara cuánto se agranda la foto en cada una; sin ellas, un mínimo de píxeles.
   const cr = rect();
-  const gs = mergeGuides(req.opts.guides);
+  const guides = mergeGuides(req.opts.guides).filter((g) => !(g.onlyLandscape && nat && nat.h > nat.w));
+  const gs = guides;
   const sized = gs.filter((g) => g.w);
   const stretch = cr ? Math.max(0, ...sized.map((g) => g.w! / (((g.aspect >= ratio ? fw : fh * g.aspect)) / s))) : 0;
   const lowRes = !!cr && (sized.length ? stretch > MAX_STRETCH : Math.max(cr.w, cr.h) < LOW_PX);
-  const guides = mergeGuides(req.opts.guides);
   const frameLabel = guides.length > 2 ? "Todas las zonas" : guides.length > 1 ? "Ambas zonas" : guides[0]?.label
     ?? (req.opts.aspect ? ASPECTS.find((a) => a.v != null && Math.abs(a.v - req.opts.aspect!) < 0.01)?.label ?? req.opts.aspect.toFixed(2) : "Original");
   const tooBig = req.file.size > MAX_BYTES || (nat ? Math.max(nat.w, nat.h) > MAX_SIDE : false);

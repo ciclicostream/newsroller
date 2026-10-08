@@ -6,6 +6,7 @@ import { Plus, Trash2, Check, X, Loader2, Tv, Pencil, Youtube } from "lucide-rea
 import type { ContentItem, RetroData } from "@newsroller/shared";
 import { contentItems } from "../lib/content-items";
 import { uploadMedia } from "../lib/content";
+import { useActiveSuite } from "../lib/collections";
 import { youtubeId } from "../lib/cameras";
 
 const CHIP_MAX = 14;
@@ -16,6 +17,7 @@ const TXT_MAX = 450;
 const DEFAULT_DUR = 15;
 
 export function RetroPlaca() {
+  const suite = useActiveSuite();
   const [items, setItems] = useState<ContentItem[]>([]);
   const [err, setErr] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
@@ -45,7 +47,11 @@ export function RetroPlaca() {
     if (!file) return;
     setErr(null); setUploading(true);
     try {
-      const url = await uploadMedia(file, "media");
+      // Clásica: la imagen se muestra entera (se ajusta a su caja sin recortarse), así que no hay nada que encuadrar.
+      // Moderna: dentro del televisor 4:3 una foto apaisada se corta (centrada); una vertical se ve entera.
+      const url = await uploadMedia(file, "media", "placa", suite?.style === "moderna"
+        ? { aspect: null, guides: [{ label: "Televisor", aspect: 4 / 3, w: 974, onlyLandscape: true }] }
+        : { noCrop: true });
       setMediaUrl(url);
       setMediaKind(file.type.startsWith("video") ? "video" : "image");
       setVideoSec(null);
