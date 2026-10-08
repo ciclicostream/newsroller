@@ -15,6 +15,12 @@ import { youtubeDuration } from "../lib/youtube";
 const T_MAX = 90;
 const KINDS: { key: CarteleraKind; label: string }[] = [{ key: "teatro", label: "Teatro" }, { key: "cine", label: "Cine" }, { key: "evento", label: "Eventos" }];
 // Dónde muestra cada colección la foto horizontal (medidas del output): el encuadrador las dibuja sobre la foto.
+// El póster (cine) es vertical. Clásica: 281×420 y sólo en escritorio. Moderna: 400×600 en escritorio y 326×489 en celular.
+const posterGuides = (collection: string): CropGuide[] =>
+  collection === "moderna"
+    ? [{ label: "Escritorio", aspect: 400 / 600, w: 400 }, { label: "Celular", aspect: 326 / 489, w: 326 }]
+    : [{ label: "Escritorio", aspect: 281 / 420, w: 281 }];
+
 const photoGuides = (collection: string, kind: CarteleraKind): CropGuide[] =>
   collection === "moderna"
     ? [{ label: "Escritorio", aspect: 1000 / 562, w: 1000 }, { label: "Celular", aspect: 960 / 540, w: 960 }]
@@ -111,7 +117,7 @@ export function Cartelera() {
       return;
     }
     setUploadingPoster(true);
-    try { setPosterUrl(await uploadMedia(file, "media")); }
+    try { setPosterUrl(await uploadMedia(file, "media", "placa", { guides: posterGuides(suite?.style ?? "clasica") })); }
     catch (e) { setErr(e instanceof Error ? e.message : "error subiendo"); }
     finally { setUploadingPoster(false); }
   }

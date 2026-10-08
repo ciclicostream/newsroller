@@ -7,6 +7,7 @@ import { GENEROS_MUSICALES_DEFAULT, MUSICA_MAX_GENEROS, MUSICA_MAX_FOTOS } from 
 import { contentItems } from "../lib/content-items";
 import { settingsApi } from "../lib/settings";
 import { uploadMedia } from "../lib/content";
+import type { CropGuide } from "../lib/imageCrop";
 
 const ALBUM_MAX = 60;
 const TITLE_MAX = 70;
@@ -46,6 +47,10 @@ function parseLrc(raw: string): { text: string; times: number[] } | null {
 // Música: una canción con portada, ficha y letra por línea sincronizada con el audio (sin resaltado, una línea a la vez).
 // La duración del bloque es la del audio. La sincronización se hace acá: se reproduce el tema y se marca con una tecla
 // cuándo empieza cada línea (o se pega la letra ya en formato LRC).
+// La portada y las fotos extra rotan en la misma tarjeta cuadrada: 560×560 en escritorio y 520×520 en celular. La portada también
+// se ve en la etiqueta redonda del disco (se centra), así que el círculo queda dentro del cuadrado.
+const IMAGE_GUIDES: CropGuide[] = [{ label: "Escritorio", aspect: 1, w: 560 }, { label: "Celular", aspect: 1, w: 520 }];
+
 export function MusicaPlaca() {
   const [items, setItems] = useState<ContentItem[]>([]);
   const [err, setErr] = useState<string | null>(null);
@@ -140,7 +145,7 @@ export function MusicaPlaca() {
     const file = e.target.files?.[0];
     if (!file) return;
     setErr(null); setUploadingCover(true);
-    try { setCoverUrl(await uploadMedia(file, "media")); }
+    try { setCoverUrl(await uploadMedia(file, "media", "placa", { guides: IMAGE_GUIDES })); }
     catch (er) { setErr(er instanceof Error ? er.message : "error subiendo"); }
     finally { setUploadingCover(false); }
   }
@@ -151,7 +156,7 @@ export function MusicaPlaca() {
     setErr(null); setUploadingPhotos(true);
     try {
       const urls: string[] = [];
-      for (const f of files) urls.push(await uploadMedia(f, "media"));
+      for (const f of files) urls.push(await uploadMedia(f, "media", "placa", { guides: IMAGE_GUIDES }));
       setPhotos((cur) => [...cur, ...urls].slice(0, MUSICA_MAX_FOTOS));
     } catch (er) { setErr(er instanceof Error ? er.message : "error subiendo"); }
     finally { setUploadingPhotos(false); }
