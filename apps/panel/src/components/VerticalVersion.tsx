@@ -19,7 +19,7 @@ export function VerticalVersion({ value, onChange, allowYoutube = false }: { val
     if (!file) return;
     setErr(null); setUploading(true);
     try {
-      const url = await uploadMedia(file, "media");
+      const url = await uploadMedia(file, "media", "placa", { guides: [{ label: "Vertical", aspect: 9 / 16, w: 1080 }] });
       onChange({ url, kind: file.type.startsWith("video") ? "video" : "image", yt: null });
     } catch (er) {
       setErr(er instanceof Error ? er.message : "error subiendo");

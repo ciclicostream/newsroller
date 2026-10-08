@@ -35,7 +35,7 @@ export async function uploadAsset(kind: AssetKind, file: File): Promise<Asset> {
 // Las fotos (JPG/PNG/WebP) pasan por el encuadrador y salen de hasta 1 MB y 2048 px (ver lib/imageCrop.ts). Banco: sin encuadre,
 // sólo se adaptan al límite. Ajustes (íconos, logos, zócalos) tiene sus propios controles. Videos, audios, GIF y SVG no se tocan.
 export async function uploadMedia(file: File, kind: AssetKind | "media" = "media", source: "banco" | "placa" | "ajustes" = "placa", crop?: CropOpts): Promise<string> {
-  if (source !== "ajustes" && isRaster(file)) file = source === "banco" ? await autoCompress(file) : await requestCrop(file, crop);
+  if (source !== "ajustes" && isRaster(file)) file = source === "banco" || crop?.noCrop ? await autoCompress(file) : await requestCrop(file, crop);
   const sign = await api.post<SignResponse>("/api/content/uploads/sign", { kind, filename: file.name, folder: source === "ajustes" ? "ajustes" : undefined });
   const { error } = await supabase.storage.from(sign.bucket).uploadToSignedUrl(sign.path, sign.token, file);
   if (error) throw new Error(friendlyError(error, "No se pudo subir el archivo"));

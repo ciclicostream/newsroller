@@ -5,10 +5,23 @@ import { Plus, Trash2, Check, X, Loader2, Megaphone, Pencil } from "lucide-react
 import type { ContentItem, PublicidadData } from "@newsroller/shared";
 import { contentItems } from "../lib/content-items";
 import { uploadMedia } from "../lib/content";
+import { useActiveSuite } from "../lib/collections";
+import type { CropGuide } from "../lib/imageCrop";
 import { api } from "../lib/api";
 import { VerticalVersion, type VerticalValue } from "../components/VerticalVersion";
 
+// Dónde muestra cada formato el aviso (medidas del output). Full: pantalla completa 16:9 (la versión vertical se carga aparte, en
+// "Versión vertical"). Vertical: siempre 9:16, en un recuadro de 381×696 (Clásica) o 405×720 (Moderna) en escritorio y de
+// 668×1206 / 600×1066 en celular, así que es una sola zona.
+const mediaGuides = (format: "full" | "vertical", collection: string): CropGuide[] =>
+  format === "full"
+    ? [{ label: "Pantalla completa", aspect: 16 / 9, w: 1920 }]
+    : collection === "moderna"
+      ? [{ label: "Escritorio", aspect: 405 / 720, w: 405 }, { label: "Celular", aspect: 600 / 1066, w: 600 }]
+      : [{ label: "Escritorio", aspect: 381 / 696, w: 381 }, { label: "Celular", aspect: 668 / 1206, w: 668 }];
+
 export function PublicidadPlaca() {
+  const suite = useActiveSuite();
   const [items, setItems] = useState<ContentItem[]>([]);
   const [err, setErr] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
@@ -43,7 +56,7 @@ export function PublicidadPlaca() {
     if (!file) return;
     setErr(null); setUploading(true);
     try {
-      setMediaUrl(await uploadMedia(file, "media"));
+      setMediaUrl(await uploadMedia(file, "media", "placa", { guides: mediaGuides(format, suite?.style ?? "clasica") }));
       setMediaKind(file.type.startsWith("video") ? "video" : "image");
     } catch (e) {
       setErr(e instanceof Error ? e.message : "error subiendo");
@@ -54,13 +67,13 @@ export function PublicidadPlaca() {
   async function onLogo(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
-    try { setLogoUrl(await uploadMedia(file, "media")); }
+    try { setLogoUrl(await uploadMedia(file, "media", "placa", { noCrop: true })); } // logo: no se recorta, sólo se adapta al límite
     catch (e) { setErr(e instanceof Error ? e.message : "error subiendo"); }
   }
   async function onQr(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
-    try { setQrUrl(await uploadMedia(file, "media")); }
+    try { setQrUrl(await uploadMedia(file, "media", "placa", { noCrop: true })); } // QR: no se recorta (un recorte lo rompería)
     catch (e) { setErr(e instanceof Error ? e.message : "error subiendo"); }
   }
 

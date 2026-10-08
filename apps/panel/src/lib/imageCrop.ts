@@ -13,7 +13,7 @@ export const MAX_SIDE = 2048;
 // `ax`/`ay` = hacia dónde se corre la zona dentro de la foto cuando la plantilla tiene que cortar (0 = pegada arriba/izquierda,
 // 1 = abajo/derecha; por defecto .5, centrada). Equivale al `object-position` de la plantilla.
 export interface CropGuide { label: string; aspect: number; w?: number; ax?: number; ay?: number }
-export interface CropOpts { aspect?: number | null; guides?: CropGuide[] } // aspect: proporción inicial del marco (ancho/alto); sin valor = la original o, con guías, la que contiene todas las zonas
+export interface CropOpts { aspect?: number | null; guides?: CropGuide[]; noCrop?: boolean } // aspect: proporción inicial del marco (ancho/alto); sin valor = la original o, con guías, la que contiene todas las zonas
 
 // Guías sin repetir: las que tienen la misma proporción se juntan en una sola ("Escritorio y celular").
 export function mergeGuides(guides: CropGuide[] = []): CropGuide[] {

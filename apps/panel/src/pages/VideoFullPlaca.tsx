@@ -34,7 +34,7 @@ export function VideoFullPlaca() {
     if (!file) return;
     setErr(null); setUploading(true);
     try {
-      setMediaUrl(await uploadMedia(file, "media"));
+      setMediaUrl(await uploadMedia(file, "media", "placa", { guides: [{ label: "Pantalla completa", aspect: 16 / 9, w: 1920 }] }));
       setMediaKind(file.type.startsWith("video") ? "video" : "image");
     } catch (e) {
       setErr(e instanceof Error ? e.message : "error subiendo");
