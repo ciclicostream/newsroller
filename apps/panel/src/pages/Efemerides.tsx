@@ -7,6 +7,8 @@ import type { ContentItem, EfemeridesData, EfemeridesEntry } from "@newsroller/s
 import { formatEfemeridesDate } from "@newsroller/shared";
 import { contentItems } from "../lib/content-items";
 import { uploadMedia } from "../lib/content";
+import { useActiveSuite } from "../lib/collections";
+import type { CropGuide } from "../lib/imageCrop";
 import { api } from "../lib/api";
 
 const T_MAX = 60;
@@ -45,7 +47,16 @@ const shiftISO = (iso: string, days: number) => { const d = new Date(iso + "T12:
 
 const MESES = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
 
+// Dónde muestra cada colección la foto (medidas del output): vertical en escritorio y apaisada en celular. El marco arranca
+// vertical (la zona de escritorio) y la de celular se ve como una franja horizontal dentro de él.
+// Clásica: 540×700 en escritorio, 860×640 en celular. Moderna: 470×740 en escritorio, 960×640 en celular.
+const photoGuides = (collection: string): CropGuide[] =>
+  collection === "moderna"
+    ? [{ label: "Escritorio", aspect: 470 / 740, w: 470 }, { label: "Celular", aspect: 960 / 640, w: 960 }]
+    : [{ label: "Escritorio", aspect: 540 / 700, w: 540 }, { label: "Celular", aspect: 860 / 640, w: 860 }];
+
 export function Efemerides() {
+  const suite = useActiveSuite();
   const [items, setItems] = useState<ContentItem[]>([]);
   const [err, setErr] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
@@ -120,7 +131,7 @@ export function Efemerides() {
     setUploading(true);
     const at = act; // por si se cambia de pestaña mientras sube
     try {
-      const url = await uploadMedia(file, "media");
+      const url = await uploadMedia(file, "media", "placa", { guides: photoGuides(suite?.style ?? "clasica") });
       patch({ mediaUrl: url, mediaKind: file.type.startsWith("video") ? "video" : "image" }, at);
     } catch (e) {
       setErr(e instanceof Error ? e.message : "error subiendo");
