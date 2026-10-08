@@ -276,19 +276,8 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 6px
 .xy { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 
 /* Submenú horizontal de plantillas (página Contenido) */
-.tpl-subnav { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 0; padding: 2px 2px 8px; margin-bottom: 14px; }
-.tpl-chip { position: relative; flex: 0 0 auto; display: flex; flex-direction: column; align-items: center; gap: 3px; width: 66px; padding: 0; background: none; border: 0; box-shadow: none; color: var(--muted); }
-.tpl-chip .tpl-chip-ic { width: 44px; height: 40px; border-radius: 10px; background: var(--surface); border: 1px solid var(--border); border-bottom: 3px solid #cfd2d8; box-shadow: var(--shadow); color: #b3b8c2; display: flex; align-items: center; justify-content: center; transition: transform .08s ease, border-color .12s ease; }
-.tpl-chip:hover .tpl-chip-ic { border-color: var(--accent); transform: translateY(-1px); }
-.tpl-chip-lbl { font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 9px; font-weight: 500; letter-spacing: .03em; text-transform: uppercase; color: #9aa3b8; text-align: center; line-height: 1.15; }
-.tpl-chip-lbl span { display: block; }
 /* Seleccionada */
-.tpl-chip.active .tpl-chip-ic { background: var(--text); border-color: var(--text); color: #fff; }
-.tpl-chip.active .tpl-chip-lbl { color: var(--text); }
 /* Al aire ahora: sólo borde inferior rojo del botón. */
-.tpl-chip.on-air .tpl-chip-ic { border-bottom-color: #f3a5b9; color: var(--text); }
-.tpl-chip.active .tpl-chip-ic { color: #fff; }
-.tpl-chip.active.on-air .tpl-chip-ic { border-bottom-color: var(--danger); }
 
 /* Formulario + monitor (páginas de Contenido): mismo ancho en todas las plantillas, centrado. */
 .pm-layout { display: grid; grid-template-columns: minmax(0, 440px) minmax(0, 460px); gap: 24px; justify-content: center; align-items: start; }
@@ -317,8 +306,6 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 6px
 .toast{pointer-events:auto;max-width:560px;padding:11px 18px;border-radius:12px;font-size:14px;font-weight:600;box-shadow:0 10px 30px rgba(15,20,32,.28);background:#1a2235;color:#fff;cursor:pointer}
 .toast.ok{background:#15803d}.toast.error{background:#c0392b}
 /* Papelera en el submenú de Contenido */
-.tpl-chip.trash .tpl-chip-ic{color:#b3b8c2}
-.tpl-chip.trash.active .tpl-chip-ic{color:#fff}
 
 /* Banco unificado */
 .bn-tools { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 14px; }
@@ -411,8 +398,6 @@ label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 6px
 .bn-tools > .muted-note { background: #fff; border: 1px solid var(--border); border-radius: 10px; padding: 8px 12px; }
 
 /* Contenido: sin línea divisoria; título y descripción de cada plantilla en una card azul navy */
-.tpl-chip-lbl { color: rgba(255,255,255,.82); }
-.tpl-chip.active .tpl-chip-lbl { color: #fff; }
 .main:has(.tpl-subnav) .page-head { background: #0b1f4d; border: 1px solid rgba(255,255,255,.1); border-radius: 14px; padding: 14px 20px; box-shadow: 0 6px 18px rgba(5,15,42,.28); }
 .main:has(.tpl-subnav) .page-head h1 { color: #fff; }
 .main:has(.tpl-subnav) .page-head p { color: rgba(255,255,255,.78); }
@@ -830,11 +815,31 @@ a.aj-hd:hover .aj-go { color: var(--accent); transform: translateX(2px); }
 .pv-row.pv-tint{border-left:4px solid var(--cc)}
 .pv-row.pv-tint:not(.missing){background:color-mix(in srgb,var(--cc) 6%,#fff);border-color:color-mix(in srgb,var(--cc) 22%,var(--ln));border-left-color:var(--cc)}
 /* Submenú de Contenido: una card por categoría (sobre el fondo oscuro, un tono translúcido del color). */
-.tpl-subnav{gap:10px;align-items:stretch}
-.tpl-grp{display:flex;flex-direction:column;gap:6px;padding:7px 9px 4px;border-radius:14px;background:color-mix(in srgb,var(--cc) 14%,transparent);border:1px solid color-mix(in srgb,var(--cc) 34%,transparent)}
-.tpl-grp-t{font-size:9.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;text-align:center;color:color-mix(in srgb,var(--cc) 50%,#fff)}
-.tpl-grp-c{display:flex;justify-content:center}
 
 /* Copiloto: sin negrita en "Contenidos disponibles" y en la parrilla. */
 .pv-disp *,.pv-par *{font-weight:400!important}
 .pv-sw button.on,.pv-ddi.sel{font-weight:500!important}
+
+/* Submenú de Contenido: una sola tira, como el menú principal. Los tipos van en grupos grises suaves por categoría (sin recuadro
+   en los íconos); el grupo que contiene la sección elegida toma el color de su categoría en lugar del gris, y la sección elegida
+   se rellena de ese color. El mismo color que en "Contenidos disponibles" y en la parrilla. */
+.cn-bar { width: min(100%, 924px); margin: 0 auto 14px; display: flex; flex-wrap: nowrap; justify-content: space-evenly; gap: 4px; background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 5px; box-shadow: var(--shadow); overflow-x: auto; scrollbar-width: none; }
+.cn-bar::-webkit-scrollbar { display: none; }
+.cn-grp { display: flex; gap: 1px; flex: none; background: #f0f2f5; border: 1px solid #e4e7ec; border-radius: 12px; padding: 2px; transition: background .15s, border-color .15s; }
+.cn-grp.has-active { background: color-mix(in srgb, var(--cc) 14%, #fff); border-color: color-mix(in srgb, var(--cc) 42%, #fff); }
+.cn-item { position: relative; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 5px 7px; border-radius: 9px; color: var(--muted); font-size: 10px; font-weight: 600; white-space: nowrap; text-decoration: none; }
+.cn-item:hover:not(.active) { background: #e4e7ec; color: var(--text); }
+.cn-grp.has-active .cn-item:hover:not(.active) { background: color-mix(in srgb, var(--cc) 20%, #fff); }
+.cn-item.active { background: var(--cc); color: #fff; }
+/* Punto negro: la sección no tiene nada en la parrilla (blanco si es la que está elegida). */
+.cn-item.sin-parrilla::after { content: ""; position: absolute; top: 5px; right: 6px; width: 4px; height: 4px; border-radius: 50%; background: #10151f; }
+.cn-item.active.sin-parrilla::after { background: #fff; }
+
+/* Encabezado de cada sección de Contenido: el nombre y su descripción van uno al lado del otro (dos columnas) y todas las tiras
+   miden lo mismo; la descripción, más chica, nunca cae debajo del nombre (si es muy larga, se corta en 3 renglones). */
+.main:has(.tpl-subnav) .page-head { box-sizing: border-box; height: 66px; padding: 0 20px; gap: 16px; margin-bottom: 14px; overflow: hidden; }
+.main:has(.tpl-subnav) .page-head > div:first-child { flex: 1; min-width: 0; display: grid; grid-template-columns: max-content minmax(0, 1fr); column-gap: 18px; align-items: center; }
+.main:has(.tpl-subnav) .page-head h1 { font-size: 20px; line-height: 1.1; white-space: nowrap; margin: 0; }
+.main:has(.tpl-subnav) .page-head p { font-size: 11.5px; line-height: 1.35; margin: 0; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.main:has(.tpl-subnav) .page-head .btn { flex: none; }
+

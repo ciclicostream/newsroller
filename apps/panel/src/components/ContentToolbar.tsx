@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { CheckSquare, Trash2, X } from "lucide-react";
+import { Trash2, X } from "lucide-react";
 import { contentItems } from "../lib/content-items";
 import { selectActions, useSelectState } from "../lib/contentSelect";
 import { toast } from "../lib/toast";
@@ -18,7 +18,6 @@ export function ContentToolbar() {
   if (!s.reload) return null;
   const n = s.selected.size;
   const inGrid = [...s.selected].filter((id) => s.grid.has(id)).length;
-  const anyGrid = s.ids.some((id) => s.grid.has(id));
 
   const close = () => { if (!busy) { setAsking(false); setTyped(""); } };
   async function confirm() {
@@ -32,22 +31,15 @@ export function ContentToolbar() {
     else toast(`${r.ok} contenido${r.ok === 1 ? "" : "s"} a la papelera. Se conservan 30 días.`, "ok");
   }
 
+  if (!s.selecting) return null; // se activa con el ícono de la cabecera del monitor
+
   return (
     <div className="ct-bar">
-      {!s.selecting ? (
-        <>
-          <button type="button" className="ct-btn" onClick={selectActions.start} disabled={s.ids.length === 0}><CheckSquare size={13} /> Seleccionar</button>
-          {anyGrid && <span className="ct-leg"><i /> En parrilla</span>}
-        </>
-      ) : (
-        <>
-          <span className="ct-n">{n} de {s.ids.length}</span>
-          <button type="button" className="ct-btn" onClick={selectActions.all}>Todos</button>
-          <button type="button" className="ct-btn" onClick={selectActions.none} disabled={n === 0}>Ninguno</button>
-          <button type="button" className="ct-btn ct-del" onClick={() => setAsking(true)} disabled={n === 0}><Trash2 size={13} /> Borrar{n ? ` (${n})` : ""}</button>
-          <button type="button" className="ct-btn" onClick={selectActions.cancel}>Cancelar</button>
-        </>
-      )}
+      <span className="ct-n">{n} de {s.ids.length}</span>
+      <button type="button" className="ct-btn" onClick={selectActions.all}>Todos</button>
+      <button type="button" className="ct-btn" onClick={selectActions.none} disabled={n === 0}>Ninguno</button>
+      <button type="button" className="ct-btn ct-del" onClick={() => setAsking(true)} disabled={n === 0}><Trash2 size={13} /> Borrar{n ? ` (${n})` : ""}</button>
+      <button type="button" className="ct-btn" onClick={selectActions.cancel}>Cancelar</button>
 
       {asking && (
         <div className="modal-back" onClick={close}>

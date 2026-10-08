@@ -27,7 +27,7 @@ import { PublicidadPlaca } from "./PublicidadPlaca";
 import { PromosPlaca } from "./PromosPlaca";
 
 // Nombres cortos para el submenú (el resto usa el label del catálogo).
-const MENU_LABEL: Record<string, string> = { declaraciones: "Textual", publicidad: "Publis" };
+const MENU_LABEL: Record<string, string> = { declaraciones: "Textual", publicidad: "Publis", promos: "Promos", video_full: "Video" };
 
 // Plantilla mostrada por defecto al entrar a Contenido.
 const DEFAULT_TYPE = "placas";
@@ -65,31 +65,32 @@ export function ContenidoNav({ active }: { active: string }) {
     .filter((g) => g.types.length > 0);
 
   return (
-      <nav className="tpl-subnav" aria-label="Plantillas">
-        {groups.map((g) => (
-          <div key={g.k} className="tpl-grp" style={catVar(g.k)}>
-            <div className="tpl-grp-t">{CAT[g.k]!.label}</div>
-            <div className="tpl-grp-c">
+      <nav className="tpl-subnav cn-bar" aria-label="Plantillas">
+        {groups.map((g) => {
+          // Un tipo puede vivir dentro de la card de otro (Lista y Elecciones en Informes, Retro en Efemérides, Obituario en Última Hora).
+          const activeHere = g.types.some((t) => t.type === active || CARD_OF[active] === t.type);
+          return (
+            <div key={g.k} className={"cn-grp" + (activeHere ? " has-active" : "")} style={catVar(g.k)} title={CAT[g.k]!.label}>
               {g.types.map((t) => {
                 // Una card puede reunir varios tipos (Informes: Carrusel y Lista; Efemérides: Efemérides y Retro):
-                // se ilumina si cualquiera de ellos está en la parrilla o en edición.
+                // se considera "en la parrilla" si cualquiera de ellos lo está. El punto negro marca las secciones que NO tienen nada en la parrilla.
                 const kids = Object.keys(CARD_OF).filter((k) => CARD_OF[k] === t.type);
                 const air = inGrid.has(t.type) || kids.some((k) => inGrid.has(k));
                 return (
                   <Link
                     key={t.type}
                     to={`/contenido/${t.type}`}
-                    className={"tpl-chip" + (t.type === active || CARD_OF[active] === t.type ? " active" : "") + (air ? " on-air" : "")}
+                    className={"cn-item" + (t.type === active || CARD_OF[active] === t.type ? " active" : "") + (air ? "" : " sin-parrilla")}
                     title={t.desc}
                   >
-                    <span className="tpl-chip-ic"><t.Icon size={16} /></span>
-                    <span className="tpl-chip-lbl">{(MENU_LABEL[t.type] ?? t.label).split(" ").filter((w) => w !== "/").map((w) => <span key={w}>{w}</span>)}</span>
+                    <t.Icon size={15} />
+                    {MENU_LABEL[t.type] ?? t.label}
                   </Link>
                 );
               })}
             </div>
-          </div>
-        ))}
+          );
+        })}
       </nav>
   );
 }

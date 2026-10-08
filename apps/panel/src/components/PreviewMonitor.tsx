@@ -1,15 +1,14 @@
 import { useEffect, useRef, useState } from "react";
-import { Eye, EyeOff, RectangleHorizontal, RectangleVertical, RotateCcw, Volume2, VolumeX, X } from "lucide-react";
+import { CheckSquare, Eye, EyeOff, RectangleHorizontal, RectangleVertical, RotateCcw, Volume2, VolumeX, X } from "lucide-react";
 import { useStoredFlag } from "../lib/storedFlag";
-import { selectingNow } from "../lib/contentSelect";
+import { selectActions, selectingNow, useSelectState } from "../lib/contentSelect";
+import { toast } from "../lib/toast";
 import { ContentToolbar } from "./ContentToolbar";
 import { useMonitorVertical } from "../lib/monitorOrientation";
 import { useMonitorAudio } from "../lib/monitorAudio";
 import { api } from "../lib/api";
 import { OUTPUT_FRAME_BASE } from "../lib/parrilla";
-import { useEnabledCollections, useMonitorCollection } from "../lib/collections";
-import { TEMPLATE_COLLECTIONS } from "@newsroller/shared";
-import { useAuth } from "../auth/AuthProvider";
+import { useActiveSuite } from "../lib/collections";
 
 // Monitor chico de edición: muestra en vivo cómo queda la placa con lo que se está
 // cargando en el formulario. Embebe el output (?draft=1) y le manda los datos por
@@ -28,17 +27,13 @@ export function PreviewMonitor({ type, data, dur, ready = true }: {
   const root = useRef<HTMLDivElement>(null);
   // Ocultar el monitor deja la lista de contenidos más arriba (y no corre el output mientras está oculto).
   const [hidden, toggleHidden] = useStoredFlag("nr.pm.hidden");
+  const sel = useSelectState(); // selección múltiple de la lista de contenidos (si la página la registró)
   const hiddenRef = useRef(hidden);
   hiddenRef.current = hidden;
   const [sound, toggleSound] = useMonitorAudio();
   const [vertical, toggleVertical] = useMonitorVertical();
-  // Colección con la que se ve la vista previa (entre las habilitadas; se recuerda en este navegador).
-  const enabledCols = useEnabledCollections();
-  // El Master también puede ver las colecciones que todavía no habilitó (para revisarlas antes).
-  const { can } = useAuth();
-  const cols = can("config_sistema") ? [...enabledCols, ...TEMPLATE_COLLECTIONS.filter((c) => !enabledCols.some((e) => e.id === c.id))] : enabledCols;
-  const [colPref, setColPref] = useMonitorCollection();
-  const col = cols.some((c) => c.id === colPref) ? colPref : cols[0]?.id ?? "";
+  // La vista previa usa la colección de templates del canal (la que sale al aire): ya no se elige acá.
+  const col = useActiveSuite()?.style ?? "";
   const [loaded, setLoaded] = useState(false); // el output avisó que está escuchando
   const [selId, setSelId] = useState<string | null>(null);
   const [saved, setSaved] = useState<Saved | null>(null);
@@ -76,8 +71,17 @@ export function PreviewMonitor({ type, data, dur, ready = true }: {
       if (!id) return;
       setSelId((cur) => { if (cur !== id) keyAtPick.current = payloadKey.current; return cur === id ? null : id; });
     };
+    // El interruptor de un contenido que está en la parrilla (al aire) queda bloqueado: para apagarlo hay que sacarlo de la parrilla.
+    // Se corta el clic antes de que llegue al botón de la página (en captura), así vale para todas las plantillas.
+    const onLocked = (e: Event) => {
+      const pill = (e.target as HTMLElement).closest(".toggle-pill.on");
+      if (!pill || !pill.closest("[data-ingrid]")) return;
+      e.stopPropagation(); e.preventDefault();
+      toast("Este contenido está en la parrilla: sacalo del aire para poder desactivarlo.", "info");
+    };
     col.addEventListener("click", onClick);
-    return () => col.removeEventListener("click", onClick);
+    col.addEventListener("click", onLocked, true);
+    return () => { col.removeEventListener("click", onClick); col.removeEventListener("click", onLocked, true); };
   }, []);
   const payloadKey = useRef(draftKey);
   payloadKey.current = draftKey;
@@ -110,11 +114,6 @@ export function PreviewMonitor({ type, data, dur, ready = true }: {
       <div className="pm-hd">
         <span>{hidden ? "Vista previa oculta" : saved ? "Contenido guardado" : "Vista previa"}</span>
         <span className="pm-hd-r">
-          {!hidden && cols.length > 1 && (
-            <select className="pm-col-sel" value={col} onChange={(e) => setColPref(e.target.value)} title="Colección de templates de la vista previa" aria-label="Colección">
-              {cols.map((c) => <option key={c.id} value={c.id}>{c.label}{enabledCols.some((e) => e.id === c.id) ? "" : c.ready ? " (sin habilitar)" : " (en preparación)"}</option>)}
-            </select>
-          )}
           {!hidden && saved && <button type="button" className="pm-back" onClick={() => setSelId(null)} title="Volver a lo que estoy cargando"><X size={12} /> Formulario</button>}
           {!hidden && (<>
           <button type="button" className={"pm-re pm-snd" + (vertical ? " on" : "")} title={vertical ? "Ver en 16:9 (horizontal)" : "Ver en 9:16 (vertical)"} aria-pressed={vertical} aria-label={vertical ? "Ver horizontal" : "Ver vertical"} onClick={toggleVertical}>
@@ -128,6 +127,12 @@ export function PreviewMonitor({ type, data, dur, ready = true }: {
             <RotateCcw size={13} />
           </button>
           </>)}
+          {sel.reload && sel.ids.length > 0 && (
+            <button type="button" className={"pm-re pm-snd" + (sel.selecting ? " on" : "")} title="Seleccionar contenidos (para borrarlos)" aria-pressed={sel.selecting} aria-label="Seleccionar contenidos"
+              onClick={() => (sel.selecting ? selectActions.cancel() : selectActions.start())}>
+              <CheckSquare size={13} />
+            </button>
+          )}
           <button type="button" className="pm-re" title={hidden ? "Mostrar la vista previa" : "Ocultar la vista previa (sube la lista de contenidos)"} aria-pressed={hidden} aria-label={hidden ? "Mostrar vista previa" : "Ocultar vista previa"} onClick={toggleHidden}>
             {hidden ? <Eye size={13} /> : <EyeOff size={13} />}
           </button>
@@ -172,7 +177,6 @@ const CSS = `
 .pm{position:sticky;top:12px;z-index:5;width:100%;background:#fff;border:1px solid #e3e7ef;border-radius:14px;padding:10px 10px 12px;box-shadow:0 6px 20px rgba(20,30,60,.08),inset 0 2px 12px rgba(20,30,60,.05)}
 .pm-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;font-size:11px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:#7c869b}
 .pm-hd-r{display:inline-flex;align-items:center;gap:6px}
-.pm-col-sel{height:24px;border:1px solid #e3e7ef;border-radius:7px;background:#fff;color:#4a5468;font-size:11px;font-weight:600;padding:0 4px;text-transform:none;letter-spacing:0}
 .pm-back{border:1px solid #2f6bff;background:#e8efff;color:#2f6bff;border-radius:7px;padding:3px 8px;font:inherit;font-size:10.5px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;display:inline-flex;align-items:center;gap:4px;cursor:pointer}
 .pm-col>.card[data-item]{cursor:pointer}
 .pm-re{border:1px solid #e3e7ef;background:#fff;color:#7c869b;border-radius:7px;padding:4px 6px;display:inline-flex;cursor:pointer}
@@ -186,9 +190,9 @@ const CSS = `
 .ct-btn:hover:not(:disabled){color:#2f6bff;border-color:#2f6bff}.ct-btn:disabled{opacity:.45;cursor:default}
 .ct-btn.ct-del{color:var(--danger);border-color:#f0c7c2}.ct-btn.ct-del:hover:not(:disabled){color:#fff;background:var(--danger);border-color:var(--danger)}
 .ct-n{font-size:12px;font-weight:800;color:#2f6bff;margin-right:2px}
-.ct-leg{margin-left:auto;display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;color:#7c869b;text-transform:none;letter-spacing:0}
-.ct-leg i{width:12px;height:12px;border-radius:4px;border:2px solid var(--danger);display:inline-block}
 .btn.ct-danger{background:var(--danger);border-color:var(--danger);color:#fff}.btn.ct-danger:disabled{opacity:.4}
+/* El interruptor de un contenido en la parrilla pasa de azul a rojo y no se mueve (se bloquea en PreviewMonitor). */
+.pm-col>.card[data-ingrid] .toggle-pill.on,.pm-col>.card[data-ingrid] .toggle-pill.on:hover{background:var(--danger);cursor:not-allowed}
 /* Contenido que está en la parrilla (borrador o al aire): borde rojo. */
 .main .pm-col>.card[data-ingrid]{border-color:var(--danger)!important;box-shadow:0 0 0 1px var(--danger)}
 /* Modo selección: tocar la card la marca; el casillero va sobre la esquina de la miniatura. */
