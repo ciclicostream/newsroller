@@ -78,7 +78,7 @@ export function Clima({ data, live, durationSec }: { data: ClimaData; live?: Cli
       <img className="cw-bg" src={fondo} alt="" />
       <Chrome hideTemp hideLogo />
 
-      {iconsLoaded && <img className="cw-big" src={climaBigUrl(climaEstado(city.code), city.isDay === false, custom)} alt="" />}
+      {iconsLoaded && <img className="cw-big" decoding="async" src={climaBigUrl(climaEstado(city.code), city.isDay === false, custom)} alt="" />}
 
       <div className="cw-main cw-flip">
         <div className="cw-t">{city.tempC != null ? `${city.tempC}°` : "--"}</div>
@@ -106,7 +106,7 @@ export function Clima({ data, live, durationSec }: { data: ClimaData; live?: Cli
         const label = i === 0 ? "HOY" : i === 1 ? "MAÑANA" : DIAS[new Date(d.date + "T12:00:00").getDay()];
         return (
           <div key={d.date} className={`cw-day cw-day-d${i + 1} cw-flip`}>
-            <img className="cw-day-ic" src={climaDayUrl(climaEstado(d.code), day)} alt="" />
+            <img className="cw-day-ic" decoding="async" src={climaDayUrl(climaEstado(d.code), day)} alt="" />
             <div className="cw-day-tmp">{d.max ?? "--"}°</div>
             <div className="cw-day-name">{label}</div>
           </div>

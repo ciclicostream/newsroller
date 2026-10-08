@@ -167,7 +167,7 @@ export function Clima({ data, live, durationSec }: { data: ClimaData; live?: Cli
             <div key={d.date} className="nmw-d" style={{ ["--dl" as string]: `${1.25 + i * 0.15}s`, ["--xo" as string]: `${0.2 - i * 0.1}s` }}>
               <div className="nm-panel">
                 <div className="nmw-dn">{i === 0 ? "HOY" : i === 1 ? "MAÑANA" : DIAS[new Date(d.date + "T12:00:00").getDay()]}</div>
-                <img src={climaDayUrl(climaEstado(d.code), day)} alt="" />
+                <img decoding="async" src={climaDayUrl(climaEstado(d.code), day)} alt="" />
                 <div className="nmw-cond">{d.desc}</div>
                 <div className="nmw-dt">{n(d.max)} <small>/ {n(d.min)}</small></div>
               </div>
@@ -178,7 +178,7 @@ export function Clima({ data, live, durationSec }: { data: ClimaData; live?: Cli
       {/* El ícono grande va en su propia capa, por encima de todas las cards. */}
       <div className="nmw-big">
         {sun && <div className="nmw-rays" />}
-        {loaded && <img src={climaBigUrl(estado, night, custom)} alt="" />}
+        {loaded && <img decoding="async" src={climaBigUrl(estado, night, custom)} alt="" />}
       </div>
       <ModernChrome />
     </div>

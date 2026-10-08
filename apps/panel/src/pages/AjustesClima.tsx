@@ -13,6 +13,36 @@ import { PreviewMonitor } from "../components/PreviewMonitor";
 // Las imágenes predeterminadas vienen con el output, en /output/clima/.
 const BASE = `${OUTPUT_FRAME_BASE}/output/clima/`;
 
+// Límite de carga: los íconos se muestran chicos (grande ≈ 940 px, de día ≈ 120 px) y un PNG enorme se decodifica entero
+// al aire (un 1500×1500 son ~9 MB de memoria) y congela cuadros. Lo que pase del tamaño se achica solo al subirlo.
+const LIMITS = { big: { px: 1100, maxKb: 3000 }, day: { px: 256, maxKb: 600 } } as const;
+const kb = (n: number) => (n >= 1024 * 1024 ? `${(n / 1048576).toFixed(1)} MB` : `${Math.round(n / 1024)} KB`);
+
+// Devuelve la imagen lista para subir: tal cual si ya entra en el límite, o achicada (PNG, conserva la transparencia).
+async function fitIcon(file: File, kind: "big" | "day"): Promise<File> {
+  const { px, maxKb } = LIMITS[kind];
+  let bmp: ImageBitmap;
+  try { bmp = await createImageBitmap(file); } catch { throw new Error("No se pudo leer la imagen. Usá un PNG o WebP."); }
+  try {
+    const side = Math.max(bmp.width, bmp.height);
+    let out = file;
+    if (side > px) {
+      const k = px / side;
+      const c = document.createElement("canvas");
+      c.width = Math.max(1, Math.round(bmp.width * k)); c.height = Math.max(1, Math.round(bmp.height * k));
+      const ctx = c.getContext("2d");
+      if (!ctx) throw new Error("No se pudo achicar la imagen.");
+      ctx.imageSmoothingQuality = "high";
+      ctx.drawImage(bmp, 0, 0, c.width, c.height);
+      const blob = await new Promise<Blob | null>((res) => c.toBlob(res, "image/png"));
+      if (!blob) throw new Error("No se pudo achicar la imagen.");
+      out = new File([blob], file.name.replace(/\.[^.]+$/, "") + ".png", { type: "image/png" });
+    }
+    if (out.size > maxKb * 1024) throw new Error(`La imagen pesa ${kb(out.size)} y el máximo es ${kb(maxKb * 1024)} (incluso achicada a ${px} px). Probá comprimirla (por ejemplo con TinyPNG).`);
+    return out;
+  } finally { bmp.close(); }
+}
+
 type Target = { kind: "big"; key: ClimaSlotKey } | { kind: "day"; key: ClimaEstado };
 const tid = (t: Target) => `${t.kind}:${t.key}`;
 
@@ -69,8 +99,9 @@ export function AjustesClima() {
     if (!/^image\//.test(file.type)) return setErr("El archivo tiene que ser una imagen (PNG con fondo transparente, ideal).");
     setBusy(tid(t)); setErr(null);
     try {
-      const url = await uploadMedia(file, "media", "ajustes");
-      await save(t, url, "Ícono guardado.");
+      const ready = await fitIcon(file, t.kind);
+      const url = await uploadMedia(ready, "media", "ajustes");
+      await save(t, url, ready === file ? "Ícono guardado." : `Ícono guardado (se achicó a ${LIMITS[t.kind].px} px).`);
     } catch (er) {
       setErr(er instanceof Error ? er.message : "no se pudo subir la imagen");
       setBusy(null);
@@ -102,7 +133,7 @@ export function AjustesClima() {
       <div className="page-head">
         <div>
           <h1>Íconos del clima</h1>
-          <p>Un ícono por cada estado del cielo que informa Open-Meteo. Lo que no cargues usa la imagen predeterminada o la del estado más parecido.</p>
+          <p>Un ícono por cada estado del cielo que informa Open-Meteo. Lo que no cargues usa la imagen predeterminada o la del estado más parecido. Las imágenes se achican solas al subirlas: el grande a 1100 px (máx. 3 MB) y el de los días a 256 px (máx. 600 KB).</p>
         </div>
         <Link to="/ajustes" className="btn"><ArrowLeft size={16} /> Ajustes</Link>
       </div>
