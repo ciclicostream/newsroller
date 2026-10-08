@@ -1,3 +1,4 @@
+import { useContentSelect } from "../lib/contentSelect";
 import { useEffect, useRef, useState } from "react";
 import { PreviewMonitor } from "../components/PreviewMonitor";
 import { UltimaHoraSwitch } from "../components/PlacaSwitch";
@@ -30,6 +31,7 @@ export function ObituarioPlaca() {
   const fileRef = useRef<HTMLInputElement>(null);
 
   const load = () => contentItems.list("obituario").then(setItems).catch((e) => setErr(e.message));
+  const sel = useContentSelect(items, load);
   useEffect(() => { void load(); }, []);
 
   async function onFile(e: React.ChangeEvent<HTMLInputElement>) {
@@ -179,7 +181,7 @@ export function ObituarioPlaca() {
           {items.map((it) => {
             const d = it.data as ObituarioData;
             return (
-              <div key={it.id} data-item={it.id} className="card" style={{ padding: 16, display: "flex", gap: 16, alignItems: "center" }}>
+              <div key={it.id} data-item={it.id} {...sel.row(it.id)} className="card" style={{ padding: 16, display: "flex", gap: 16, alignItems: "center" }}>
                 <div style={{ width: 44, height: 56, borderRadius: 6, background: "#1a1d24", flex: "0 0 auto", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
                   {d.photo_url ? <img src={d.photo_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", filter: "grayscale(1)" }} /> : <Flower2 size={20} color="#fff" />}
                 </div>

@@ -1,5 +1,8 @@
 import { useEffect, useRef, useState } from "react";
-import { RectangleHorizontal, RectangleVertical, RotateCcw, Volume2, VolumeX, X } from "lucide-react";
+import { Eye, EyeOff, RectangleHorizontal, RectangleVertical, RotateCcw, Volume2, VolumeX, X } from "lucide-react";
+import { useStoredFlag } from "../lib/storedFlag";
+import { selectingNow } from "../lib/contentSelect";
+import { ContentToolbar } from "./ContentToolbar";
 import { useMonitorVertical } from "../lib/monitorOrientation";
 import { useMonitorAudio } from "../lib/monitorAudio";
 import { api } from "../lib/api";
@@ -22,6 +25,11 @@ export function PreviewMonitor({ type, data, dur, ready = true }: {
   ready?: boolean;
 }) {
   const frame = useRef<HTMLIFrameElement>(null);
+  const root = useRef<HTMLDivElement>(null);
+  // Ocultar el monitor deja la lista de contenidos más arriba (y no corre el output mientras está oculto).
+  const [hidden, toggleHidden] = useStoredFlag("nr.pm.hidden");
+  const hiddenRef = useRef(hidden);
+  hiddenRef.current = hidden;
   const [sound, toggleSound] = useMonitorAudio();
   const [vertical, toggleVertical] = useMonitorVertical();
   // Colección con la que se ve la vista previa (entre las habilitadas; se recuerda en este navegador).
@@ -58,9 +66,10 @@ export function PreviewMonitor({ type, data, dur, ready = true }: {
 
   // Tocar una card de la lista (no sus botones) selecciona ese contenido; tocarla de nuevo lo suelta.
   useEffect(() => {
-    const col = frame.current?.closest(".pm-col");
+    const col = root.current?.closest(".pm-col");
     if (!col) return;
     const onClick = (e: Event) => {
+      if (hiddenRef.current || selectingNow()) return; // oculto o eligiendo contenidos: tocar una card no la previsualiza
       const t = e.target as HTMLElement;
       if (t.closest("button, a, input, select, textarea, label")) return;
       const id = t.closest("[data-item]")?.getAttribute("data-item");
@@ -72,6 +81,9 @@ export function PreviewMonitor({ type, data, dur, ready = true }: {
   }, []);
   const payloadKey = useRef(draftKey);
   payloadKey.current = draftKey;
+
+  // Al ocultarlo se descarta el iframe: cuando vuelve, hay que esperar de nuevo su aviso.
+  useEffect(() => { if (hidden) { setLoaded(false); setSelId(null); } }, [hidden]);
 
   // Trae el contenido elegido (endpoint público del output).
   useEffect(() => {
@@ -93,17 +105,18 @@ export function PreviewMonitor({ type, data, dur, ready = true }: {
   }, [key, loaded, showReady]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
-    <div className="pm">
+    <div className={"pm" + (hidden ? " hid" : "")} ref={root}>
       <style>{CSS}{selId ? `.pm-col>.card[data-item="${selId}"]{outline:2px solid #2f6bff;outline-offset:-2px}` : ""}</style>
       <div className="pm-hd">
-        <span>{saved ? "Contenido guardado" : "Vista previa"}</span>
+        <span>{hidden ? "Vista previa oculta" : saved ? "Contenido guardado" : "Vista previa"}</span>
         <span className="pm-hd-r">
-          {cols.length > 1 && (
+          {!hidden && cols.length > 1 && (
             <select className="pm-col-sel" value={col} onChange={(e) => setColPref(e.target.value)} title="Colección de templates de la vista previa" aria-label="Colección">
               {cols.map((c) => <option key={c.id} value={c.id}>{c.label}{enabledCols.some((e) => e.id === c.id) ? "" : c.ready ? " (sin habilitar)" : " (en preparación)"}</option>)}
             </select>
           )}
-          {saved && <button type="button" className="pm-back" onClick={() => setSelId(null)} title="Volver a lo que estoy cargando"><X size={12} /> Formulario</button>}
+          {!hidden && saved && <button type="button" className="pm-back" onClick={() => setSelId(null)} title="Volver a lo que estoy cargando"><X size={12} /> Formulario</button>}
+          {!hidden && (<>
           <button type="button" className={"pm-re pm-snd" + (vertical ? " on" : "")} title={vertical ? "Ver en 16:9 (horizontal)" : "Ver en 9:16 (vertical)"} aria-pressed={vertical} aria-label={vertical ? "Ver horizontal" : "Ver vertical"} onClick={toggleVertical}>
             {vertical ? <RectangleVertical size={13} /> : <RectangleHorizontal size={13} />}
           </button>
@@ -114,12 +127,19 @@ export function PreviewMonitor({ type, data, dur, ready = true }: {
             onClick={() => frame.current?.contentWindow?.postMessage({ source: "ciclico-panel-draft", replay: true }, "*")}>
             <RotateCcw size={13} />
           </button>
+          </>)}
+          <button type="button" className="pm-re" title={hidden ? "Mostrar la vista previa" : "Ocultar la vista previa (sube la lista de contenidos)"} aria-pressed={hidden} aria-label={hidden ? "Mostrar vista previa" : "Ocultar vista previa"} onClick={toggleHidden}>
+            {hidden ? <Eye size={13} /> : <EyeOff size={13} />}
+          </button>
         </span>
       </div>
-      <div className={"pm-screen" + (vertical ? " v" : "")}>
-        <iframe key={(sound ? "snd" : "mute") + (vertical ? "-v" : "") + col} ref={frame} src={`${OUTPUT_FRAME_BASE}/output/?draft=1${sound ? "&audio=1" : ""}${vertical ? "&orientation=vertical" : ""}${col ? "&style=" + col : ""}`} title="Vista previa" tabIndex={-1} allow="autoplay; encrypted-media" />
-        {!showReady && <div className="pm-ph">Completá los datos para ver la vista previa.</div>}
-      </div>
+      <ContentToolbar />
+      {!hidden && (
+        <div className={"pm-screen" + (vertical ? " v" : "")}>
+          <iframe key={(sound ? "snd" : "mute") + (vertical ? "-v" : "") + col} ref={frame} src={`${OUTPUT_FRAME_BASE}/output/?draft=1${sound ? "&audio=1" : ""}${vertical ? "&orientation=vertical" : ""}${col ? "&style=" + col : ""}`} title="Vista previa" tabIndex={-1} allow="autoplay; encrypted-media" />
+          {!showReady && <div className="pm-ph">Completá los datos para ver la vista previa.</div>}
+        </div>
+      )}
     </div>
   );
 }
@@ -158,6 +178,24 @@ const CSS = `
 .pm-re{border:1px solid #e3e7ef;background:#fff;color:#7c869b;border-radius:7px;padding:4px 6px;display:inline-flex;cursor:pointer}
 .pm-snd.on{background:#2f6bff;border-color:#2f6bff;color:#fff}.pm-snd.on:hover:not(:disabled){color:#fff}
 .pm-re:hover:not(:disabled){color:#2f6bff;border-color:#2f6bff}.pm-re:disabled{opacity:.4;cursor:default}
+.pm.hid{padding-bottom:10px}.pm.hid .pm-hd{margin-bottom:0}
+/* Barra de selección y borrado de la lista de contenidos. */
+.ct-bar{display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin:0 0 8px}
+.pm.hid .ct-bar{margin:8px 0 0}
+.ct-btn{border:1px solid #e3e7ef;background:#fff;color:#4a5468;border-radius:7px;padding:4px 9px;font:inherit;font-size:11.5px;font-weight:700;display:inline-flex;align-items:center;gap:5px;cursor:pointer}
+.ct-btn:hover:not(:disabled){color:#2f6bff;border-color:#2f6bff}.ct-btn:disabled{opacity:.45;cursor:default}
+.ct-btn.ct-del{color:var(--danger);border-color:#f0c7c2}.ct-btn.ct-del:hover:not(:disabled){color:#fff;background:var(--danger);border-color:var(--danger)}
+.ct-n{font-size:12px;font-weight:800;color:#2f6bff;margin-right:2px}
+.ct-leg{margin-left:auto;display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;color:#7c869b;text-transform:none;letter-spacing:0}
+.ct-leg i{width:12px;height:12px;border-radius:4px;border:2px solid var(--danger);display:inline-block}
+.btn.ct-danger{background:var(--danger);border-color:var(--danger);color:#fff}.btn.ct-danger:disabled{opacity:.4}
+/* Contenido que está en la parrilla (borrador o al aire): borde rojo. */
+.main .pm-col>.card[data-ingrid]{border-color:var(--danger)!important;box-shadow:0 0 0 1px var(--danger)}
+/* Modo selección: tocar la card la marca; el casillero va sobre la esquina de la miniatura. */
+.pm-col>.card[data-sel]{position:relative;cursor:pointer;user-select:none}
+.pm-col>.card[data-sel]::after{content:"";position:absolute;top:8px;left:8px;width:20px;height:20px;border-radius:6px;border:2px solid #9aa4b8;background:#fff;box-sizing:border-box;display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px;font-weight:900;line-height:1;z-index:2}
+.pm-col>.card[data-sel="1"]{outline:2px solid #2f6bff;outline-offset:-2px;background:#eef3ff!important}
+.pm-col>.card[data-sel="1"]::after{content:"\\2713";background:#2f6bff;border-color:#2f6bff;text-align:center}
 .pm-screen{position:relative;aspect-ratio:16/9;background:#05081a;border-radius:9px;overflow:hidden}
 .pm-screen.v{aspect-ratio:9/16;width:min(100%,290px);margin:0 auto}
 .pm-screen iframe{width:100%;height:100%;border:0;display:block;pointer-events:none}

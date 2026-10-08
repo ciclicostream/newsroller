@@ -1,3 +1,4 @@
+import { useContentSelect } from "../lib/contentSelect";
 import { useEffect, useRef, useState } from "react";
 import { PreviewMonitor } from "../components/PreviewMonitor";
 import { InformesSwitch } from "../components/PlacaSwitch";
@@ -67,6 +68,7 @@ export function EleccionesPlaca() {
   const sumPct = cands.reduce((s, c) => s + (c.pct || 0), 0);
 
   const load = () => contentItems.list("elecciones").then(setItems).catch((e) => setErr(e.message));
+  const sel = useContentSelect(items, load);
   useEffect(() => { void load(); }, []);
 
   const patchCand = (i: number, p: Partial<ElectionCandidate>) => setCands((r) => r.map((x, j) => (j === i ? { ...x, ...p } : x)));
@@ -364,7 +366,7 @@ export function EleccionesPlaca() {
             const c = ELECTION_COUNTRIES.find((x) => x.id === d.country);
             const lead = [...(d.candidates ?? [])].sort((a, b) => b.pct - a.pct)[0];
             return (
-              <div key={it.id} data-item={it.id} className="card" style={{ padding: 16, display: "flex", gap: 16, alignItems: "center" }}>
+              <div key={it.id} data-item={it.id} {...sel.row(it.id)} className="card" style={{ padding: 16, display: "flex", gap: 16, alignItems: "center" }}>
                 <div style={{ width: 44, height: 44, borderRadius: 8, background: "#0d2168", flex: "0 0 auto", display: "flex", alignItems: "center", justifyContent: "center" }}><Vote size={20} color="#fff" /></div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{d.title || `${c?.name ?? d.country}${d.year ? " " + d.year : ""}`} · {d.kind === "parlamentaria" ? "Parlamentaria" : d.round === 2 ? "2ª vuelta" : "Presidencial"}</div>

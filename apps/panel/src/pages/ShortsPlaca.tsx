@@ -1,3 +1,4 @@
+import { useContentSelect } from "../lib/contentSelect";
 import { useEffect, useState } from "react";
 import { PreviewMonitor } from "../components/PreviewMonitor";
 import { Plus, Trash2, Check, Youtube, Pencil } from "lucide-react";
@@ -20,6 +21,7 @@ export function ShortsPlaca() {
   const [saving, setSaving] = useState(false);
 
   const load = () => contentItems.list("shorts").then(setItems).catch((e) => setErr(e.message));
+  const sel = useContentSelect(items, load);
   useEffect(() => { void load(); }, []);
   useEffect(() => {
     content.listShorts().then((sh) => {
@@ -170,7 +172,7 @@ export function ShortsPlaca() {
           {items.map((it) => {
             const d = it.data as ShortsData;
             return (
-              <div key={it.id} data-item={it.id} className="card" style={{ padding: 16, display: "flex", gap: 16, alignItems: "center" }}>
+              <div key={it.id} data-item={it.id} {...sel.row(it.id)} className="card" style={{ padding: 16, display: "flex", gap: 16, alignItems: "center" }}>
                 <div style={{ width: 44, height: 44, borderRadius: 8, background: "#0d2168", flex: "0 0 auto", display: "flex", alignItems: "center", justifyContent: "center" }}>
                   <Youtube size={20} color="#fff" />
                 </div>

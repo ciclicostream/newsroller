@@ -27,6 +27,15 @@ export const contentItems = {
       return false;
     }
   },
+  // Borrado en tandas (selección múltiple). Un contenido al aire lo rechaza el servidor: se cuenta aparte y no frena al resto.
+  removeMany: async (ids: string[]): Promise<{ ok: number; failed: number; reason: string }> => {
+    let ok = 0, failed = 0, reason = "";
+    for (const id of ids) {
+      try { await api.del(`/api/content-items/${id}`); ok++; }
+      catch (e) { failed++; reason ||= e instanceof Error ? e.message : "no se pudo borrar"; }
+    }
+    return { ok, failed, reason };
+  },
   trash: () => api.get<TrashedItem[]>("/api/content-items/trash"),
   restore: (id: string) => api.post<ContentItem>(`/api/content-items/${id}/restore`, {}),
   purge: (id: string) => api.del(`/api/content-items/${id}/purge`),

@@ -1,3 +1,4 @@
+import { useContentSelect } from "../lib/contentSelect";
 import { useEffect, useRef, useState } from "react";
 import { PreviewMonitor } from "../components/PreviewMonitor";
 import { Plus, Trash2, Check, X, Loader2, Megaphone, Pencil } from "lucide-react";
@@ -29,6 +30,7 @@ export function PublicidadPlaca() {
   const qrRef = useRef<HTMLInputElement>(null);
 
   const load = () => contentItems.list("publicidad").then(setItems).catch((e) => setErr(e.message));
+  const sel = useContentSelect(items, load);
   useEffect(() => { void load(); }, []);
   useEffect(() => {
     api.get<{ counts: Record<string, number> }>("/api/content/report/publicidad")
@@ -218,7 +220,7 @@ export function PublicidadPlaca() {
             const d = it.data as PublicidadData;
             const salidas = report[it.id] ?? 0;
             return (
-              <div key={it.id} data-item={it.id} className="card" style={{ padding: 16, display: "flex", gap: 16, alignItems: "center" }}>
+              <div key={it.id} data-item={it.id} {...sel.row(it.id)} className="card" style={{ padding: 16, display: "flex", gap: 16, alignItems: "center" }}>
                 <div style={{ width: 44, height: 44, borderRadius: 8, background: "#0d2168", flex: "0 0 auto", display: "flex", alignItems: "center", justifyContent: "center" }}>
                   <Megaphone size={20} color="#fff" />
                 </div>

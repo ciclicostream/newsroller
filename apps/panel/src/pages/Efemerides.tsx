@@ -1,3 +1,4 @@
+import { useContentSelect } from "../lib/contentSelect";
 import { useEffect, useRef, useState } from "react";
 import { PreviewMonitor } from "../components/PreviewMonitor";
 import { EfemeridesSwitch } from "../components/PlacaSwitch";
@@ -109,6 +110,7 @@ export function Efemerides() {
   }
 
   const load = () => contentItems.list("efemerides").then(setItems).catch((e) => setErr(e.message));
+  const sel = useContentSelect(items, load);
   useEffect(() => { void load(); }, []);
 
   async function onFile(e: React.ChangeEvent<HTMLInputElement>) {
@@ -308,7 +310,7 @@ export function Efemerides() {
           {items.map((it) => {
             const d = it.data as EfemeridesData;
             return (
-              <div key={it.id} data-item={it.id} className="card" style={{ padding: 16, display: "flex", gap: 16, alignItems: "center" }}>
+              <div key={it.id} data-item={it.id} {...sel.row(it.id)} className="card" style={{ padding: 16, display: "flex", gap: 16, alignItems: "center" }}>
                 <div style={{ width: 44, height: 64, borderRadius: 8, background: "#0d2168", flex: "0 0 auto", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
                   {d.media_url ? <img src={d.media_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <CalendarDays size={20} color="#fff" />}
                 </div>

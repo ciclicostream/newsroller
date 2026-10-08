@@ -1,3 +1,4 @@
+import { useContentSelect } from "../lib/contentSelect";
 import { useEffect, useRef, useState } from "react";
 import { PreviewMonitor } from "../components/PreviewMonitor";
 import { Plus, Trash2, Check, Search, Sparkles, Pencil } from "lucide-react";
@@ -28,6 +29,7 @@ export function PromosPlaca() {
   const searchedOnce = useRef(false);
 
   const load = () => contentItems.list("promos").then(setItems).catch((e) => setErr(e.message));
+  const sel = useContentSelect(items, load);
   useEffect(() => { void load(); }, []);
   useEffect(() => { if (!searchedOnce.current) { searchedOnce.current = true; void search(); } }, []);
 
@@ -190,7 +192,7 @@ export function PromosPlaca() {
           {items.map((it) => {
             const d = it.data as PromosData;
             return (
-              <div key={it.id} data-item={it.id} className="card" style={{ padding: 16, display: "flex", gap: 16, alignItems: "center" }}>
+              <div key={it.id} data-item={it.id} {...sel.row(it.id)} className="card" style={{ padding: 16, display: "flex", gap: 16, alignItems: "center" }}>
                 <div style={{ width: 44, height: 44, borderRadius: 8, background: "#0d2168", flex: "0 0 auto", display: "flex", alignItems: "center", justifyContent: "center" }}>
                   <Sparkles size={20} color="#fff" />
                 </div>

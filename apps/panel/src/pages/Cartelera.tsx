@@ -1,3 +1,4 @@
+import { useContentSelect } from "../lib/contentSelect";
 import { useEffect, useRef, useState } from "react";
 import { PreviewMonitor } from "../components/PreviewMonitor";
 import { Plus, Trash2, Check, X, Loader2, Clapperboard, Pencil, Tv } from "lucide-react";
@@ -219,6 +220,7 @@ export function Cartelera() {
     await load();
   }
   const shownItems = items.filter((it) => kindOf(it.data as CarteleraData) === kind);
+  const sel = useContentSelect(shownItems, load);
 
   async function toggleDisponible(it: ContentItem) {
     await contentItems.patch(it.id, { in_parrilla: !(it.in_parrilla !== false) });
@@ -475,7 +477,7 @@ export function Cartelera() {
           {shownItems.map((it) => {
             const d = it.data as CarteleraData;
             return (
-              <div key={it.id} data-item={it.id} className="card" style={{ padding: 16, display: "flex", gap: 16, alignItems: "center" }}>
+              <div key={it.id} data-item={it.id} {...sel.row(it.id)} className="card" style={{ padding: 16, display: "flex", gap: 16, alignItems: "center" }}>
                 <div style={{ width: 90, height: 56, borderRadius: 8, background: "#0d2168", flex: "0 0 auto", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
                   {(d.poster_url || d.short_thumb || d.photo_url || (d.trailer_id ? `https://img.youtube.com/vi/${d.trailer_id}/mqdefault.jpg` : "")) ? <img src={d.poster_url || d.short_thumb || d.photo_url || `https://img.youtube.com/vi/${d.trailer_id}/mqdefault.jpg`} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <Clapperboard size={20} color="#fff" />}
                 </div>

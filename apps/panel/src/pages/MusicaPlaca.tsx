@@ -1,3 +1,4 @@
+import { useContentSelect } from "../lib/contentSelect";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { PreviewMonitor } from "../components/PreviewMonitor";
 import { Plus, Trash2, Check, X, Loader2, Music, Disc3, Pencil, Crosshair, Undo2, Eraser } from "lucide-react";
@@ -116,6 +117,7 @@ export function MusicaPlaca() {
   }
 
   const load = () => contentItems.list("musica").then(setItems).catch((e) => setErr(e.message));
+  const sel = useContentSelect(items, load);
   useEffect(() => {
     void load();
     settingsApi.get().then((s) => setGeneros(s.generos ?? GENEROS_MUSICALES_DEFAULT)).catch(() => {});
@@ -472,7 +474,7 @@ export function MusicaPlaca() {
             const n = d.lyrics?.length ?? 0;
             const s = d.lyrics?.filter((l) => l.t != null).length ?? 0;
             return (
-              <div key={it.id} data-item={it.id} className="card" style={{ padding: 16, display: "flex", gap: 16, alignItems: "center" }}>
+              <div key={it.id} data-item={it.id} {...sel.row(it.id)} className="card" style={{ padding: 16, display: "flex", gap: 16, alignItems: "center" }}>
                 <div style={{ width: 52, height: 52, borderRadius: 8, background: "#0d2168", flex: "0 0 auto", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
                   {d.cover_url ? <img src={d.cover_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <Disc3 size={22} color="#fff" />}
                 </div>

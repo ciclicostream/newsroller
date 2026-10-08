@@ -1,3 +1,4 @@
+import { useContentSelect } from "../lib/contentSelect";
 import { useEffect, useRef, useState } from "react";
 import { PreviewMonitor } from "../components/PreviewMonitor";
 import { InformesSwitch } from "../components/PlacaSwitch";
@@ -23,6 +24,7 @@ export function InformePlaca() {
   const fileRef = useRef<HTMLInputElement>(null);
 
   const load = () => contentItems.list("informe").then(setItems).catch((e) => setErr(e.message));
+  const sel = useContentSelect(items, load);
   useEffect(() => { void load(); }, []);
 
   async function onSlideFile(e: React.ChangeEvent<HTMLInputElement>) {
@@ -158,7 +160,7 @@ export function InformePlaca() {
           {items.map((it) => {
             const d = it.data as InformeData;
             return (
-              <div key={it.id} data-item={it.id} className="card" style={{ padding: 16, display: "flex", gap: 16, alignItems: "center" }}>
+              <div key={it.id} data-item={it.id} {...sel.row(it.id)} className="card" style={{ padding: 16, display: "flex", gap: 16, alignItems: "center" }}>
                 <div style={{ width: 44, height: 44, borderRadius: 8, background: "#0d2168", flex: "0 0 auto", display: "flex", alignItems: "center", justifyContent: "center" }}>
                   <ListOrdered size={20} color="#fff" />
                 </div>

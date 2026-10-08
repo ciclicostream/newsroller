@@ -1,3 +1,4 @@
+import { useContentSelect } from "../lib/contentSelect";
 import { useEffect, useRef, useState } from "react";
 import { PreviewMonitor } from "../components/PreviewMonitor";
 import { Plus, Trash2, Check, Video, X, Loader2, Pencil } from "lucide-react";
@@ -22,6 +23,7 @@ export function CamarasPlaca() {
   const fileRef = useRef<HTMLInputElement>(null);
 
   const load = () => contentItems.list("camaras").then(setItems).catch((e) => setErr(e.message));
+  const sel = useContentSelect(items, load);
   useEffect(() => { void load(); }, []);
   useEffect(() => {
     camerasApi.list().then((cs) => {
@@ -169,7 +171,7 @@ export function CamarasPlaca() {
             const d = it.data as CamarasData;
             const cam = cameras.find((c) => c.id === d.camera_id);
             return (
-              <div key={it.id} data-item={it.id} className="card" style={{ padding: 16, display: "flex", gap: 16, alignItems: "center" }}>
+              <div key={it.id} data-item={it.id} {...sel.row(it.id)} className="card" style={{ padding: 16, display: "flex", gap: 16, alignItems: "center" }}>
                 <div style={{ width: 44, height: 44, borderRadius: 8, background: "#0d2168", flex: "0 0 auto", display: "flex", alignItems: "center", justifyContent: "center" }}>
                   <Video size={20} color="#fff" />
                 </div>

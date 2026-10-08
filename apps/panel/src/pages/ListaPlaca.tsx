@@ -1,3 +1,4 @@
+import { useContentSelect } from "../lib/contentSelect";
 import { useEffect, useRef, useState } from "react";
 import { PreviewMonitor } from "../components/PreviewMonitor";
 import { InformesSwitch } from "../components/PlacaSwitch";
@@ -47,6 +48,7 @@ export function ListaPlaca() {
   const cur = rows[act] ?? rows[0]!;
 
   const load = () => contentItems.list("lista").then(setItems).catch((e) => setErr(e.message));
+  const sel = useContentSelect(items, load);
   useEffect(() => { void load(); }, []);
   useEffect(() => () => { audioRef.current?.pause(); }, []);
 
@@ -359,7 +361,7 @@ export function ListaPlaca() {
             const n = d.items?.length ?? 0;
             const nAudio = d.items?.filter((x) => x.audio_url).length ?? 0;
             return (
-              <div key={it.id} data-item={it.id} className="card" style={{ padding: 16, display: "flex", gap: 16, alignItems: "center" }}>
+              <div key={it.id} data-item={it.id} {...sel.row(it.id)} className="card" style={{ padding: 16, display: "flex", gap: 16, alignItems: "center" }}>
                 <div style={{ width: 44, height: 44, borderRadius: 8, background: "#0d2168", flex: "0 0 auto", display: "flex", alignItems: "center", justifyContent: "center" }}>
                   <ListChecks size={20} color="#fff" />
                 </div>
