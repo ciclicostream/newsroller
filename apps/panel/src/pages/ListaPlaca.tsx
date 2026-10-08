@@ -7,6 +7,7 @@ import type { ContentItem, ListaData, ListaItem } from "@newsroller/shared";
 import { LISTA_MAX_ITEMS } from "@newsroller/shared";
 import { contentItems } from "../lib/content-items";
 import { uploadMedia } from "../lib/content";
+import type { CropGuide } from "../lib/imageCrop";
 import { api } from "../lib/api";
 
 const MIN_ITEMS = 3;
@@ -19,6 +20,10 @@ const INTRO_OUTRO_SEC = 2; // entrada + salida, además de los segundos de cada 
 
 interface Track { id: string; title: string; artist: string; album: string; cover: string | null; preview: string; source: "deezer" | "itunes" }
 const blankItem = (): ListaItem => ({ title: "", subtitle: "", value: "", text: "", image_url: null, audio_url: null });
+
+// Imagen de cada ítem: siempre cuadrada. Portada de 274×274 (Clásica, escritorio), 240×240 (Clásica, celular) y 250×250 (Moderna);
+// las miniaturas de la lista (46–52 px) usan la misma imagen.
+const COVER_GUIDES: CropGuide[] = [{ label: "Escritorio", aspect: 1, w: 274 }, { label: "Celular", aspect: 1, w: 250 }];
 
 export function ListaPlaca() {
   const [items, setItems] = useState<ContentItem[]>([]);
@@ -78,7 +83,7 @@ export function ListaPlaca() {
     const file = e.target.files?.[0];
     if (!file) return;
     setErr(null); setUploading(true);
-    try { patchRow(act, { image_url: await uploadMedia(file, "media") }); }
+    try { patchRow(act, { image_url: await uploadMedia(file, "media", "placa", { guides: COVER_GUIDES }) }); }
     catch (e) { setErr(e instanceof Error ? e.message : "error subiendo"); }
     finally { setUploading(false); if (imgRef.current) imgRef.current.value = ""; }
   }

@@ -6,8 +6,16 @@ import type { ContentItem, CamarasData, Camera } from "@newsroller/shared";
 import { contentItems } from "../lib/content-items";
 import { camerasApi } from "../lib/cameras";
 import { uploadMedia } from "../lib/content";
+import { useActiveSuite } from "../lib/collections";
+import type { CropGuide } from "../lib/imageCrop";
+
+// Los avisos que rotan junto a la cámara. Las cámaras no salen en el output vertical: una sola zona. Clásica: 372×465.
+// Moderna: 520×552.
+const adGuides = (collection: string): CropGuide[] =>
+  collection === "moderna" ? [{ label: "Escritorio", aspect: 520 / 552, w: 520 }] : [{ label: "Escritorio", aspect: 372 / 465, w: 372 }];
 
 export function CamarasPlaca() {
+  const suite = useActiveSuite();
   const [items, setItems] = useState<ContentItem[]>([]);
   const [cameras, setCameras] = useState<Camera[]>([]);
   const [err, setErr] = useState<string | null>(null);
@@ -43,7 +51,7 @@ export function CamarasPlaca() {
     const file = e.target.files?.[0];
     if (!file) return;
     setErr(null); setUploading(true);
-    try { const url = await uploadMedia(file, "media"); setAds((a) => [...a, url]); }
+    try { const url = await uploadMedia(file, "media", "placa", { guides: adGuides(suite?.style ?? "clasica") }); setAds((a) => [...a, url]); }
     catch (e) { setErr(e instanceof Error ? e.message : "error subiendo"); }
     finally { setUploading(false); if (fileRef.current) fileRef.current.value = ""; }
   }
