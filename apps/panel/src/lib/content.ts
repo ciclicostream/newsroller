@@ -1,6 +1,7 @@
 import type { Asset, AssetKind, Placa, Short } from "@newsroller/shared";
 import { api } from "./api";
 import { supabase } from "./supabase";
+import { autoCompress, isRaster, requestCrop, type CropOpts } from "./imageCrop";
 
 interface SignResponse {
   bucket: string;
@@ -30,7 +31,10 @@ export async function uploadAsset(kind: AssetKind, file: File): Promise<Asset> {
 // Sube media para usar dentro de plantillas/placas (a Storage) y devuelve la URL pública,
 // SIN registrar un asset (no aparece en Publicidad). Default: bucket "media" (NO "ads",
 // que los adblockers bloquean por la ruta /ads/ → no cargaba en Chrome).
-export async function uploadMedia(file: File, kind: AssetKind | "media" = "media", source: "banco" | "placa" | "ajustes" = "placa"): Promise<string> {
+// Las fotos (JPG/PNG/WebP) pasan por el encuadrador y salen de hasta 1 MB y 2048 px (ver lib/imageCrop.ts). Banco: sin encuadre,
+// sólo se adaptan al límite. Ajustes (íconos, logos, zócalos) tiene sus propios controles. Videos, audios, GIF y SVG no se tocan.
+export async function uploadMedia(file: File, kind: AssetKind | "media" = "media", source: "banco" | "placa" | "ajustes" = "placa", crop?: CropOpts): Promise<string> {
+  if (source !== "ajustes" && isRaster(file)) file = source === "banco" ? await autoCompress(file) : await requestCrop(file, crop);
   const sign = await api.post<SignResponse>("/api/content/uploads/sign", { kind, filename: file.name, folder: source === "ajustes" ? "ajustes" : undefined });
   const { error } = await supabase.storage.from(sign.bucket).uploadToSignedUrl(sign.path, sign.token, file);
   if (error) throw new Error(`subida a Storage: ${error.message}`);

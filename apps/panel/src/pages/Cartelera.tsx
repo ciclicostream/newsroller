@@ -89,7 +89,7 @@ export function Cartelera() {
     const file = e.target.files?.[0];
     if (!file) return;
     setErr(null); setUploadingPhoto(true);
-    try { setPhotoUrl(await uploadMedia(file, "media")); }
+    try { setPhotoUrl(await uploadMedia(file, "media", "placa", { aspect: 16 / 9 })); }
     catch (e) { setErr(e instanceof Error ? e.message : "error subiendo"); }
     finally { setUploadingPhoto(false); }
   }

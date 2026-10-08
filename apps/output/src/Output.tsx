@@ -509,6 +509,7 @@ function ytEmbed(videoId: string): string {
     playsinline: "1",
     modestbranding: "1",
     rel: "0",
+    cc_load_policy: "0",
   });
   return `https://www.youtube.com/embed/${videoId}?${p.toString()}`;
 }

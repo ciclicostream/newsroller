@@ -1,3 +1,4 @@
+import { ImageCropHost } from "./ImageCropHost";
 import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 import { type ReactNode, useEffect, useState } from "react";
 import {
@@ -123,6 +124,7 @@ export function Layout({ children }: { children: ReactNode }) {
 
       <main className={"main" + (isSection(pathname) ? " sec" : "")}>{children}{streamOpened && canDo("stream") && <div style={{ display: onStream ? "contents" : "none" }}><StreamPage visible={onStream} /></div>}</main>
       <Toaster />
+      <ImageCropHost />
       {me && <IdleGuard minutes={me.idleMinutes} onIdle={() => { void signOut("idle").then(() => navigate("/login")); }} />}
     </div>
   );

@@ -32,7 +32,7 @@ export function InformePlaca() {
     if (!file) return;
     if (slides.length >= MAX_SLIDES) return setErr(`Máximo ${MAX_SLIDES} slides.`);
     setErr(null); setUploading(true);
-    try { const url = await uploadMedia(file, "media"); setSlides((s) => [...s, url]); }
+    try { const url = await uploadMedia(file, "media", "placa", { aspect: 4 / 5 }); setSlides((s) => [...s, url]); }
     catch (e) { setErr(e instanceof Error ? e.message : "error subiendo"); }
     finally { setUploading(false); if (fileRef.current) fileRef.current.value = ""; }
   }

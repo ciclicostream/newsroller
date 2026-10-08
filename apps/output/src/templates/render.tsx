@@ -164,6 +164,14 @@ function VideoAsset({ src, fit, radius, onEnded }: { src: string; fit: string; r
 // Reproductor de YouTube con IFrame API. allowAudio=false → siempre muteado (cámaras).
 // `loop` repite el video al terminar (no llama a onEnded). `holdAudio` no activa el sonido al arrancar:
 // queda mudo hasta que `unmuted` pasa a true (ej. el trailer espera a que termine el short del columnista).
+// Sin subtítulos de YouTube. `cc_load_policy: 0` es lo normal, pero YouTube igual los muestra si el navegador que lo
+// reproduce tiene "mostrar siempre subtítulos" (o con subtítulos automáticos): por eso además se descarga el módulo de
+// captions del reproductor. Es una llamada no documentada de la IFrame API: si YouTube la cambia, los subtítulos
+// vuelven a depender de la preferencia del navegador, sin romper nada más.
+function noCaptions(player: any): void {
+  for (const m of ["captions", "cc"]) { try { player.unloadModule(m); } catch { /* noop */ } }
+}
+
 export function YouTubePlayer({ videoId, onEnded, allowAudio = true, loop = false, holdAudio = false, unmuted = false }: { videoId: string; onEnded: () => void; allowAudio?: boolean; loop?: boolean; holdAudio?: boolean; unmuted?: boolean }) {
   const ref = useRef<HTMLDivElement>(null);
   const playerRef = useRef<any>(null);
@@ -188,9 +196,10 @@ export function YouTubePlayer({ videoId, onEnded, allowAudio = true, loop = fals
         width: "100%",
         height: "100%",
         // autoplay muteado = arranca SIEMPRE (política del navegador). En vMix el unMute toma sonido.
-        playerVars: { autoplay: 1, mute: 1, controls: 0, rel: 0, modestbranding: 1, playsinline: 1, iv_load_policy: 3, fs: 0, disablekb: 1 },
+        playerVars: { autoplay: 1, mute: 1, controls: 0, rel: 0, modestbranding: 1, playsinline: 1, iv_load_policy: 3, cc_load_policy: 0, fs: 0, disablekb: 1 },
         events: {
           onReady: (e: any) => {
+            noCaptions(e.target);
             try { e.target.playVideo(); } catch { /* noop */ }
             // Solo intentar sonido si se pidió (OBS/vMix con ?audio=1). En el navegador normal
             // NO se toca: así el autoplay muteado nunca se bloquea.
@@ -203,6 +212,7 @@ export function YouTubePlayer({ videoId, onEnded, allowAudio = true, loop = fals
           },
           onStateChange: (e: any) => {
             const S = window.YT?.PlayerState;
+            if (e.data === S?.PLAYING) noCaptions(e.target); // los subtítulos pueden cargarse recién al arrancar
             if (e.data === S?.ENDED) {
               if (loopRef.current) { try { e.target.seekTo(0, true); e.target.playVideo(); } catch { /* noop */ } return; }
               endedRef.current(); return;
