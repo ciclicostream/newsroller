@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Plus, Trash2, Save, Type, Image as ImageIcon, Film, CloudSun, BarChart3, Hexagon, Zap, Search, Video, ArrowLeft, PenTool } from "lucide-react";
+import { Plus, Trash2, Save, Type, Image as ImageIcon, Film, CloudSun, BarChart3, Hexagon, Zap, Search, Video, ArrowLeft } from "lucide-react";
 import {
   CANVAS_W,
   CANVAS_H,
@@ -62,7 +62,6 @@ export function Plantillas() {
 }
 
 function PlantillasEditor() {
-  const [editing, setEditing] = useState(false);
   const [items, setItems] = useState<ContentItem[]>([]);
   const [live, setLive] = useState<PlaylistItem[]>([]);
   const [err, setErr] = useState<string | null>(null);
@@ -73,8 +72,6 @@ function PlantillasEditor() {
       .then(([its, pl]) => { setItems(its); setLive(pl); })
       .catch((e) => setErr(e.message));
   useEffect(() => { void load(); }, []);
-
-  if (editing) return <PlantillaEditor onBack={() => { setEditing(false); void load(); }} />;
 
   // id de content_item → tipo (para contar lo que está al aire)
   const idType = new Map(items.map((i) => [i.id, i.type]));
@@ -90,11 +87,8 @@ function PlantillasEditor() {
       <div className="page-head">
         <div>
           <h1>Plantillas</h1>
-          <p>Todas las placas del canal. Entrá a una para cargar su contenido, o creá una plantilla nueva.</p>
+          <p>Todas las placas del canal. Entrá a una para ver su contenido.</p>
         </div>
-        <button className="btn primary" onClick={() => setEditing(true)}>
-          <Plus size={16} /> Crear plantilla
-        </button>
       </div>
 
       {err && <div className="alert error">{err}</div>}
@@ -128,21 +122,13 @@ function PlantillasEditor() {
           );
         })}
       </div>
-
-      <div className="page-head" style={{ marginTop: 28 }}>
-        <div>
-          <h2 style={{ margin: 0, fontSize: 17 }}>Plantillas personalizadas</h2>
-          <p style={{ margin: "2px 0 0" }}>Diseñadas a mano en el editor.</p>
-        </div>
-        <button className="btn" onClick={() => setEditing(true)}>
-          <PenTool size={15} /> Abrir editor
-        </button>
-      </div>
     </>
   );
 }
 
-function PlantillaEditor({ onBack }: { onBack: () => void }) {
+// Editor viejo de plantillas a mano. Ya no tiene acceso desde el panel (se sacaron los botones "Crear plantilla" y "Abrir editor");
+// el código queda por si hace falta volver a habilitarlo.
+export function PlantillaEditor({ onBack }: { onBack: () => void }) {
   const [list, setList] = useState<Template[]>([]);
   const [cur, setCur] = useState<Template | null>(null);
   const [selId, setSelId] = useState<string | null>(null);
