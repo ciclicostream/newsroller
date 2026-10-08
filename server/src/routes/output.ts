@@ -4,6 +4,7 @@ import { getStore } from "../db/store.js";
 import { liveContentItems } from "../db/contentItems.js";
 import { rateLimited } from "../util/rateLimit.js";
 import { outputIncident } from "../incidents.js";
+import { recordPerf } from "../perfLog.js";
 import { resolveSceneItems } from "../db/scene.js";
 import { resolveOutputLink } from "./output-links.js";
 import { readAll } from "./settings.js";
@@ -153,6 +154,13 @@ export function outputRouter(): Router {
       kind: b.kind, key: b.key.slice(0, 500), label: typeof b.label === "string" ? b.label : undefined,
       detail: typeof b.detail === "string" ? b.detail : undefined, item_id: typeof b.item_id === "string" ? b.item_id : null,
     });
+    res.status(204).end();
+  });
+
+  // Fluidez del output al aire: un resumen por minuto de cada output real (ver perfLog.ts). La lectura es autenticada (/api/perf).
+  r.post("/perf", (req, res) => {
+    if (rateLimited(`perf:${req.ip}`, 20, 60_000)) return res.status(429).end();
+    if (!recordPerf(req.body ?? {})) return res.status(400).json({ error: "datos inválidos" });
     res.status(204).end();
   });
 

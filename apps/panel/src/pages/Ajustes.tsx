@@ -4,7 +4,7 @@ import {
   ROLES, ROLE_LABEL, IDLE_MINUTES_DEFAULT, MUSIC_DEFAULT, GENEROS_MUSICALES_DEFAULT, DEFAULT_COLLECTION, TEMPLATE_COLLECTIONS, activeSuiteOf,
   type Camera, type MusicSettings, type Plataforma, type Role, type Short,
 } from "@newsroller/shared";
-import { Users as UsersIcon, Youtube, Tv, Images, Rss, CloudSun, Clapperboard, History, Music, Disc3, Trash2, Palette, Video, Timer, ChevronRight, Hash } from "lucide-react";
+import { Users as UsersIcon, Youtube, Tv, Images, Rss, CloudSun, Clapperboard, History, Music, Disc3, Trash2, Palette, Video, Timer, ChevronRight, Hash, Activity as ActivityIcon } from "lucide-react";
 import { useAuth } from "../auth/AuthProvider";
 import { settingsApi, type AppSettings } from "../lib/settings";
 import { camerasApi } from "../lib/cameras";
@@ -231,6 +231,10 @@ export function Ajustes() {
           <AjCard to="/ajustes/papelera" icon={<Trash2 size={22} />} name="Papelera" desc="Contenidos borrados: se conservan 30 días">
             {trashCount != null && <div className="aj-stats"><span><b>{trashCount}</b> contenido{trashCount === 1 ? "" : "s"}</span></div>}
           </AjCard>
+        )}
+
+        {isAdmin && (
+          <AjCard to="/ajustes/fluidez" icon={<ActivityIcon size={22} />} name="Fluidez del aire" desc="Cuadros por segundo del output y dónde se corta" />
         )}
 
         {can("reportes") && (

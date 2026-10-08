@@ -6,6 +6,7 @@ import { API_BASE } from "./lib/scene";
 import { IS_VERTICAL, fitScale, stageStyle } from "./lib/orientation";
 import { useAudioUnlock } from "./lib/audioUnlock";
 import offAir from "./assets/off-air.jpg";
+import { startPerf, setPerfLabel } from "./lib/perf";
 
 // Output de Stream (radio manual): `/output/?radio=1&key=<clave>[&orientation=vertical][&audio=1]`.
 // Corre en el OBS/vMix del estudio. Emite lo que el Host toca en el panel (contenido en loop, o la placa de espera),
@@ -21,6 +22,7 @@ export function RadioOutput() {
   const [rtc, setRtc] = useState<"idle" | "connecting" | "connected">("idle");
   const [camLive, setCamLive] = useState(false);
   const [denied, setDenied] = useState(false);
+  useEffect(() => { startPerf(); setPerfLabel("stream"); }, []); // medición de fluidez (lib/perf.ts)
   const [music, setMusic] = useState<MusicSettings>(MUSIC_DEFAULT); // Ajustes → Música (tema activo)
   const musicRef = useRef<HTMLAudioElement>(null);
   const clipAudioRef = useRef(false); // el contenido al aire trae audio propio: la música se apaga

@@ -804,3 +804,9 @@ a.aj-hd:hover .aj-go { color: var(--accent); transform: translateX(2px); }
 .sx-regen p { margin: 0 0 10px; }
 .sx-regen ul { margin: 0; padding-left: 18px; color: var(--muted); display: flex; flex-direction: column; gap: 4px; }
 .sx-regen code { font-size: 12.5px; background: var(--bg); border-radius: 5px; padding: 1px 5px; color: var(--text); }
+
+/* Ajustes → Fluidez del aire */
+.tbl th, .tbl td { padding: 8px 12px; font-size: 13px; text-align: center; white-space: nowrap; border-bottom: 1px solid var(--border); }
+.tbl th { color: var(--muted); font-weight: 600; }
+.tbl tr.fl-warn td { background: #fff7e0; }
+.tbl tr.fl-bad td { background: #fdeceb; color: var(--danger); }

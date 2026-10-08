@@ -24,6 +24,8 @@ import { contentItemsRouter } from "./routes/content-items.js";
 import { playlistRouter } from "./routes/playlist.js";
 import { parrillaRouter } from "./routes/parrilla.js";
 import { outputRouter } from "./routes/output.js";
+import { perfSummary } from "./perfLog.js";
+import { requireAuth, requirePerm } from "./auth/middleware.js";
 import { outputLinksRouter } from "./routes/output-links.js";
 import { attachRadio, radioRouter } from "./routes/radio.js";
 import { templatesRouter } from "./routes/templates.js";
@@ -76,6 +78,7 @@ app.use("/api/playlist", playlistRouter());
 app.use("/api/parrilla", parrillaRouter(io));
 app.use("/api/templates", templatesRouter());
 app.use("/api/output", outputRouter()); // público (sin auth) para vMix
+app.get("/api/perf", requireAuth, requirePerm("perfiles"), (req, res) => res.json(perfSummary(Math.min(Number(req.query.hours) || 24, 24) * 3_600_000)));
 app.use("/api/output-links", outputLinksRouter(io)); // links con nombre: administración desde el panel
 // Resultados electorales del TSE (Brasil): el colector corre salvo TSE_ENABLED=0; la API siempre responde (503 sin datos).
 const tseCfg = tseConfig();

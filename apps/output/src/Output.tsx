@@ -8,6 +8,7 @@ import { TemplateView, templateHasVideo } from "./templates/render";
 import { ItemView } from "./collections";
 import offAir from "./assets/off-air.jpg";
 import { reportAiring, reportIncident, isLiveOutput } from "./lib/telemetry";
+import { startPerf, setPerfLabel } from "./lib/perf";
 import { IS_VERTICAL, ORIENTATION, fitScale, stageStyle, supportsVertical } from "./lib/orientation";
 import { useForcePlay } from "./lib/autoplay";
 import { useAudioUnlock } from "./lib/audioUnlock";
@@ -148,6 +149,12 @@ export function Output() {
   const musicTrack = !SESSION_ID ? music.tracks.find((t) => t.id === music.activeId) ?? null : null;
   const wantMusic = music.enabled && !!musicTrack && onAir;
   const currentHasAudio = isSession ? sessionAudio : blockHasAudio(current);
+
+  // Medición de fluidez (lib/perf.ts): arranca una vez y etiqueta los cuadros con lo que está al aire.
+  useEffect(() => { startPerf(); }, []);
+  useEffect(() => {
+    setPerfLabel(!current || !onAir ? "idle" : current.item ? current.item.type : isSession ? "sesion" : isTemplate ? "plantilla" : "bloque");
+  }, [current?.id, index, onAir]);
 
   // Ref (no state/dep) para que `advance` tenga una identidad ESTABLE entre
   // refrescos de escena — así no reinicia el timer de reproducción (ver abajo).
@@ -467,6 +474,7 @@ function SessionRunner({ scene, blocks, sessionId, onDone, onAudioChange }: { sc
     if (airedRef.current === key) return;
     airedRef.current = key;
     reportAiring(cur.item.id, cur.item.type, cur.duration_sec, ORIENTATION, sessionId);
+    setPerfLabel(cur.item.type);
   }, [cur?.id, idx, sessionId]);
 
   if (!cur?.item) return null;
