@@ -17,7 +17,7 @@ export interface CropOpts { aspect?: number | null; guides?: CropGuide[] } // as
 export function mergeGuides(guides: CropGuide[] = []): CropGuide[] {
   const out: CropGuide[] = [];
   for (const g of guides) {
-    const same = out.find((o) => Math.abs(o.aspect - g.aspect) / o.aspect < 0.01);
+    const same = out.find((o) => Math.abs(o.aspect - g.aspect) / o.aspect < 0.03);
     if (same) { same.label = `${same.label} y ${g.label.toLowerCase()}`; same.w = Math.max(same.w ?? 0, g.w ?? 0) || undefined; } else out.push({ ...g });
   }
   return out;

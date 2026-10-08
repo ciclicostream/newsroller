@@ -6,6 +6,8 @@ import { Plus, Trash2, Check, X, Loader2, Flower2, Pencil } from "lucide-react";
 import type { ContentItem, ObituarioData } from "@newsroller/shared";
 import { contentItems } from "../lib/content-items";
 import { uploadMedia } from "../lib/content";
+import { useActiveSuite } from "../lib/collections";
+import type { CropGuide } from "../lib/imageCrop";
 
 const NAME_MAX = 50;
 const YEARS_MAX = 20;
@@ -14,7 +16,16 @@ const TXT_MAX = 300;
 const DEFAULT_DUR = 15;
 
 // Obituario: vive dentro de la card de Última Hora. Placa sobria, sin marco ni ticker.
+// Dónde muestra cada colección la foto (medidas del output). Clásica: una tarjeta vertical (470×620 en escritorio, 600×780
+// en celular). Moderna: la foto es el FONDO a pantalla completa (1920×1080 en escritorio, 1080×1920 en celular), así que en
+// celular se ve sólo la columna central de una foto horizontal: el marco arranca en 16:9 (lo que sale al aire en escritorio).
+const photoOpts = (collection: string): { guides: CropGuide[]; aspect?: number } =>
+  collection === "moderna"
+    ? { guides: [{ label: "Escritorio", aspect: 1920 / 1080, w: 1920 }, { label: "Celular", aspect: 1080 / 1920, w: 1080 }], aspect: 16 / 9 }
+    : { guides: [{ label: "Escritorio", aspect: 470 / 620, w: 470 }, { label: "Celular", aspect: 600 / 780, w: 600 }] };
+
 export function ObituarioPlaca() {
+  const suite = useActiveSuite();
   const [items, setItems] = useState<ContentItem[]>([]);
   const [err, setErr] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
@@ -39,7 +50,7 @@ export function ObituarioPlaca() {
     if (!file) return;
     setErr(null); setUploading(true);
     try {
-      setPhotoUrl(await uploadMedia(file, "media"));
+      setPhotoUrl(await uploadMedia(file, "media", "placa", photoOpts(suite?.style ?? "clasica")));
     } catch (e) {
       setErr(e instanceof Error ? e.message : "error subiendo");
     } finally {

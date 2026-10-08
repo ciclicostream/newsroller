@@ -31,7 +31,7 @@ export function ImageCropHost() {
   // Zona de trabajo: todo el ancho disponible y un alto que deja ver los botones aun en pantallas bajas.
   useLayoutEffect(() => {
     if (!req) return;
-    const measure = () => setBox({ w: boxRef.current?.clientWidth || 560, h: Math.round(Math.min(380, Math.max(200, window.innerHeight * 0.94 - 300))) });
+    const measure = () => setBox({ w: boxRef.current?.clientWidth || 560, h: Math.round(Math.min(380, Math.max(200, window.innerHeight * 0.94 - 320))) });
     measure();
     window.addEventListener("resize", measure);
     return () => window.removeEventListener("resize", measure);
@@ -165,18 +165,18 @@ export function ImageCropHost() {
           </div>
 
 
-          {lowRes && cr && (
-            <div className="alert" style={{ margin: 0, background: "#fff7e0", borderColor: "#f0dba0", color: "#7a5b00" }}>
-              {sized.length
-                ? <>Con este encuadre la foto queda de {Math.round(cr.w)}×{Math.round(cr.h)} px y al aire se agranda ×{stretch.toFixed(1).replace(".", ",")}: puede verse borrosa.</>
-                : <>Con este encuadre la foto queda de {Math.round(cr.w)}×{Math.round(cr.h)} px. Es chica para la pantalla (1920 px de ancho) y puede verse borrosa al aire.</>}
-            </div>
-          )}
           {err && <div className="alert error" style={{ margin: 0 }}>{err}</div>}
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <div className="muted-note" style={{ fontSize: 11.5, lineHeight: 1.35, flex: 1, minWidth: 0, wordBreak: "break-word" }}>
               {req.file.name} · {nat ? `${nat.w}×${nat.h}` : "…"} · {fmtSize(req.file.size)}
               {tooBig ? ` → se guarda de hasta ${MAX_SIDE} px y ${fmtSize(MAX_BYTES)}` : " → ya entra en el límite"}
+              {lowRes && cr && (
+                <div style={{ color: "#8a5a00", fontWeight: 600, marginTop: 2 }}>
+                  ⚠ {sized.length
+                    ? <>Queda de {Math.round(cr.w)}×{Math.round(cr.h)} px y al aire se agranda ×{stretch.toFixed(1).replace(".", ",")}: puede verse borrosa.</>
+                    : <>Queda de {Math.round(cr.w)}×{Math.round(cr.h)} px: es chica para la pantalla y puede verse borrosa al aire.</>}
+                </div>
+              )}
             </div>
             <button type="button" className="btn" onClick={cancel} disabled={busy}>Cancelar</button>
             <button type="button" className="btn primary" onClick={accept} disabled={!nat || busy}>{busy ? "Procesando…" : "Usar esta foto"}</button>
