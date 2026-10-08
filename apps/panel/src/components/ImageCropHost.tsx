@@ -112,7 +112,7 @@ export function ImageCropHost() {
   const stretch = cr ? Math.max(0, ...sized.map((g) => g.w! / (((g.aspect >= ratio ? fw : fh * g.aspect)) / s))) : 0;
   const lowRes = !!cr && (sized.length ? stretch > MAX_STRETCH : Math.max(cr.w, cr.h) < LOW_PX);
   const guides = mergeGuides(req.opts.guides);
-  const frameLabel = guides.length > 1 ? "Ambas zonas" : guides[0]?.label
+  const frameLabel = guides.length > 2 ? "Todas las zonas" : guides.length > 1 ? "Ambas zonas" : guides[0]?.label
     ?? (req.opts.aspect ? ASPECTS.find((a) => a.v != null && Math.abs(a.v - req.opts.aspect!) < 0.01)?.label ?? req.opts.aspect.toFixed(2) : "Original");
   const tooBig = req.file.size > MAX_BYTES || (nat ? Math.max(nat.w, nat.h) > MAX_SIDE : false);
 
@@ -153,9 +153,9 @@ export function ImageCropHost() {
               {/* zonas donde la plantilla muestra la foto (centradas: lo que sobra se corta) */}
               {guides.map((g, i) => {
                 const w = g.aspect >= ratio ? fw : fh * g.aspect, h = g.aspect >= ratio ? fw / g.aspect : fh;
-                const col = i === 0 ? "#ffd24a" : "#4ad0ff";
+                const col = ["#ffd24a", "#4ad0ff", "#ff7ad9"][i % 3]!;
                 return (
-                  <div key={g.label} style={{ position: "absolute", left: (fw - w) / 2, top: (fh - h) / 2, width: w, height: h, border: `2px dashed ${col}`, boxSizing: "border-box" }}>
+                  <div key={g.label} style={{ position: "absolute", left: (fw - w) * (g.ax ?? 0.5), top: (fh - h) * (g.ay ?? 0.5), width: w, height: h, border: `2px dashed ${col}`, boxSizing: "border-box" }}>
                     <span style={{ position: "absolute", left: 4, top: 4, background: col, color: "#10151f", fontSize: 10, fontWeight: 800, padding: "1px 6px", borderRadius: 4, whiteSpace: "nowrap" }}>{g.label}</span>
                   </div>
                 );

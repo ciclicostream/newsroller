@@ -10,14 +10,16 @@ export const MAX_SIDE = 2048;
 // Zona donde la plantilla muestra la foto en cada versión (escritorio / celular): proporción ancho/alto del lugar.
 // Como la plantilla centra y corta lo que sobra, el encuadrador la dibuja sobre la foto para saber qué se va a ver.
 // `w` = ancho en píxeles del lugar en el output (1920×1080): sirve para avisar si la foto se va a agrandar demasiado.
-export interface CropGuide { label: string; aspect: number; w?: number }
+// `ax`/`ay` = hacia dónde se corre la zona dentro de la foto cuando la plantilla tiene que cortar (0 = pegada arriba/izquierda,
+// 1 = abajo/derecha; por defecto .5, centrada). Equivale al `object-position` de la plantilla.
+export interface CropGuide { label: string; aspect: number; w?: number; ax?: number; ay?: number }
 export interface CropOpts { aspect?: number | null; guides?: CropGuide[] } // aspect: proporción inicial del marco (ancho/alto); sin valor = la original o, con guías, la que contiene todas las zonas
 
 // Guías sin repetir: las que tienen la misma proporción se juntan en una sola ("Escritorio y celular").
 export function mergeGuides(guides: CropGuide[] = []): CropGuide[] {
   const out: CropGuide[] = [];
   for (const g of guides) {
-    const same = out.find((o) => Math.abs(o.aspect - g.aspect) / o.aspect < 0.03);
+    const same = out.find((o) => Math.abs(o.aspect - g.aspect) / o.aspect < 0.03 && (o.ax ?? .5) === (g.ax ?? .5) && (o.ay ?? .5) === (g.ay ?? .5));
     if (same) { same.label = `${same.label} y ${g.label.toLowerCase()}`; same.w = Math.max(same.w ?? 0, g.w ?? 0) || undefined; } else out.push({ ...g });
   }
   return out;

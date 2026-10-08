@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { ElectionCandidate, ElectionData, ElectionLive, ElectionPhase } from "@newsroller/shared";
 import { ELECTION_COUNTRIES, ELECTION_ENTER_SEC, ELECTION_PHASES, normName, ELECTION_TOP_N, electionHold, electionPhase, electionScreens, type ElectionScreen } from "@newsroller/shared";
 import ciclicoWhite from "../../assets/ciclico-white.png";
@@ -7,7 +7,7 @@ import { API_BASE } from "../../lib/scene";
 import { IS_VERTICAL } from "../../lib/orientation";
 import { useForcePlay } from "../../lib/autoplay";
 import maps from "../../lib/electionMaps.json";
-import { Grain, Kick, Lights, NM_CSS, Words, fmtNum, useCount, useFitMax, useLife } from "./base";
+import { Grain, Kick, Lights, NM_CSS, Words, fmtNum, useCount, useLife } from "./base";
 import { ModernChrome } from "./Chrome";
 
 // Resultados electorales, colección Modernas (sólo 16:9 por ahora). Fondo: loop de la bandera del país, oscurecido y
@@ -43,6 +43,30 @@ const solid = (hex: string, a: number): string => {
 };
 type Ranked = ElectionCandidate & { i: number };
 
+// Título de la placa: la fuente baja hasta que el texto entre en el lugar que tiene (antes se frenaba en 38 px y un título largo
+// se cortaba o pisaba el recuadro de escrutinio). En vertical el lugar llega hasta ese recuadro, que está justo debajo; en
+// horizontal es una franja de 90 px. Se vuelve a ajustar cuando terminan de cargar las fuentes, porque cambian el ancho del texto.
+const TITLE_MAX = IS_VERTICAL ? 68 : 64;
+const TITLE_MIN = 20;
+function useFitTitle(ref: React.RefObject<HTMLElement>, deps: unknown[]): void {
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const fit = () => {
+      const count = el.closest(".nm-sc")?.querySelector<HTMLElement>(".ne-count");
+      const head = el.parentElement;
+      const room = IS_VERTICAL && count && head ? count.offsetTop - 14 - (head.offsetTop + el.offsetTop) : 90;
+      let px = TITLE_MAX;
+      el.style.fontSize = px + "px";
+      while (el.scrollHeight > room && px > TITLE_MIN) { px -= 2; el.style.fontSize = px + "px"; }
+    };
+    fit();
+    let on = true;
+    void document.fonts?.ready.then(() => { if (on) fit(); });
+    return () => { on = false; };
+  }, deps); // eslint-disable-line react-hooks/exhaustive-deps
+}
+
 function Avatar({ c, size, className = "" }: { c: Ranked; size: number; className?: string }) {
   const st = { width: size, height: size, background: c.photo_url ? `url(${c.photo_url}) center/cover` : `linear-gradient(150deg,${hexA(c.color, 1)},${hexA(c.color, .55)})`, boxShadow: `0 0 0 3px ${hexA(c.color, .9)},0 14px 30px -10px ${hexA(c.color, .7)}` };
   return <div className={"ne-av " + className} style={st}>{!c.photo_url && <span style={{ fontSize: size * 0.38 }}>{initials(c.name)}</span>}</div>;
@@ -60,12 +84,22 @@ function IntroScreen({ d, kind }: { d: ElectionData; kind: string }) {
   const title = d.title?.trim() || `${(country?.name ?? "").toUpperCase()} VOTA`;
   // Hora de cierre: la última HH:MM del horario cargado ("08:00 a 17:00 hs"); sin horario, 17:00 para Brasil.
   const closeTime = d.voting_hours?.match(/\d{1,2}:\d{2}(?!.*\d{1,2}:\d{2})/)?.[0] ?? (d.country === "br" ? "17:00" : "");
+  // Título grande de arranque: baja la fuente hasta que entre a lo ancho. En vertical cada palabra es un bloque del ancho de la
+  // pantalla con `overflow:hidden`, así que una palabra larga ("ARGENTINA") se recortaba sin que el scrollWidth lo notara:
+  // se mide también el ancho real de la palabra más larga. Se repite al cargar las fuentes (cambian el ancho del texto).
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
-    let sz = IS_VERTICAL ? 320 : 230;
-    el.style.fontSize = sz + "px";
-    while (el.scrollWidth > el.clientWidth + 1 && sz > 90) { sz -= 6; el.style.fontSize = sz + "px"; }
+    const widest = () => Math.max(0, ...Array.from(el.querySelectorAll<HTMLElement>(".nm-w > span")).map((w) => w.offsetWidth));
+    const fit = () => {
+      let sz = IS_VERTICAL ? 320 : 230;
+      el.style.fontSize = sz + "px";
+      while ((el.scrollWidth > el.clientWidth + 1 || widest() > el.clientWidth) && sz > 40) { sz -= 6; el.style.fontSize = sz + "px"; }
+    };
+    fit();
+    let on = true;
+    void document.fonts?.ready.then(() => { if (on) fit(); });
+    return () => { on = false; };
   }, [title, named.length >= 2]);
   const facts = [
     ph === "apertura" && closeTime && ["Cierre de comicios", closeTime],
@@ -436,7 +470,7 @@ export function Elecciones({ data: manual, durationSec }: { data: ElectionData; 
   useEffect(() => { if (wantScr.current > 0 && n > wantScr.current) { setIdx(wantScr.current); idx0.current = wantScr.current; wantScr.current = 0; } }, [n]);
   const [prev, setPrev] = useState<number | null>(null);
   const tRef = useRef<HTMLDivElement>(null);
-  useFitMax(tRef, 64, 38, 90, [data.title, data.country]);
+  useFitTitle(tRef, [data.title, data.country]);
 
   useEffect(() => {
     if (n <= 1) return;

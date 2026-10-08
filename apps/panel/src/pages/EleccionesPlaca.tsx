@@ -7,6 +7,7 @@ import type { ContentItem, ElectionCandidate, ElectionData, ElectionIntroMode, E
 import { BR_CANDIDATES, ELECTION_COUNTRIES, ELECTION_MAX_CANDIDATES, ELECTION_ENTER_SEC, ELECTION_HOLD_MIN_SEC, ELECTION_PHASES, electionDuration, electionScreens } from "@newsroller/shared";
 import { contentItems } from "../lib/content-items";
 import { uploadMedia } from "../lib/content";
+import type { CropGuide } from "../lib/imageCrop";
 import { api } from "../lib/api";
 
 const MIN_CAND = 2;
@@ -14,6 +15,14 @@ const SCR_LABEL: Record<ElectionScreen, string> = { intro: "Arranque", winner: "
 const PALETTE = ["#2F6BFF", "#E0553A", "#2BB673", "#F2B134", "#A66BFF", "#12B5CB", "#E64A9B", "#8A93A6", "#7ED321", "#FF8A3D"];
 const blankCand = (i: number): ElectionCandidate => ({ name: "", party: "", color: PALETTE[i % PALETTE.length]!, photo_url: null, pct: 0, votes: undefined });
 const num = (v: string): number | undefined => { const n = Number(v.replace(",", ".")); return v.trim() === "" || Number.isNaN(n) ? undefined : n; };
+
+// Dónde muestra la placa la foto del candidato (medidas del output, colección Moderna): la tarjeta grande (540×740 en escritorio,
+// 960×600 en celular) la muestra pegada arriba (50 % 14 %, para no cortar la cara) y el círculo de las listas la centra.
+const PHOTO_GUIDES: CropGuide[] = [
+  { label: "Escritorio", aspect: 540 / 740, w: 540, ay: 0.14 },
+  { label: "Celular", aspect: 960 / 600, w: 960, ay: 0.14 },
+  { label: "Círculo", aspect: 1, w: 132 },
+];
 
 export function EleccionesPlaca() {
   const [items, setItems] = useState<ContentItem[]>([]);
@@ -93,7 +102,7 @@ export function EleccionesPlaca() {
     const file = e.target.files?.[0];
     if (!file) return;
     setErr(null); setUploading(true);
-    try { patchCand(act, { photo_url: await uploadMedia(file, "media") }); }
+    try { patchCand(act, { photo_url: await uploadMedia(file, "media", "placa", { guides: PHOTO_GUIDES }) }); }
     catch (e) { setErr(e instanceof Error ? e.message : "error subiendo"); }
     finally { setUploading(false); if (photoRef.current) photoRef.current.value = ""; }
   }
