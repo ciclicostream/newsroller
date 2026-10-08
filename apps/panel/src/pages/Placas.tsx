@@ -5,6 +5,8 @@ import { Plus, Trash2, Check, Loader2, Image as ImageIcon, Music, X, Download, N
 import type { ContentItem, PlacasData } from "@newsroller/shared";
 import { contentItems } from "../lib/content-items";
 import { uploadMedia } from "../lib/content";
+import { useActiveSuite } from "../lib/collections";
+import type { CropGuide } from "../lib/imageCrop";
 import { api } from "../lib/api";
 
 const T_MAX = 130;
@@ -21,7 +23,16 @@ interface CiclicoPost {
   youtube: string | null;
 }
 
+// Dónde muestra cada colección la foto (medidas del output). Clásica: 604×397 en escritorio, 960×540 en celular.
+// Moderna: 680×740 en escritorio (casi cuadrada), 960×560 en celular. El marco arranca en la zona más "alta" y la otra
+// se ve como una franja dentro de él.
+const photoGuides = (collection: string): CropGuide[] =>
+  collection === "moderna"
+    ? [{ label: "Escritorio", aspect: 680 / 740, w: 680 }, { label: "Celular", aspect: 960 / 560, w: 960 }]
+    : [{ label: "Escritorio", aspect: 604 / 397, w: 604 }, { label: "Celular", aspect: 960 / 540, w: 960 }];
+
 export function Placas() {
+  const suite = useActiveSuite();
   const [items, setItems] = useState<ContentItem[]>([]);
   const [err, setErr] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
@@ -54,7 +65,7 @@ export function Placas() {
     setErr(null);
     setUploading(true);
     try {
-      setMediaUrl(await uploadMedia(file, "media"));
+      setMediaUrl(await uploadMedia(file, "media", "placa", { guides: photoGuides(suite?.style ?? "clasica") }));
       setMediaKind(file.type.startsWith("video/") ? "video" : "image");
     } catch (e) {
       setErr(e instanceof Error ? e.message : "error subiendo");
